@@ -14,7 +14,9 @@ export interface QuickAction {
   params: { practice: string } | null;
 }
 
+/** The single practice a record ran; routine records have none. */
 export function practiceFromRecord(record: SessionRecord): Practice | null {
+  if (record.parts || record.source.kind === 'routine') return null;
   return parsePractice({ source: record.source, name: record.name, techniqueId: record.techniqueId, steps: record.steps, target: record.target });
 }
 
@@ -26,9 +28,10 @@ export function quickActionItems(last: Practice | null, history: readonly Sessio
   }
   items.push({ id: 'box', title: '1-minute box breathing', subtitle: `${box.name} · ${describeRhythm(box.steps)}`, icon: 'symbol:square', params: null });
 
-  const distinct = new Set(history.map((r) => practiceKey(r)));
+  const singles = history.filter((r) => !r.parts);
+  const distinct = new Set(singles.map((r) => practiceKey(r)));
   if (last && distinct.size >= 2) {
-    const other = history.find((r) => practiceKey(r) !== practiceKey(last));
+    const other = singles.find((r) => practiceKey(r) !== practiceKey(last));
     const practice = other && practiceFromRecord(other);
     if (practice) {
       items.push({

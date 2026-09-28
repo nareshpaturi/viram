@@ -1,10 +1,11 @@
 /**
  * Builds the cue schedule the native audio timeline plays for one segment
- * (FR-02, FR-03). Times are segment clock times: the neutral lead comes
+ * (FR-02, FR-03). Times are segment clock times: the neutral lead (settle,
+ * resume, or a routine transition) comes
  * first, then one cue per non-zero step boundary, then the completion cue.
  */
 import { cueFor, type CueId } from '../content/voice';
-import { LEAD_MS, type SessionPlan } from './session';
+import { LEAD_MS, segmentEndMs, segmentLayout, type Segment, type SessionPlan } from './session';
 import { formatClock } from './describe';
 import { boundaries, stepMs, type StepKind } from './rhythm';
 
@@ -69,15 +70,18 @@ export function buildSchedule(
   startPlanMs: number,
   settings: CueSettings,
   clipMs: (id: CueId) => number | undefined,
+  leadMs: number = LEAD_MS,
+  withCompletion = true,
 ): SegmentSchedule {
   const firstStep = plan.steps.findIndex((s) => s.seconds > 0);
   const cues: Cue[] = boundaries(plan.steps, startPlanMs, plan.durationMs).map(({ atMs, round, index }, i) => ({
-    atMs: LEAD_MS + atMs - startPlanMs,
+    atMs: leadMs + atMs - startPlanMs,
     sound: soundForStep(settings, plan.steps[index], round + 1, clipMs),
     haptic: settings.haptics,
     nowPlaying: i === 0 || index === firstStep ? roundLine(round + 1, plan.rounds, plan.durationMs - atMs) : null,
   }));
-  const endMs = LEAD_MS + plan.durationMs - startPlanMs;
+  const endMs = leadMs + plan.durationMs - startPlanMs;
+  if (!withCompletion) return { cues, endMs };
   cues.push({
     atMs: endMs,
     sound: settings.mode === 'silent' ? null : toneFor(settings.toneSet, 'complete'),
@@ -85,4 +89,27 @@ export function buildSchedule(
     nowPlaying: 'Practice complete',
   });
   return { cues, endMs };
+}
+
+/**
+ * One segment of a run: the segment's first part from its start, then each
+ * later part after a quiet five-second transition, on one timeline. Only the
+ * last part ends with the completion cue.
+ */
+export function buildRunSchedule(
+  plans: readonly SessionPlan[],
+  segment: Segment,
+  settings: CueSettings,
+  clipMs: (id: CueId) => number | undefined,
+  names: readonly string[],
+): SegmentSchedule {
+  const spans = segmentLayout(plans, segment);
+  const cues: Cue[] = spans.flatMap((span, i) => {
+    const last = i === spans.length - 1;
+    const part = buildSchedule(plans[span.part], span.startPlanMs, settings, clipMs, span.leadMs, last);
+    const shifted = part.cues.map((cue) => ({ ...cue, atMs: cue.atMs + span.offsetMs }));
+    if (span.part === segment.part) return shifted;
+    return [{ atMs: span.offsetMs, sound: null, haptic: null, nowPlaying: `Up next · ${names[span.part]}` }, ...shifted];
+  });
+  return { cues, endMs: segmentEndMs(plans, segment) };
 }

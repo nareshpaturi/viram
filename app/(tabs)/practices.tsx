@@ -3,6 +3,8 @@ import { StyleSheet } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { describeRhythm, describeTarget } from '../../src/breathing/describe';
 import { practiceFromRhythm, rhythmSubtitle } from '../../src/rhythms/describe';
+import { routineChain, routineSummary } from '../../src/routines/describe';
+import { resolveSegment, routineRun, type Routine } from '../../src/routines/repository';
 import { AppText } from '../../src/components/AppText';
 import { ListRow, RowGroup } from '../../src/components/ListRow';
 import { Screen } from '../../src/components/Screen';
@@ -23,7 +25,13 @@ const FAMILIES: { family: Technique['family']; title: string }[] = [
 export default function Practices() {
   const { update } = usePreferences();
   const [rhythms, setRhythms] = useState<SavedRhythm[]>([]);
-  useFocusEffect(useCallback(() => setRhythms(stores().rhythms.list()), []));
+  const [routines, setRoutines] = useState<Routine[]>([]);
+  useFocusEffect(
+    useCallback(() => {
+      setRhythms(stores().rhythms.list());
+      setRoutines(stores().routines.list());
+    }, []),
+  );
 
   const makeReady = (rhythm: SavedRhythm) => {
     update({ lastPractice: practiceFromRhythm(rhythm) });
@@ -36,6 +44,22 @@ export default function Practices() {
         Practices
       </AppText>
       <AppText style={styles.muted}>Traditional techniques, explained simply. Each shows how to practice, when to take care, and its sources.</AppText>
+      <RowGroup title="Routines">
+        {routines.map((routine) => {
+          const resolved = routineRun(routine, stores().rhythms);
+          const names = routine.segments.map((s) => resolveSegment(s, stores().rhythms) ?? { name: 'A deleted rhythm' });
+          return (
+            <ListRow
+              key={routine.id}
+              title={routine.name}
+              subtitle={routineChain(names)}
+              trailing={'run' in resolved ? routineSummary(resolved.run.parts).split(' · ')[1] : 'Needs a change'}
+              onPress={() => router.push({ pathname: '/routine/[id]', params: { id: routine.id } })}
+            />
+          );
+        })}
+        <ListRow title="Build a routine" subtitle="Chain 2–6 practices" onPress={() => router.push('/routine/edit')} />
+      </RowGroup>
       {FAMILIES.map(({ family, title }) => (
         <RowGroup key={family} title={title}>
           {LIBRARY.filter((t) => t.family === family).map((technique) => (

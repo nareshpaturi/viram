@@ -129,12 +129,12 @@ export function findTechnique(id: string): Technique | undefined {
  * installed, shareable technique's structure and sides, and its route and
  * cue come from the library.
  */
-export function validateRhythm(input: SharedRhythm): SharedRhythm | null {
+export function validateRhythm(input: SharedRhythm, options: { anyMinutes?: boolean } = {}): SharedRhythm | null {
   // Callers pass data from storage and files too, so check shapes first.
   if (typeof input.name !== 'string' || typeof input.target !== 'object' || input.target === null) return null;
   if (!Array.isArray(input.steps) || !input.steps.every(isStepShape)) return null;
   const name = cleanName(input.name);
-  if (!name || !isValidTarget(input.target)) return null;
+  if (!name || !isValidTarget(input.target, options.anyMinutes)) return null;
   if (input.techniqueId === null) {
     const fits =
       input.steps.length === 4 &&

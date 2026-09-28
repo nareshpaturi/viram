@@ -7,6 +7,7 @@ import { AppText } from '../src/components/AppText';
 import { Button } from '../src/components/Button';
 import { Card } from '../src/components/Card';
 import { ConfirmPanel } from '../src/components/ConfirmPanel';
+import { RoutineParts } from '../src/components/RoutineParts';
 import { Stat, StatRow } from '../src/components/Stat';
 import { Screen } from '../src/components/Screen';
 import { parseRecord, type SessionRecord } from '../src/history/repository';
@@ -62,7 +63,12 @@ export default function Complete() {
   const practice = practiceFromRecord(record);
   const completed = record.outcome === 'completed';
   const done = () => router.replace('/');
-  const again = practice ? () => router.replace(practiceHref(practice)) : undefined;
+  const routine = record.source.kind === 'routine' && record.parts ? stores().routines.get(record.source.id) : null;
+  const again = practice
+    ? () => router.replace(practiceHref(practice))
+    : routine
+      ? () => router.replace({ pathname: '/routine/[id]', params: { id: routine.id } })
+      : undefined;
 
   if (state === 'leaving') {
     return (
@@ -93,7 +99,7 @@ export default function Complete() {
         ) : (
           <>
             <Button title="Done" onPress={done} />
-            {again ? <Button title="Breathe again" variant="secondary" onPress={again} /> : null}
+            {again ? <Button title={routine ? 'Back to routine' : 'Breathe again'} variant="secondary" onPress={again} /> : null}
           </>
         )
       }
@@ -115,14 +121,21 @@ export default function Complete() {
       </AppText>
       <StatRow>
         <Stat value={formatClock(record.activeMs)} label="Practice time" />
-        <Stat value={String(record.completedRounds)} label="Complete rounds" />
+        {record.parts ? (
+          <Stat value={String(record.parts.length)} label={record.parts.length === 1 ? 'Practice' : 'Practices'} />
+        ) : (
+          <Stat value={String(record.completedRounds)} label="Complete rounds" />
+        )}
       </StatRow>
-      <Card>
-        <AppText variant="bodyStrong">{[record.name, practice && subtitleOf(practice)].filter(Boolean).join(' · ')}</AppText>
-        <AppText variant="label">
-          {describeRhythm(record.steps)} · guided {formatPace(record.breathsPerMinute)} breaths/min
-        </AppText>
-      </Card>
+      {record.parts ? <RoutineParts parts={record.parts} /> : null}
+      {record.parts ? null : (
+        <Card>
+          <AppText variant="bodyStrong">{[record.name, practice && subtitleOf(practice)].filter(Boolean).join(' · ')}</AppText>
+          <AppText variant="label">
+            {describeRhythm(record.steps)} · guided {formatPace(record.breathsPerMinute)} breaths/min
+          </AppText>
+        </Card>
+      )}
       <AppText variant="label" style={failed ? styles.warning : undefined}>
         {failed ? 'Try saving again before leaving this screen.' : state === 'saved' ? '✓ Saved on this device' : 'Saving…'}
       </AppText>

@@ -19,8 +19,10 @@ export interface RhythmStep {
   cue?: 'hum';
 }
 
+/** The minute choices in Adjust rhythm and share links (FR-01). */
 export type MinuteTarget = 1 | 3 | 5 | 10;
-export type Target = { minutes: MinuteTarget } | { rounds: number };
+/** Routines and programs set any whole number of minutes per practice (FR-14, FR-20). */
+export type Target = { minutes: number } | { rounds: number };
 export type Increment = 1 | 0.5;
 
 export const STEP_KINDS: readonly StepKind[] = ['inhale', 'hold', 'exhale', 'rest'];
@@ -28,6 +30,8 @@ export const MINUTE_TARGETS: readonly MinuteTarget[] = [1, 3, 5, 10];
 export const ROUND_SHORTCUTS = [11, 21, 27] as const;
 export const MAX_ROUNDS = 108;
 export const MAX_STEP_SECONDS = 20;
+/** Longest single practice inside a routine or program. */
+export const MAX_SEGMENT_MINUTES = 30;
 
 export function minSeconds(kind: StepKind): number {
   return kind === 'inhale' || kind === 'exhale' ? 1 : 0;
@@ -42,8 +46,16 @@ export function isValidSeconds(kind: StepKind, seconds: number, increment: Incre
   );
 }
 
-export function isValidTarget(target: Target): boolean {
-  if ('minutes' in target) return MINUTE_TARGETS.includes(target.minutes);
+/**
+ * Adjust rhythm and share links offer 1, 3, 5, or 10 minutes; routine and
+ * program parts may use any whole number of minutes up to 30.
+ */
+export function isValidTarget(target: Target, anyMinutes = false): boolean {
+  if ('minutes' in target) {
+    return anyMinutes
+      ? Number.isInteger(target.minutes) && target.minutes >= 1 && target.minutes <= MAX_SEGMENT_MINUTES
+      : MINUTE_TARGETS.includes(target.minutes as MinuteTarget);
+  }
   return Number.isInteger(target.rounds) && target.rounds >= 1 && target.rounds <= MAX_ROUNDS;
 }
 

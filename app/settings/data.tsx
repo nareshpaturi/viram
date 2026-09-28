@@ -23,7 +23,7 @@ type Mode =
 const IMPORT_PROBLEM = {
   invalid: 'This file can’t be imported. Something in it is missing or out of bounds, so nothing was changed.',
   newer: 'This file was made by a newer version of Viram. Update Viram, then try again. Nothing was changed.',
-  limit: 'This file has more rhythms than fit with yours (20 at most). Delete some in My rhythms, then try again. Nothing was changed.',
+  limit: 'This file has more rhythms or routines than fit with yours (20 of each at most). Delete some, then try again. Nothing was changed.',
 } as const;
 
 /**
@@ -97,15 +97,16 @@ export default function YourData() {
   if (mode.kind === 'review') {
     const { plan } = mode;
     const rhythms = plan.rhythms.newItems.length;
+    const routines = plan.routines.newItems.length;
     const sessions = plan.sessions.newItems.length;
-    const nothing = rhythms === 0 && sessions === 0 && !plan.preferences;
+    const nothing = rhythms === 0 && routines === 0 && sessions === 0 && !plan.preferences;
     return (
       <Screen
         edges={['left', 'right']}
         footer={
           <>
             <Button
-              title={nothing ? 'Nothing new to import' : `Import ${rhythms} ${rhythms === 1 ? 'rhythm' : 'rhythms'} and ${sessions} ${sessions === 1 ? 'practice' : 'practices'}`}
+              title={nothing ? 'Nothing new to import' : `Import ${importLabel(rhythms, routines, sessions)}`}
               disabled={nothing}
               onPress={() => {
                 try {
@@ -127,6 +128,7 @@ export default function YourData() {
         <AppText variant="label">{mode.fileName}</AppText>
         <Card>
           <Line title="My rhythms" detail={`${plan.rhythms.found} found · ${plan.rhythms.found - rhythms} already saved`} />
+          <Line title="Routines" detail={`${plan.routines.found} found · ${plan.routines.found - routines} already saved`} />
           <Line title="Practice history" detail={`${plan.sessions.found} found · ${plan.sessions.found - sessions} already here`} />
           <Line title="Settings" detail={plan.preferences ? 'Restored from the file' : 'Kept as they are now'} />
         </Card>
@@ -140,7 +142,7 @@ export default function YourData() {
       <AppText variant="title" accessibilityRole="header">
         Your practice,{'\n'}in a file.
       </AppText>
-      <AppText>Export saves My rhythms, history, and settings in one file you control. Nothing is uploaded.</AppText>
+      <AppText>Export saves My rhythms, routines, history, and settings in one file you control. Nothing is uploaded.</AppText>
       <Card muted>
         <AppText variant="bodyStrong">Included in device backups</AppText>
         <AppText>Viram is part of your iCloud or Google backup, so a new phone restored from backup keeps your practice.</AppText>
@@ -157,6 +159,13 @@ export default function YourData() {
       <Button title="Delete local history" variant="destructive" onPress={() => setMode({ kind: 'confirmDelete' })} />
     </Screen>
   );
+}
+
+/** “2 rhythms, 1 routine, and 14 practices”; routines only when there are some. */
+function importLabel(rhythms: number, routines: number, sessions: number): string {
+  const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+  const items = [count(rhythms, 'rhythm', 'rhythms'), ...(routines ? [count(routines, 'routine', 'routines')] : []), count(sessions, 'practice', 'practices')];
+  return items.length === 2 ? items.join(' and ') : `${items.slice(0, -1).join(', ')}, and ${items[items.length - 1]}`;
 }
 
 function Line({ title, detail }: { title: string; detail: string }) {

@@ -1,5 +1,6 @@
 /**
- * Runs one practice: introduction, settle, guidance, pauses, and the end.
+ * Runs a practice or a routine: introduction, settle, guidance, routine
+ * transitions, pauses, and the end.
  *
  * The session state machine (src/breathing/session.ts) decides; the guide's
  * audio clock supplies time; this hook connects them to the app lifecycle,
@@ -13,6 +14,7 @@ import * as guide from '../audio/guide';
 import { CLIP_MS } from '../audio/manifest.generated';
 import { beginTimingLog, markSegment, markTiming } from '../audio/timingLog';
 import { formatClock, stepLabel } from '../breathing/describe';
+import { stepAt } from '../breathing/rhythm';
 import {
   LEAD_MS,
   complete,
@@ -24,16 +26,21 @@ import {
   requestEnd,
   resume,
   sessionPlan,
+  segmentEndMs,
   settle,
+  totals,
+  type PartResult,
   type PauseReason,
   type Position,
+  type SessionPlan,
   type SessionState,
 } from '../breathing/session';
-import { buildSchedule, roundLine, type CueSettings } from '../breathing/timeline';
-import type { SessionRecord } from '../history/repository';
+import { buildRunSchedule, roundLine, type CueSettings } from '../breathing/timeline';
+import type { PartRecord, RecordSource, SessionRecord } from '../history/repository';
 import type { Preferences } from '../settings/preferences';
 import { newId } from '../storage/db';
-import { techniqueOf, type Practice } from './practice';
+import { techniqueOf } from './practice';
+import type { PracticeRun } from './run';
 
 const TICK_MS = 50;
 const KEEP_AWAKE_TAG = 'viram-practice';
@@ -41,14 +48,23 @@ const KEEP_AWAKE_TAG = 'viram-practice';
 export type SessionView =
   | { kind: 'loading' }
   | { kind: 'intro'; lines: string[]; line: number; remainingMs: number }
-  | { kind: 'countdown'; purpose: 'settle' | 'resume'; seconds: number; resumeStep: string }
-  | { kind: 'running'; position: Position; stepKey: string }
-  | { kind: 'paused'; reason: PauseReason; confirmingEnd: boolean; roundNumber: number; rounds: number; remainingMs: number; resumeStep: string }
+  | { kind: 'countdown'; purpose: 'settle' | 'resume' | 'transition'; part: number; seconds: number; resumeStep: string }
+  | { kind: 'running'; part: number; position: Position; stepKey: string }
+  | {
+      kind: 'paused';
+      part: number;
+      reason: PauseReason;
+      confirmingEnd: boolean;
+      roundNumber: number;
+      rounds: number;
+      remainingMs: number;
+      resumeStep: string;
+    }
   | { kind: 'finished'; record: SessionRecord }
   | { kind: 'cancelled' };
 
 interface Options {
-  practice: Practice;
+  run: PracticeRun;
   preferences: Preferences;
   quickStart: boolean;
   onIntroHeard: (techniqueId: string) => void;
@@ -66,7 +82,48 @@ function introLine(lines: string[], progress: number): number {
   return lines.length - 1;
 }
 
-export function usePracticeSession({ practice, preferences, quickStart, onIntroHeard }: Options) {
+/** The saved record: one practice, or a routine with a snapshot of every practice reached. */
+function buildRecord(
+  run: PracticeRun,
+  plans: readonly SessionPlan[],
+  result: { outcome: 'completed' | 'ended'; parts: PartResult[] },
+  meta: { id: string; startedAt: number; cueMode: SessionRecord['cueMode']; haptics: boolean },
+): SessionRecord {
+  const first = run.parts[0];
+  const single = run.parts.length === 1;
+  const source: RecordSource = single
+    ? first.source
+    : { kind: 'routine', id: run.routineId ?? (run.program ? `program:${run.program.programId}` : 'unsaved') };
+  const parts: PartRecord[] = result.parts.map((r, i) => ({
+    name: run.parts[i].name,
+    techniqueId: run.parts[i].techniqueId,
+    steps: run.parts[i].steps,
+    target: run.parts[i].target,
+    activeMs: r.activeMs,
+    completedRounds: r.completedRounds,
+    breathsPerMinute: plans[i].breathsPerMinute,
+    outcome: r.outcome,
+  }));
+  return {
+    id: meta.id,
+    startedAt: meta.startedAt,
+    ...totals(result.parts),
+    source,
+    techniqueId: single ? first.techniqueId : null,
+    name: run.name,
+    steps: first.steps,
+    target: first.target,
+    breathsPerMinute: plans[0].breathsPerMinute,
+    outcome: result.outcome,
+    cueMode: meta.cueMode,
+    haptics: meta.haptics,
+    parts: single ? null : parts,
+    program: run.program ? { id: run.program.programId, name: run.program.programName, session: run.program.session } : null,
+    health: 'none',
+  };
+}
+
+export function usePracticeSession({ run, preferences, quickStart, onIntroHeard }: Options) {
   // Settings are fixed for the length of a practice.
   const [settings] = useState(() => ({
     cues: {
@@ -77,10 +134,11 @@ export function usePracticeSession({ practice, preferences, quickStart, onIntroH
     volume: preferences.cueVolume,
     mixWithOthers: preferences.otherAudio === 'alongside',
   }));
-  const [plan] = useState(() => sessionPlan(practice.steps, practice.target));
-  // Decided once per practice, like the settings.
+  const [plans] = useState(() => run.parts.map((p) => sessionPlan(p.steps, p.target)));
+  const names = run.parts.map((p) => p.name);
+  // Decided once per run, like the settings. Only the first practice is introduced.
   const [intro] = useState(() => {
-    const technique = techniqueOf(practice);
+    const technique = techniqueOf(run.parts[0]);
     const wanted =
       !quickStart &&
       technique &&
@@ -96,14 +154,14 @@ export function usePracticeSession({ practice, preferences, quickStart, onIntroH
   const announced = useRef('');
 
   const subtitleNow = useCallback(
-    (position: Position) => roundLine(position.roundNumber, plan.rounds, position.remainingMs),
-    [plan.rounds],
+    (position: Position) => roundLine(position.roundNumber, plans[position.part].rounds, position.remainingMs),
+    [plans],
   );
 
-  const resumeStepAt = useCallback((planMs: number) => {
-    const index = readPosition(plan, { purpose: 'resume', startPlanMs: planMs, activeBeforeMs: 0 }, LEAD_MS).step.index;
-    return stepLabel(plan.steps[index]);
-  }, [plan]);
+  const stepLabelAt = useCallback(
+    (part: number, planMs: number) => stepLabel(plans[part].steps[stepAt(plans[part].steps, planMs).index]),
+    [plans],
+  );
 
   // ——— Deriving the view from (state, clock) ———
 
@@ -120,45 +178,37 @@ export function usePracticeSession({ practice, preferences, quickStart, onIntroH
       key = `intro|${line}|${Math.ceil(next.remainingMs / 1000)}`;
     } else if (state.status === 'active') {
       const clock = Math.max(0, guide.positionMs());
-      const position = readPosition(plan, state.segment, clock);
-      if (position.countdown > 0) {
-        next = { kind: 'countdown', purpose: state.segment.purpose, seconds: position.countdown, resumeStep: resumeStepAt(state.segment.startPlanMs) };
-        key = `countdown|${state.segment.purpose}|${position.countdown}`;
+      const position = readPosition(plans, state.segment, clock);
+      if (position.lead) {
+        next = { kind: 'countdown', purpose: position.lead, part: position.part, seconds: position.countdown, resumeStep: stepLabelAt(position.part, position.planMs) };
+        key = `countdown|${position.part}|${position.lead}|${position.countdown}`;
       } else {
-        const stepKey = `${state.segment.startPlanMs}|${position.step.startMs}`;
-        next = { kind: 'running', position, stepKey };
+        const stepKey = `${position.part}|${state.segment.startPlanMs}|${position.step.startMs}`;
+        next = { kind: 'running', part: position.part, position, stepKey };
         key = `running|${stepKey}|${Math.ceil((position.step.durationMs - position.step.elapsedMs) / 1000)}|${Math.round(position.remainingMs / 1000)}`;
       }
     } else if (state.status === 'paused') {
-      const roundNumber = Math.floor(state.resumePlanMs / plan.roundMs) + 1;
+      const plan = plans[state.part];
       next = {
         kind: 'paused',
+        part: state.part,
         reason: state.reason,
         confirmingEnd: state.confirmingEnd,
-        roundNumber,
+        roundNumber: Math.floor(state.resumePlanMs / plan.roundMs) + 1,
         rounds: plan.rounds,
         remainingMs: plan.durationMs - state.resumePlanMs,
-        resumeStep: resumeStepAt(state.resumePlanMs),
+        resumeStep: stepLabelAt(state.part, state.resumePlanMs),
       };
-      key = `paused|${state.reason}|${state.confirmingEnd}`;
+      key = `paused|${state.part}|${state.reason}|${state.confirmingEnd}`;
     } else if (state.status === 'finished') {
       next = {
         kind: 'finished',
-        record: {
+        record: buildRecord(run, plans, state, {
           id: recordRef.current.id,
           startedAt: recordRef.current.startedAt,
-          activeMs: state.activeMs,
-          source: practice.source,
-          techniqueId: practice.techniqueId,
-          name: practice.name,
-          steps: practice.steps,
-          target: practice.target,
-          completedRounds: state.completedRounds,
-          breathsPerMinute: plan.breathsPerMinute,
-          outcome: state.outcome,
           cueMode: settings.cues.mode,
           haptics: settings.cues.haptics !== null,
-        },
+        }),
       };
       key = 'finished';
     } else {
@@ -169,7 +219,7 @@ export function usePracticeSession({ practice, preferences, quickStart, onIntroH
       viewKey.current = key;
       setView(next);
     }
-  }, [intro, plan, practice, resumeStepAt, settings]);
+  }, [intro, plans, run, settings, stepLabelAt]);
 
   const transition = useCallback(
     (state: SessionState) => {
@@ -184,29 +234,34 @@ export function usePracticeSession({ practice, preferences, quickStart, onIntroH
   // ——— Segments ———
 
   const startGuidance = useCallback(
-    (startPlanMs: number) => {
-      const schedule = buildSchedule(plan, startPlanMs, settings.cues, guide.clipLength);
-      markSegment(startPlanMs === 0 ? 'Guidance started' : `Resumed from plan ${formatClock(startPlanMs)}`);
+    (state: SessionState) => {
+      if (state.status !== 'active') return;
+      const { segment } = state;
+      const schedule = buildRunSchedule(plans, segment, settings.cues, guide.clipLength, names);
+      markSegment(segment.purpose === 'settle' ? 'Guidance started' : `Resumed ${names[segment.part]} from plan ${formatClock(segment.startPlanMs)}`);
       guide.startSegment(schedule, {
         volume: settings.volume,
         mixWithOthers: settings.mixWithOthers,
-        title: practice.name,
+        title: run.name,
         subtitle: 'Getting ready',
       });
     },
-    [plan, practice.name, settings],
+    // names derive from run, which is fixed for the screen.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [plans, run.name, settings],
   );
 
   const beginSettle = useCallback(() => {
     if (intro) onIntroHeard(intro.id);
     recordRef.current.startedAt = Date.now();
     beginTimingLog(
-      practice.name,
-      `${Platform.OS} · ${settings.cues.mode} · ${settings.mixWithOthers ? 'play along' : 'pause other audio'} · ${formatClock(plan.durationMs)} planned`,
+      run.name,
+      `${Platform.OS} · ${settings.cues.mode} · ${settings.mixWithOthers ? 'play along' : 'pause other audio'} · ${formatClock(segmentEndMs(plans, { purpose: 'settle', part: 0, startPlanMs: 0, activeBeforeMs: 0 }) - LEAD_MS)} planned`,
     );
-    transition(settle());
-    startGuidance(0);
-  }, [intro, onIntroHeard, plan.durationMs, practice.name, settings, startGuidance, transition]);
+    const state = settle();
+    transition(state);
+    startGuidance(state);
+  }, [intro, onIntroHeard, plans, run.name, settings, startGuidance, transition]);
 
   // Load sounds, then introduce or settle.
   useEffect(() => {
@@ -222,7 +277,7 @@ export function usePracticeSession({ practice, preferences, quickStart, onIntroH
           transition(initialState(true));
           guide.startSegment(
             { cues: [{ atMs: 0, sound: `voice.${intro.clip}`, haptic: null, nowPlaying: null }], endMs: CLIP_MS[intro.clip] },
-            { volume: settings.volume, mixWithOthers: settings.mixWithOthers, title: practice.name, subtitle: 'Introduction' },
+            { volume: settings.volume, mixWithOthers: settings.mixWithOthers, title: run.name, subtitle: 'Introduction' },
           );
         } else {
           beginSettle();
@@ -243,19 +298,20 @@ export function usePracticeSession({ practice, preferences, quickStart, onIntroH
       // Interrupted during the introduction: pause before any practice time; Resume settles.
       if (state?.status === 'intro') {
         guide.stop();
-        transition({ status: 'paused', reason, resumePlanMs: 0, activeMs: 0, confirmingEnd: false });
+        transition({ status: 'paused', reason, part: 0, resumePlanMs: 0, activeMs: 0, confirmingEnd: false, done: [] });
         return;
       }
       if (state?.status !== 'active') return;
       const clock = guide.pause();
-      const next = pause(plan, state, Math.max(0, clock), reason);
+      const next = pause(plans, state, Math.max(0, clock), reason);
       transition(next);
       if (next.status === 'paused') {
+        const plan = plans[next.part];
         const round = Math.floor(next.resumePlanMs / plan.roundMs) + 1;
-        guide.setNowPlaying(practice.name, `Paused · round ${round} of ${plan.rounds}, ${formatClock(plan.durationMs - next.resumePlanMs)} left`);
+        guide.setNowPlaying(run.name, `Paused · round ${round} of ${plan.rounds}, ${formatClock(plan.durationMs - next.resumePlanMs)} left`);
       }
     },
-    [plan, practice.name, transition],
+    [plans, run.name, transition],
   );
 
   const resumePractice = useCallback(() => {
@@ -265,7 +321,7 @@ export function usePracticeSession({ practice, preferences, quickStart, onIntroH
     // A pause during the introduction resumes into the first guidance.
     if (recordRef.current.startedAt === 0) recordRef.current.startedAt = Date.now();
     transition(next);
-    if (next.status === 'active') startGuidance(next.segment.startPlanMs);
+    startGuidance(next);
   }, [startGuidance, transition]);
 
   const askToEnd = useCallback(() => {
@@ -273,11 +329,11 @@ export function usePracticeSession({ practice, preferences, quickStart, onIntroH
     if (!state) return;
     if (state.status === 'active') {
       const clock = guide.pause();
-      transition(requestEnd(plan, state, Math.max(0, clock)));
+      transition(requestEnd(plans, state, Math.max(0, clock)));
     } else if (state.status === 'paused') {
       transition({ ...state, confirmingEnd: true });
     }
-  }, [plan, transition]);
+  }, [plans, transition]);
 
   const keepBreathing = useCallback(() => {
     const state = stateRef.current;
@@ -295,12 +351,12 @@ export function usePracticeSession({ practice, preferences, quickStart, onIntroH
     }
     if (state?.status === 'active') {
       const clock = guide.pause();
-      transition(endEarly(plan, pause(plan, state, Math.max(0, clock), 'user')));
+      transition(endEarly(plans, pause(plans, state, Math.max(0, clock), 'user')));
     } else if (state?.status === 'paused') {
-      transition(endEarly(plan, state));
+      transition(endEarly(plans, state));
     }
     guide.stop();
-  }, [plan, transition]);
+  }, [plans, transition]);
 
   const skipIntro = useCallback(() => {
     if (stateRef.current?.status !== 'intro') return;
@@ -319,7 +375,15 @@ export function usePracticeSession({ practice, preferences, quickStart, onIntroH
     const state = stateRef.current;
     if (state?.status !== 'active' || state.segment.purpose !== 'resume') return;
     guide.pause();
-    transition({ status: 'paused', reason: 'user', resumePlanMs: state.segment.startPlanMs, activeMs: state.segment.activeBeforeMs, confirmingEnd: false });
+    transition({
+      status: 'paused',
+      reason: 'user',
+      part: state.segment.part,
+      resumePlanMs: state.segment.startPlanMs,
+      activeMs: state.segment.activeBeforeMs,
+      confirmingEnd: false,
+      done: state.done,
+    });
   }, [transition]);
 
   // ——— Clock ———
@@ -333,15 +397,15 @@ export function usePracticeSession({ practice, preferences, quickStart, onIntroH
       } else if (state?.status === 'active') {
         const clock = guide.positionMs();
         // A released segment (-1) means the guide already played it to the end.
-        if (clock < 0 || readPosition(plan, state.segment, clock).done) {
-          transition(complete(plan, state));
+        if (clock < 0 || readPosition(plans, state.segment, clock).done) {
+          transition(complete(plans, state));
           return;
         }
       }
       render();
     }, TICK_MS);
     return () => clearInterval(timer);
-  }, [beginSettle, intro, plan, render, transition]);
+  }, [beginSettle, intro, plans, render, transition]);
 
   // ——— Interruptions, lock-screen controls, and locking in Silent ———
 
@@ -353,13 +417,13 @@ export function usePracticeSession({ practice, preferences, quickStart, onIntroH
           const state = stateRef.current;
           if (state?.status === 'intro') return pauseFor(reason);
           if (state?.status !== 'active') return;
-          transition(pause(plan, state, Math.max(0, guide.positionMs()), reason));
+          transition(pause(plans, state, Math.max(0, guide.positionMs()), reason));
         },
         // Events still arrive while Android pauses JS timers on a locked screen,
         // so a practice that ends locked is completed and saved right away.
         onSegmentEnded: () => {
           const state = stateRef.current;
-          if (state?.status === 'active') transition(complete(plan, state));
+          if (state?.status === 'active') transition(complete(plans, state));
         },
         onRemoteCommand: (command) => {
           if (command === 'pause') pauseFor('lockScreen');
@@ -367,7 +431,7 @@ export function usePracticeSession({ practice, preferences, quickStart, onIntroH
           else endSession();
         },
       }),
-    [endSession, pauseFor, plan, resumePractice, transition],
+    [endSession, pauseFor, plans, resumePractice, transition],
   );
 
   useEffect(() => {
@@ -404,7 +468,7 @@ export function usePracticeSession({ practice, preferences, quickStart, onIntroH
   useEffect(() => {
     let message = '';
     if (view.kind === 'running') {
-      const step = plan.steps[view.position.step.index];
+      const step = plans[view.part].steps[view.position.step.index];
       message = `${stepLabel(step)}, ${step.seconds} seconds`;
       if (announced.current !== view.stepKey) {
         announced.current = view.stepKey;
@@ -413,21 +477,28 @@ export function usePracticeSession({ practice, preferences, quickStart, onIntroH
     } else if (view.kind === 'paused' && !view.confirmingEnd && announced.current !== 'paused') {
       announced.current = 'paused';
       AccessibilityInfo.announceForAccessibility('Practice paused');
-    } else if (view.kind === 'countdown' && announced.current !== `countdown-${view.purpose}`) {
-      announced.current = `countdown-${view.purpose}`;
-      AccessibilityInfo.announceForAccessibility(view.purpose === 'settle' ? 'Settle in. Starting in 3 seconds' : `Resuming in 3 seconds with ${view.resumeStep}`);
+    } else if (view.kind === 'countdown' && announced.current !== `countdown-${view.part}-${view.purpose}`) {
+      announced.current = `countdown-${view.part}-${view.purpose}`;
+      const message = {
+        settle: 'Settle in. Starting in 3 seconds',
+        resume: `Resuming in 3 seconds with ${view.resumeStep}`,
+        transition: `Up next, ${names[view.part]}. Starting in 5 seconds`,
+      }[view.purpose];
+      AccessibilityInfo.announceForAccessibility(message);
     }
-  }, [plan.steps, view]);
+    // names derive from run, which is fixed for the screen.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [plans, view]);
 
   // Keep the lock screen's round line current while the app is open.
   useEffect(() => {
-    if (view.kind === 'running') guide.setNowPlaying(practice.name, subtitleNow(view.position));
+    if (view.kind === 'running') guide.setNowPlaying(run.name, subtitleNow(view.position));
     // Only at round starts; the native timeline updates it while locked.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view.kind === 'running' ? view.position.roundNumber : 0]);
+  }, [view.kind === 'running' ? `${view.part}|${view.position.roundNumber}` : '']);
 
   return {
-    plan,
+    plans,
     view,
     hasIntro: intro !== null,
     actions: { pause: () => pauseFor('user'), resume: resumePractice, askToEnd, keepBreathing, endSession, skipIntro, cancel, cancelResume, dismissEnd: () => {

@@ -8,6 +8,7 @@ import type { SessionRecord } from '../../history/repository';
 import { practiceFromTechnique } from '../../practice/practice';
 import { MAX_RHYTHMS } from '../../rhythms/repository';
 import { DEFAULT_PREFERENCES } from '../../settings/preferences';
+import { routineRun } from '../../routines/repository';
 import { MIGRATIONS, MigrationError, migrate, schemaVersion } from '../db';
 import { createStores } from '../stores';
 import { memoryDb } from './testDb';
@@ -39,6 +40,9 @@ const record = (id: string, overrides: Partial<SessionRecord> = {}): SessionReco
   outcome: 'completed',
   cueMode: 'voice',
   haptics: true,
+  parts: null,
+  program: null,
+  health: 'none',
   ...overrides,
 });
 
@@ -202,5 +206,72 @@ describe('export and import', () => {
     unknownTechnique.sessions[0].techniqueId = 'kapalabhati';
     expect(checkImport(JSON.stringify(unknownTechnique), target)).toEqual({ ok: false, reason: 'invalid' });
     expect(target.history.list()).toHaveLength(0);
+  });
+});
+
+describe('routines (FR-14)', () => {
+  const box = { ref: { kind: 'technique' as const, id: 'sama-vritti' }, minutes: 3 };
+  const coherent = { ref: { kind: 'technique' as const, id: 'coherent' }, minutes: 5 };
+
+  it('saves 2–6 practices, allows repeats, and rejects the rest', () => {
+    const { routines } = freshStores();
+    expect(routines.save({ name: 'Evening', segments: [box] })).toEqual({ ok: false, reason: 'invalid' });
+    expect(routines.save({ name: 'Evening', segments: Array(7).fill(box) })).toEqual({ ok: false, reason: 'invalid' });
+    expect(routines.save({ name: 'Evening', segments: [box, { ...box, minutes: 31 }] })).toEqual({ ok: false, reason: 'invalid' });
+    expect(routines.save({ name: 'Evening', segments: [box, { ref: { kind: 'technique', id: 'kapalabhati' }, minutes: 3 }] })).toEqual({ ok: false, reason: 'invalid' });
+    const saved = routines.save({ name: 'Evening', segments: [box, coherent, box] });
+    expect(saved.ok && routines.get(saved.routine.id)?.segments).toHaveLength(3);
+  });
+
+  it('resolves to a run with each practice at its own minutes, and flags deleted rhythms', () => {
+    const stores = freshStores();
+    const rhythm = stores.rhythms.save({ name: 'Mine', steps: custom, target: { minutes: 5 }, techniqueId: null, origin: 'custom' });
+    if (!rhythm.ok) throw new Error('rhythm');
+    const saved = stores.routines.save({ name: 'Mixed', segments: [box, { ref: { kind: 'rhythm', id: rhythm.rhythm.id }, minutes: 7 }] });
+    if (!saved.ok) throw new Error('routine');
+    const resolved = routineRun(saved.routine, stores.rhythms);
+    expect('run' in resolved && resolved.run.parts.map((p) => [p.name, p.target])).toEqual([
+      ['Sama Vritti', { minutes: 3 }],
+      ['Mine', { minutes: 7 }],
+    ]);
+    stores.rhythms.remove(rhythm.rhythm.id);
+    expect(routineRun(saved.routine, stores.rhythms)).toEqual({ missing: [1] });
+  });
+
+  it('exports and imports routines without duplicates', () => {
+    const source = freshStores();
+    source.routines.save({ name: 'Morning', segments: [box, coherent] });
+    const file = JSON.stringify(buildExport(source));
+    const target = freshStores();
+    const check = checkImport(file, target);
+    if (!check.ok) throw new Error(check.reason);
+    applyImport(check.plan, target);
+    expect(target.routines.list().map((r) => r.name)).toEqual(['Morning']);
+    const again = checkImport(file, target);
+    expect(again.ok && again.plan.routines.newItems).toHaveLength(0);
+  });
+
+  it('keeps routine records with every practice reached', () => {
+    const { history } = freshStores();
+    const parts = [
+      { name: 'Sama Vritti', techniqueId: 'sama-vritti', steps: custom, target: { minutes: 3 }, activeMs: 192_000, completedRounds: 12, breathsPerMinute: 3.75, outcome: 'completed' as const },
+      { name: 'Coherent breathing', techniqueId: 'coherent', steps: custom, target: { minutes: 5 }, activeMs: 23_000, completedRounds: 2, breathsPerMinute: 5.5, outcome: 'ended' as const },
+    ];
+    history.save(record('r', { source: { kind: 'routine', id: 'x' }, parts, program: { id: 'foundations', name: 'Pranayama Foundations', session: 6 }, outcome: 'ended' }));
+    expect(history.get('r')).toMatchObject({ source: { kind: 'routine' }, parts, program: { session: 6 }, health: 'none' });
+  });
+});
+
+describe('migration 1 → 2', () => {
+  it('keeps every v1.0 record when sessions are rebuilt', () => {
+    const db = memoryDb();
+    migrate(db, MIGRATIONS.slice(0, 1));
+    db.runSync(
+      "INSERT INTO sessions (id, started_at, active_ms, practice_kind, practice_ref, technique_id, name, steps, target_kind, target_value, completed_rounds, breaths_per_minute, outcome, cue_mode, haptics) VALUES ('old', 1, 60000, 'technique', 'sama-vritti', 'sama-vritti', 'Sama Vritti', ?, 'minutes', 5, 19, 3.75, 'completed', 'voice', 1)",
+      [JSON.stringify(custom)],
+    );
+    migrate(db);
+    expect(schemaVersion(db)).toBe(MIGRATIONS.length);
+    expect(createStores(db).history.get('old')).toMatchObject({ name: 'Sama Vritti', parts: null, program: null, health: 'none' });
   });
 });

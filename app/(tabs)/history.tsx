@@ -5,6 +5,7 @@ import { describeRhythm, formatClock } from '../../src/breathing/describe';
 import { AppText } from '../../src/components/AppText';
 import { Button } from '../../src/components/Button';
 import { ListRow, RowGroup } from '../../src/components/ListRow';
+import { recordLine } from '../../src/components/RoutineParts';
 import { Screen } from '../../src/components/Screen';
 import { groupByDay, timeLabel } from '../../src/history/format';
 import type { SessionRecord } from '../../src/history/repository';
@@ -57,7 +58,7 @@ export default function History() {
                   key={record.id}
                   title={record.name}
                   trailing={formatClock(record.activeMs)}
-                  subtitle={`${describeRhythm(record.steps)} · ${record.completedRounds} ${record.completedRounds === 1 ? 'round' : 'rounds'}`}
+                  subtitle={record.program ? `${record.program.name} · session ${record.program.session} · ${recordLine(record)}` : recordLine(record)}
                   detail={`${timeLabel(record.startedAt)} · ${record.outcome === 'completed' ? 'Saved on this device' : 'Ended early · saved here'}`}
                   onPress={() => router.push({ pathname: '/session/[id]', params: { id: record.id } })}
                 />

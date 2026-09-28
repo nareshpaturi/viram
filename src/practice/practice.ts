@@ -88,12 +88,15 @@ export function isLibraryDefault(practice: Practice): boolean {
 }
 
 /** Stable key for quick actions and “most recent other practice”. */
-export function practiceKey(practice: Pick<Practice, 'source'>): string {
-  return practice.source.kind === 'custom' ? 'custom' : `${practice.source.kind}:${practice.source.id}`;
+export function practiceKey(subject: { source: PracticeSource | { kind: 'routine'; id: string } }): string {
+  return subject.source.kind === 'custom' ? 'custom' : `${subject.source.kind}:${subject.source.id}`;
 }
 
-/** Validates a practice read from storage or route params with the share-link rules. */
-export function parsePractice(value: unknown): Practice | null {
+/**
+ * Validates a practice read from storage or route params with the share-link
+ * rules. Routine and program parts may use any whole number of minutes.
+ */
+export function parsePractice(value: unknown, options: { anyMinutes?: boolean } = {}): Practice | null {
   if (typeof value !== 'object' || value === null) return null;
   const v = value as Partial<Practice>;
   const source = v.source;
@@ -105,6 +108,6 @@ export function parsePractice(value: unknown): Practice | null {
   if (!validSource || !Array.isArray(v.steps) || typeof v.target !== 'object' || v.target === null) return null;
   const techniqueId = typeof v.techniqueId === 'string' ? v.techniqueId : null;
   if (source.kind === 'technique' && source.id !== techniqueId) return null;
-  const rhythm = validateRhythm({ name: String(v.name ?? ''), steps: v.steps, target: v.target, techniqueId });
+  const rhythm = validateRhythm({ name: String(v.name ?? ''), steps: v.steps, target: v.target, techniqueId }, options);
   return rhythm ? { source, name: rhythm.name, techniqueId: rhythm.techniqueId, steps: rhythm.steps, target: rhythm.target } : null;
 }

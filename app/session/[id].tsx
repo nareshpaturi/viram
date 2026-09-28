@@ -5,6 +5,7 @@ import { formatPace } from '../../src/breathing/rhythm';
 import { AppText } from '../../src/components/AppText';
 import { Button } from '../../src/components/Button';
 import { Card } from '../../src/components/Card';
+import { RoutineParts } from '../../src/components/RoutineParts';
 import { Stat, StatRow } from '../../src/components/Stat';
 import { Screen } from '../../src/components/Screen';
 import { dayLabel, timeLabel } from '../../src/history/format';
@@ -38,11 +39,21 @@ export default function SessionDetail() {
       </AppText>
       <StatRow>
         <Stat value={formatClock(record.activeMs)} label="Practice time" />
-        <Stat value={String(record.completedRounds)} label="Complete rounds" />
+        <Stat value={String(record.parts ? record.parts.length : record.completedRounds)} label={record.parts ? 'Practices' : 'Complete rounds'} />
       </StatRow>
+      {record.program ? (
+        <AppText variant="label">
+          {record.program.name} · session {record.program.session}
+        </AppText>
+      ) : null}
+      {record.parts ? <RoutineParts parts={record.parts} /> : null}
       <Card>
-        <AppText>{describeRhythm(record.steps).replace(/^./, (c) => c.toUpperCase())}</AppText>
-        <AppText variant="label">Guided pace: {formatPace(record.breathsPerMinute)} breaths/min</AppText>
+        {record.parts ? null : (
+          <>
+            <AppText>{describeRhythm(record.steps).replace(/^./, (c) => c.toUpperCase())}</AppText>
+            <AppText variant="label">Guided pace: {formatPace(record.breathsPerMinute)} breaths/min</AppText>
+          </>
+        )}
         <AppText variant="label">
           {CUE_LABEL[record.cueMode]}
           {record.haptics ? ' · haptic taps' : ''}
