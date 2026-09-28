@@ -1,0 +1,42 @@
+/* viram.app: static, no cookies, no trackers, no third-party requests. */
+:root {
+  --pine: #12372f;
+  --pine-raised: #1c4b40;
+  --mist: #eef4ef;
+  --paper: #fbfcf8;
+  --ink: #17211d;
+  --ink-soft: #59675f;
+  --muted-on-pine: #cbe0d2;
+  --sky: #a8cfd0;
+  --coral: #e46f51;
+  --line: #d5ded6;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 16px/1.5 "DM Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+main { max-width: 560px; margin: 0 auto; padding: 32px 16px 48px; }
+h1, h2 { font-family: Newsreader, Georgia, "Times New Roman", serif; font-weight: 500; line-height: 1.15; }
+h1 { font-size: 2.25rem; margin: 0.4em 0 0.3em; }
+h2 { font-size: 1.4rem; margin: 1.6em 0 0.4em; }
+a { color: var(--pine); }
+.brand { display: flex; align-items: center; gap: 12px; font-weight: 600; color: var(--pine); text-decoration: none; }
+.card { background: var(--pine); color: #fff; border-radius: 16px; padding: 24px; margin: 24px 0; }
+.card h1 { color: #fff; margin-top: 0.1em; }
+.card .muted { color: var(--muted-on-pine); }
+.muted { color: var(--ink-soft); }
+.small { font-size: 0.8125rem; }
+.actions { display: grid; gap: 12px; margin: 24px 0; }
+.button {
+  display: block; min-height: 52px; padding: 14px 24px; border-radius: 12px;
+  text-align: center; font-weight: 600; text-decoration: none;
+  background: var(--pine); color: #fff;
+}
+.button.secondary { background: #fff; color: var(--ink); border: 1px solid #68746d; }
+.button[hidden] { display: none; }
+.note { background: var(--mist); border-radius: 16px; padding: 16px; }
+ul { padding-left: 1.2em; }

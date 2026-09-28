@@ -1,0 +1,73 @@
+# Every pull request runs the checks (delivery plan D01, CP0).
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Typecheck, content, theme, audio manifest, tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+
+  android:
+    name: Android debug build
+    needs: checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - run: npm ci
+      - run: npx expo prebuild --platform android --no-install
+      - run: ./gradlew assembleDebug --no-daemon
+        working-directory: android
+      - name: Merged manifest has mediaPlayback and no Health or microphone permission
+        run: |
+          manifest=$(find android/app/build/intermediates -path '*merged_manifest*' -name AndroidManifest.xml | head -1)
+          test -n "$manifest"
+          grep -q 'FOREGROUND_SERVICE_MEDIA_PLAYBACK' "$manifest"
+          ! grep -E 'RECORD_AUDIO|permission\.health' "$manifest"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: viram-android-debug
+          path: android/app/build/outputs/apk/debug/*.apk
+
+  ios:
+    name: iOS simulator build
+    needs: checks
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx expo prebuild --platform ios
+      - name: Info.plist has background audio and no Health or microphone purpose string
+        run: |
+          grep -q "<string>audio</string>" ios/Viram/Info.plist
+          ! grep -E "NSMicrophoneUsageDescription|NSHealth" ios/Viram/Info.plist
+      - run: |
+          xcodebuild -workspace ios/Viram.xcworkspace -scheme Viram -configuration Debug \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build

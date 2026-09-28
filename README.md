@@ -1,188 +1,126 @@
 # Viram
 
-**Steady breath. Steady mind.** A free, cross-platform pranayama app for iOS and Android.
+**Steady breath. Steady mind.** Pranayama, guided at your pace: a free, offline
+pranayama app for iOS and Android.
 
-Custom per-phase breathing timers (e.g. 4-4-6-4), guided tones + haptics, local
-session history, streaks, and permission-gated health trends from Apple HealthKit
-(iOS) and Health Connect (Android).
+v1.0 has eight gentle techniques with sourced guides, and flexible rhythms by
+minutes or rounds. Voice, tone, and haptic cues keep guiding with the screen
+locked. It also has My rhythms, share links for teachers, app-icon quick
+actions, local history with export and import, and a published free-core
+promise. There is no account, no ads, and no analytics.
 
-> **Audio roadmap:** the first test builds use **tones + haptics only**.
-> Recorded voice guidance is added after testing, before public launch.
+> **Voice clips are placeholders.** `assets/voice/` holds text-to-speech clips
+> generated on a Mac so the voice path can be built and tested. They are not
+> for release: delivery plan D23 replaces them with the approved Viram voice.
+> “Hear it” on technique guides stays hidden until then.
+
+The product docs live in [`docs/`](docs/README.md). Start with the
+[delivery plan](docs/delivery-plan.md) and its [implementation status](docs/delivery-plan.md#implementation-status--2026-09-27).
 
 ---
 
 ## 1. Run it locally
 
-### Prerequisites
-
 | You need | Notes |
 |---|---|
-| Node.js 22+ and npm | Check with `node --version` |
-| For iOS builds | A Mac with Xcode installed |
-| For Android builds | Android Studio (Mac, Windows, or Linux) |
-| A phone (recommended) | Health features need a real device |
-
-### Setup
+| Node.js 24+ and npm | The content and audio scripts use Node's built-in TypeScript support |
+| iOS | A Mac with Xcode 26.4+ (Expo SDK 57) and CocoaPods |
+| Android | Android Studio (JDK 17+, SDK 36) |
 
 ```bash
-git clone <your-repo-url> viram
-cd viram
-npm install
+npm ci
 ```
 
-> If `npm install` ever fails with an `ERESOLVE` conflict around `react-dom`,
-> the repo pins it exactly (`"react-dom": "19.2.3"` plus an npm `overrides`
-> entry) — pull latest and retry before changing versions.
-
-### Running
-
-**This app needs a development build, not Expo Go.** It ships native health
-modules (`react-native-health`, `react-native-health-connect`) that don't exist
-inside the Expo Go sandbox.
+Viram needs a **development build**, not Expo Go. It ships its own native guide
+module (`modules/viram-guide`) for locked-screen audio.
 
 ```bash
-# Android (emulator or USB-connected device)
-npx expo run:android
-
-# iOS (Mac only — simulator or USB-connected device)
 npx expo run:ios
 ```
 
-The first run compiles the native projects (a few minutes). After that, start
-the dev server for fast iteration:
-
 ```bash
-npx expo start --dev-client
+npx expo run:android
 ```
 
-Then open the **development build** app on your phone (not Expo Go) and scan
-the QR code, or press `a` / `i` in the terminal.
+After the first native build, iterate with `npx expo start --dev-client`.
+If CocoaPods fails with an encoding error, run it with `LANG=en_US.UTF-8`.
 
-### Testing checklist (first pass)
+### Checks
 
-1. **Timer accuracy** — run a 4-4-4-4 session; phases should flip exactly on
-   time and the circle animation should stay in sync with the tones.
-2. **Background behavior** — lock the phone mid-session; the timer is
-   wall-clock based so it should resume on the correct phase.
-3. **Tones + haptics** — each phase transition plays a soft chime and a tap.
-   iPhone silent switch on: tones should still play.
-4. **History & streaks** — finish a session, check Home and History; do one
-   session two days in a row and confirm the streak increments.
-5. **Health (physical device only)** — Settings → Health access → grant
-   permission; Progress should show resting HR / HRV / respiratory rate / SpO₂ /
-   sleep when the paired wearable has synced data. Deny permission → the app
-   must work normally with friendly empty states.
-6. **Custom pattern** — build a 4-4-6-4 (or any) pattern in Setup and confirm
-   the summary shows it correctly.
+```bash
+npm run check
+```
+
+That runs `typecheck`, `check:content` (technique content rules),
+`check:theme` (WCAG contrast of the tokens), `check:audio` (clip lengths and
+the generated manifest), `check:site` (the web page's library data), and the
+Jest suites. CI runs the same, plus Android and iOS simulator builds
+(`.github/workflows/ci.yml`).
+
+| Script | What it does |
+|---|---|
+| `npm test` | Unit tests: step engine, session state machine, cue timeline, share-link codec (with fuzzing), storage and migrations, export/import, quick actions, web decoder parity |
+| `npm run audio:manifest` | Measures `assets/tones` and `assets/voice` and regenerates `src/audio/manifest.generated.ts` |
+| `npm run audio:tones` | Renders the Wood and Chimes tone sets (placeholders for the sound-design lane) |
+| `npm run audio:voice-placeholders` | Regenerates the placeholder voice clips with macOS `say` |
+| `npm run site:data` | Regenerates `site/r/library.js` from the technique library |
+| `npm run content:preview` | Renders `docs/content/library-preview.html` |
+| `npm run brand:assets` | Renders the app icon, adaptive icons, favicon, and splash |
 
 ---
 
-## 2. Push to GitHub
+## 2. What to test on a phone
 
-Create a **private** repo on GitHub (don't initialize it with a README), then:
+These need physical devices; the simulator can't prove them. Record results in
+[`docs/decisions/locked-audio.md`](docs/decisions/locked-audio.md).
 
-```bash
-cd viram
-git remote add origin git@github.com:<your-username>/<repo>.git
-git add -A
-git commit -m "Viram — MVP (tones + haptics)"
-git push -u origin main
-```
-
-Later changes: `git add -A && git commit -m "..." && git push`.
-
----
-
-## 3. Builds & store submission (EAS)
-
-```bash
-npm install -g eas-cli
-eas login
-eas build:configure   # creates eas.json
-```
-
-```bash
-# Test on your phone via internal distribution
-eas build --profile preview --platform all
-
-# Store-ready binaries
-eas build --profile production --platform all
-eas submit --platform ios     # needs App Store Connect record "Viram: Pranayama & Breath"
-eas submit --platform android # needs Play Console app, package app.viram
-```
-
-**Before submitting:**
-- App Store Connect: create the **Viram: Pranayama & Breath** record (bundle id
-  `app.viram`).
-- Play Console: create the app with package `app.viram`.
-- Privacy policy: required by both stores (health data access). Host it at
-  `https://viram.app/privacy` and link it in the store listings.
-- Apple HealthKit: the build enables the HealthKit capability automatically via
-  config plugin; answer Apple's health-data questions honestly in review
-  ("reads heart/HRV/sleep to display trends; writes mindful minutes").
-- Screenshots: 6.7" iOS + 10" Android tablet recommended.
-- Copy: keep claims modest — no medical promises. The Settings screen already
-  carries the breath-retention safety note; mirror it in the store description.
+1. **Locked-screen timing.** Begin box breathing at 5 minutes in Voice mode, lock the phone at once, and check that it ends within ±250 ms of 5:04. Repeat with Tones, 20 minutes, Low Power Mode or battery saver, and Doze.
+2. **Interruptions.** A phone call, headphones unplugged, and another app playing audio should each pause the practice and say why. Resume restarts the step after three seconds.
+3. **Music.** With *Play along*, music keeps playing (on Android it dips under each cue). With *Pause other audio*, Viram pauses it.
+4. **Lock-screen controls.** iOS Now Playing (in *Pause other audio*) and the Android media notification show the practice, round, and time left, with Pause and Resume (and End on Android).
+5. **Silent mode.** The screen stays on. Locking pauses on iOS, and on Android continues with haptics.
+6. **Links.** `viram://r/…` opens the preview now. Universal Links and App Links need viram.app hosting (see [`site/README.md`](site/README.md)).
+7. **Quick actions.** Long-press the icon on a cold start and a warm start, and again before first use.
+8. **Backup.** Restore from an iOS backup or Android Auto Backup, and export and import between phones.
 
 ---
 
-## 4. Project structure
+## 3. Project structure
 
 ```
-viram/
-  app/                    # expo-router screens
-    _layout.tsx           # stack nav + DB/audio init
-    index.tsx             # Home — streak, quick start, recent sessions
-    setup.tsx             # pattern presets + custom builder + duration
-    session.tsx           # breathing player (engine + tones + haptics)
-    summary.tsx           # post-session summary
-    history.tsx           # session list
-    progress.tsx          # streaks, charts, per-pattern totals, health
-    settings.tsx          # toggles, defaults, health access, safety note
-  src/
-    theme.ts              # Viram brand tokens
-    engine/
-      types.ts            # Phase, PatternConfig, presets (4-4-4-4, 4-4-6-4, 4-7-8)
-      BreathingEngine.ts  # drift-free wall-clock phase machine
-    audio/tones.ts        # generated chimes via expo-audio (silent-switch proof)
-    haptics.ts            # expo-haptics cues
-    storage/
-      db.ts               # expo-sqlite schema
-      sessions.ts         # sessions, streaks, per-day minutes, pattern totals
-      settings.ts         # user preferences
-    health/
-      index.ts            # unified safe interface (never throws)
-      healthkit.ts        # iOS — Apple HealthKit
-      healthconnect.ts    # Android — Health Connect
-    components/           # BreathingCircle, StatCard, TrendChart, PrimaryButton
-  assets/
-    icon.png / splash.png / favicon.png
-    tones/                # inhale/hold/exhale/rest/complete chimes (WAV)
+app/                         expo-router screens
+  _layout.tsx                fonts, storage (recoverable error), preferences, quick actions, stack
+  (tabs)/                    Breathe · Practices · History · Settings
+  welcome.tsx                one-screen first use
+  practice.tsx               intro → settle → guidance → paused / end confirmation
+  complete.tsx               completion; saves the record, retry on failure
+  technique/[id].tsx         technique guide
+  adjust.tsx                 Adjust rhythm (library structure or the four-row builder)
+  save-rhythm.tsx            save or rename a rhythm (1–40 plain-text characters, up to 20)
+  rhythms.tsx                My rhythms
+  share.tsx, r/[payload].tsx share preview and incoming link
+  session/[id].tsx           history detail
+  settings/                  cues & sound, your data, safety, privacy, about, sources
+src/
+  breathing/                 pure step engine, rhythm math, session state machine, cue timeline
+  content/                   bundled technique library, sources, voice cue rules, safety copy
+  audio/                     guide API (native clock, JS fallback), generated sound manifest
+  sharing/link.ts            share-link encode, decode, and validation
+  practice/                  practice model, launching, the session hook
+  history/, rhythms/,        repositories (screens never issue SQL)
+  settings/, storage/        preferences, migrations, database opener
+  data/transfer.ts           export and import
+  quickstart/                app-icon quick actions
+  components/                shared, token-driven UI
+  theme.ts                   brand tokens and text styles
+modules/viram-guide/         native guide: Swift (AVAudioEngine) and Kotlin (AudioTrack + mediaPlayback service)
+site/                        static viram.app: link fallback page, privacy, support, link-verification files
+assets/tones, assets/voice   tone sets and (placeholder) voice clips
 ```
 
-## 5. Architecture notes
+## 4. Architecture notes
 
-- **Local-first.** Sessions and settings live in SQLite on-device. No backend,
-  no account, no analytics in v1.
-- **Health is optional.** Every health function fails soft — the app is fully
-  usable with no wearable, no permission, or no data.
-- **Timing is wall-clock.** `BreathingEngine` recomputes phase from timestamps
-  each tick, so animation, tones and haptics can't drift apart, and
-  pause/resume is exact.
-- **Voice guidance comes later.** The engine fires `onPhaseStart` per phase —
-  the hook for recorded voice cues is already there; add playback in
-  `session.tsx` when the voice assets land.
-- **Native patches.** `patches/react-native-health+1.19.0.patch` (applied
-  automatically via the `postinstall` script) removes two obsolete lines from
-  the library's iOS code that used a pre-New-Architecture API
-  (`RCTCallableJSModules setBridge:`), which no longer exists in React Native
-  0.81. Without it, `npx expo run:ios` fails to compile the HealthKit pod.
-
-## 6. Roadmap
-
-- [x] Custom per-phase timers, presets, tones + haptics
-- [x] Local history, streaks, progression analytics
-- [x] HealthKit + Health Connect (read indicators, write mindful minutes)
-- [ ] Physical-device testing pass
-- [ ] Recorded voice guidance
-- [ ] Store submission (Viram)
+- **Local-first.** Sessions, My rhythms, and preferences live in SQLite (`viram.sqlite`) with forward-only migrations. Each migration runs in one transaction, so a failure keeps the data and shows a recoverable error. The file is in iCloud and device backups and in Android Auto Backup.
+- **One clock.** The native guide schedules every cue on the audio clock and reports its position. The screen derives everything from `(session state, clock)`. JavaScript never times cues. See [the locked-audio decision](docs/decisions/locked-audio.md).
+- **Validated boundaries.** Rhythms from storage, route params, share links, and import files all pass the same rules (`validateRhythm`). Link content is shown as plain text only. Instructions and safety text come from the bundled library.
+- **No Health in v1.0.** Apple Health and Health Connect session writing return with v1.1-E; the v1.0 binary requests no Health, microphone, or notification permission.

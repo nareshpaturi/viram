@@ -41,6 +41,10 @@ const normalTextPairs = [
   ['coralDeep', 'white'],
   ['success', 'mist'],
   ['primary', 'paper'],
+  ['clay', 'paper'],
+  ['clay', 'white'],
+  ['pine', 'mist'],
+  ['pineDark', 'coral'],
 ];
 
 const largePhaseNumberPairs = [
@@ -50,7 +54,12 @@ const largePhaseNumberPairs = [
   ['pine', 'mist'],
 ];
 
-const nonTextPairs = [['focus', 'paper']];
+const nonTextPairs = [
+  ['focus', 'paper'],
+  // Control outlines (buttons, steppers, segmented options) need 3:1.
+  ['outline', 'paper'],
+  ['outline', 'white'],
+];
 
 for (const [foreground, background] of normalTextPairs) {
   const ratio = contrast(foreground, background);
