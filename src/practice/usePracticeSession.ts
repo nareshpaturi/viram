@@ -134,6 +134,7 @@ export function usePracticeSession({ run, preferences, quickStart, night, onIntr
       toneSet: preferences.toneSet,
       haptics: preferences.haptics ? preferences.hapticStrength : null,
       softFinish: night,
+      counting: preferences.voiceCounting,
     } satisfies CueSettings,
     volume: preferences.cueVolume,
     mixWithOthers: preferences.otherAudio === 'alongside',
@@ -148,7 +149,10 @@ export function usePracticeSession({ run, preferences, quickStart, night, onIntr
       technique &&
       (preferences.introductions === 'always' ||
         (preferences.introductions === 'first' && !preferences.introductionsHeard.includes(technique.id)));
-    return wanted ? { id: technique.id, clip: technique.guidance.introduction.clip, lines: technique.guidance.introduction.lines } : null;
+    if (!wanted) return null;
+    const { introduction } = technique.guidance;
+    const chosen = preferences.introLength === 'long' && introduction.long ? introduction.long : introduction;
+    return { id: technique.id, clip: chosen.clip, lines: chosen.lines };
   });
 
   const stateRef = useRef<SessionState | null>(null);

@@ -55,7 +55,9 @@ export function audioAvailable(): boolean {
 /** Every sound a practice can use with these settings: cue clips and one tone set. */
 export function practiceSounds(toneSet: string): string[] {
   const kinds = ['inhale', 'hold', 'exhale', 'rest', 'complete'];
-  return [...kinds.map((k) => `tone.${toneSet}.${k}`), ...Object.keys(CUES).map((id) => `voice.${id}`)];
+  // Night practice always finishes on the soft bells (FR-23), whatever the tone set.
+  const tones = new Set([...kinds.map((k) => `tone.${toneSet}.${k}`), 'tone.soft-bells.complete']);
+  return [...tones, ...Object.keys(CUES).map((id) => `voice.${id}`)];
 }
 
 /** Length of a loaded voice clip, from the build-time manifest. */

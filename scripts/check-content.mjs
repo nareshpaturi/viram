@@ -10,6 +10,8 @@ const MINUTE_TARGETS = [1, 3, 5, 10];
 const PROGRESSION_PATHS = ['sama-vritti', 'visama-vritti', 'nadi-shodhana', 'ujjayi'];
 // About 40 seconds at a calm 120–130 words per minute (brand voice spec).
 const INTRO_WORD_LIMIT = 85;
+// About 80 seconds at the same pace.
+const LONG_INTRO_WORD_LIMIT = 170;
 // Treatment, diagnosis, and outcome words are release blockers in copy.
 const CLAIM_WORDS =
   /\b(cures?|cured|curing|heals?|healing|treats?|treating|therap(?:y|ies|eutic)|diagnos\w*|prescri\w*|guarantee\w*|proven|detox\w*|boosts?)\b/i;
@@ -36,6 +38,7 @@ function copyOf(technique) {
     ...guidance.takeCare,
     guidance.research,
     ...guidance.introduction.lines,
+    ...(guidance.introduction.long?.lines ?? []),
     ...practice.steps.map((step) => step.caption),
   ];
 }
@@ -121,6 +124,15 @@ export function checkLibrary() {
     if (guidance.introduction.clip !== `intro.${at}`) fail(at, `introduction clip must be intro.${at}`);
     const introWords = guidance.introduction.lines.join(' ').split(/\s+/).length;
     if (introWords > INTRO_WORD_LIMIT) fail(at, `introduction is ${introWords} words; limit ${INTRO_WORD_LIMIT}`);
+    // Fuller voice (FR-19): the longer introduction ends the same way, so the practice starts the same way.
+    const long = guidance.introduction.long;
+    if (long) {
+      if (long.clip !== `intro-long.${at}`) fail(at, `long introduction clip must be intro-long.${at}`);
+      const longWords = long.lines.join(' ').split(/\s+/).length;
+      if (longWords <= introWords || longWords > LONG_INTRO_WORD_LIMIT) fail(at, `long introduction is ${longWords} words; it must be longer than the short one and at most ${LONG_INTRO_WORD_LIMIT}`);
+      if (long.lines.at(-1) !== guidance.introduction.lines.at(-1)) fail(at, 'long introduction must end with the same line as the short one');
+      if (long.lines.some((line) => !line || line.length > 200)) fail(at, 'long introduction lines must be 1–200 characters');
+    }
 
     // Copy rules.
     for (const text of copyOf(technique)) {

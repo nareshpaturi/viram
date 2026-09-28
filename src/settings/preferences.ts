@@ -11,6 +11,7 @@ import { parsePractice, type Practice } from '../practice/practice';
 export type OtherAudio = 'alongside' | 'pause';
 export type Introductions = 'first' | 'always' | 'never';
 export type Motion = 'system' | 'reduced';
+export type IntroLength = 'short' | 'long';
 /** FR-17: one local reminder a day, off until the practitioner turns it on. */
 export interface Reminder {
   enabled: boolean;
@@ -42,6 +43,14 @@ export interface Preferences {
   reminder: Reminder;
   /** FR-23: Off, 9 PM–6 AM, or Always. */
   nightPractice: NightSetting;
+  /** FR-19: count each second within a step (Voice mode). */
+  voiceCounting: boolean;
+  /** FR-19: the short or the longer spoken introduction. */
+  introLength: IntroLength;
+  /** FR-18: the practitioner chose to add sessions to Apple Health / Health Connect. */
+  healthConnected: boolean;
+  /** “Not now” on the Health offer: it isn't offered after practices again (Settings still is). */
+  healthDismissed: boolean;
 }
 
 export const DEFAULT_PREFERENCES: Preferences = {
@@ -65,6 +74,10 @@ export const DEFAULT_PREFERENCES: Preferences = {
   progressionSnoozed: {},
   reminder: { enabled: false, hour: 7, minute: 30 },
   nightPractice: 'off',
+  healthConnected: false,
+  healthDismissed: false,
+  voiceCounting: false,
+  introLength: 'short',
 };
 
 const oneOf =
@@ -96,6 +109,10 @@ const VALIDATORS: { [K in keyof Preferences]: (v: unknown) => Preferences[K] | u
       ? (v as Record<string, number>)
       : undefined,
   nightPractice: (v) => (oneOf('off', 'evening', 'always')(v) ? v : undefined),
+  healthConnected: (v) => (isBoolean(v) ? v : undefined),
+  voiceCounting: (v) => (isBoolean(v) ? v : undefined),
+  introLength: (v) => (oneOf('short', 'long')(v) ? v : undefined),
+  healthDismissed: (v) => (isBoolean(v) ? v : undefined),
   reminder: (v) => {
     const r = v as Reminder;
     return typeof v === 'object' && v !== null && isBoolean(r.enabled) && isInt(r.hour, 0, 23) && isInt(r.minute, 0, 59)

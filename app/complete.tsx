@@ -27,6 +27,8 @@ import {
   type Enrollment,
 } from '../src/programs/engine';
 import { SessionDots } from '../src/components/SessionDots';
+import { HEALTH_NAME, HEALTH_RESULT, healthAvailable, healthEligible, writeToHealth } from '../src/health/health';
+import type { HealthState } from '../src/history/repository';
 import { refreshReminder } from '../src/reminder/ReminderBridge';
 import { practiceFromRecord } from '../src/quickstart/quickActions';
 import { refreshQuickActions } from '../src/quickstart/QuickActionsBridge';
@@ -99,6 +101,7 @@ function CompleteScreen() {
   const [offer, setOffer] = useState<Offer | null>(null);
   const [nextTime, setNextTime] = useState<NextTime>(null);
   const [programResult, setProgramResult] = useState<ProgramResult | null>(null);
+  const [health, setHealth] = useState<HealthState>('none');
   const easier = useMemo(() => (record ? easierPractice(record) : null), [record]);
 
   useEffect(() => {
@@ -107,6 +110,11 @@ function CompleteScreen() {
     setState(result);
     if (result === 'saved') {
       refreshQuickActions(preferences);
+      // Health writing follows the local save, never replaces it (FR-18).
+      if (preferences.healthConnected && healthEligible(record)) {
+        setHealth('pending');
+        writeToHealth(stores(), record).then(setHealth, () => setHealth('failed'));
+      }
       try {
         setProgramResult(applyToProgram(record));
         refreshReminder(preferences);
@@ -235,6 +243,11 @@ function CompleteScreen() {
       <AppText variant="label" style={failed ? styles.warning : undefined}>
         {failed ? 'Try saving again before leaving this screen.' : saved ? '✓ Saved on this device' : 'Saving…'}
       </AppText>
+      {saved && health !== 'none' ? (
+        <AppText variant="label" accessibilityLiveRegion="polite">
+          {health === 'pending' ? `Adding to ${HEALTH_NAME}…` : `${HEALTH_RESULT[health].title}${health === 'failed' ? ' You can retry from Settings.' : ''}`}
+        </AppText>
+      ) : null}
       {saved && programResult && programResult.kind !== 'phase' ? <ProgramCard result={programResult} record={record} onChange={setProgramResult} /> : null}
       {saved && offer && !nextTime ? (
         <Card>
@@ -260,6 +273,13 @@ function CompleteScreen() {
         <AppText variant="label" style={styles.nextTime}>
           {message}
         </AppText>
+      ) : null}
+      {saved && health === 'none' && !preferences.healthConnected && !preferences.healthDismissed && healthEligible(record) && healthAvailable() ? (
+        <Button
+          title={`Add sessions to ${HEALTH_NAME}`}
+          variant="quiet"
+          onPress={() => router.push({ pathname: '/health', params: { record: record.id } })}
+        />
       ) : null}
       {saved && easier && !nextTime ? (
         <Button title="Make it easier next time" variant="quiet" onPress={() => chooseNext({ kind: 'easier', practice: easier })} />

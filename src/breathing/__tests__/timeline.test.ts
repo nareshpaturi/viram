@@ -82,3 +82,51 @@ describe('buildSchedule', () => {
     expect(endMs).toBe(LEAD_MS + plan.durationMs - 20_000);
   });
 });
+
+describe('counting within steps (FR-19)', () => {
+  const counts = (n: number) => Object.fromEntries(Array.from({ length: 19 }, (_, i) => [`count-${i + 2}`, n]));
+  const withCounts = (ms: number) => (id: CueId) => ({ ...clips, ...counts(ms) })[id];
+  const counting: CueSettings = { ...voice, counting: true };
+  const inOut = (inhale: number, exhale: number) =>
+    sessionPlan(
+      [
+        { kind: 'inhale', seconds: inhale },
+        { kind: 'exhale', seconds: exhale },
+      ],
+      { rounds: 1 },
+    );
+
+  it('speaks each whole second after the step cue, with no haptic', () => {
+    const { cues } = buildSchedule(inOut(4, 6), 0, counting, withCounts(500));
+    expect(cues.map((c) => [c.atMs - LEAD_MS, c.sound])).toEqual([
+      [0, 'voice.inhale'],
+      [1000, 'voice.count-2'],
+      [2000, 'voice.count-3'],
+      [3000, 'voice.count-4'],
+      [4000, 'voice.exhale'],
+      [5000, 'voice.count-2'],
+      [6000, 'voice.count-3'],
+      [7000, 'voice.count-4'],
+      [8000, 'voice.count-5'],
+      [9000, 'voice.count-6'],
+      [10_000, 'tone.soft-bells.complete'],
+    ]);
+    expect(cues.filter((c) => c.sound?.includes('count')).every((c) => c.haptic === null && c.nowPlaying === null)).toBe(true);
+  });
+
+  it('is off by default, in Tones and Silent, and never counts a half second', () => {
+    expect(buildSchedule(inOut(4, 6), 0, voice, withCounts(500)).cues).toHaveLength(3);
+    expect(buildSchedule(inOut(4, 6), 0, { ...counting, mode: 'tones' }, withCounts(500)).cues).toHaveLength(3);
+    const half = buildSchedule(inOut(4.5, 4.5), 0, counting, withCounts(500)).cues.filter((c) => c.sound?.includes('count'));
+    expect(half).toHaveLength(6);
+  });
+
+  it('stays quiet where a number would overlap the step cue or not fit its second', () => {
+    const plan = sessionPlan(practice('nadi-shodhana').steps, { rounds: 1 });
+    const long = { ...clips, 'inhale-left': 1300, ...counts(500) };
+    const { cues } = buildSchedule(plan, 0, counting, (id) => long[id]);
+    // “Inhale left” runs 1.3 s, so the count starts at three.
+    expect(cues[1]).toMatchObject({ atMs: LEAD_MS + 2000, sound: 'voice.count-3' });
+    expect(buildSchedule(inOut(4, 6), 0, counting, withCounts(900)).cues).toHaveLength(3);
+  });
+});

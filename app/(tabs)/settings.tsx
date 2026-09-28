@@ -8,6 +8,7 @@ import { Segmented } from '../../src/components/Segmented';
 import { TONE_SET_LABEL } from '../../src/audio/toneSets';
 import { TIMING_LOG_ENABLED } from '../../src/audio/timingLog';
 import { reminderTime } from '../../src/reminder/reminder';
+import { HEALTH_NAME, healthAvailable } from '../../src/health/health';
 import { usePreferences } from '../../src/settings/PreferencesProvider';
 import { stores } from '../../src/storage';
 
@@ -68,6 +69,9 @@ export default function Settings() {
         <ListRow title="My rhythms" subtitle={`${saved} saved`} onPress={() => router.push('/rhythms')} />
       </RowGroup>
       <RowGroup title="Your data">
+        {healthAvailable() || preferences.healthConnected ? (
+          <ListRow title={HEALTH_NAME} subtitle={preferences.healthConnected ? 'Adding completed sessions' : 'Not connected'} onPress={() => router.push('/health')} />
+        ) : null}
         <ListRow title="Export or import" subtitle="Included in device backups" onPress={() => router.push('/settings/data')} />
         <ListRow title="Privacy" onPress={() => router.push('/settings/privacy')} />
         <ListRow title="Safety & wellbeing" onPress={() => router.push('/settings/safety')} />

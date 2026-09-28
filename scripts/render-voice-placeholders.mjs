@@ -2,9 +2,9 @@
 // guidance can be built and tested before the licensed Viram voice exists
 // (delivery plan D14). Not for release: D23 replaces every file in
 // assets/voice/ with approved clips generated from docs/content/viram-lexicon.pls.
-// Run on a Mac with `npm run audio:voice-placeholders`.
+// Run on a Mac with `npm run audio:voice-placeholders` (add `-- --missing` for new clips only).
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { LIBRARY } from '../src/content/library.ts';
@@ -14,9 +14,12 @@ import { readWav, writeWav } from './lib/wav.mjs';
 const VOICE = process.env.VIRAM_TTS_VOICE ?? 'Samantha';
 const OUT = 'assets/voice';
 const work = mkdtempSync(join(tmpdir(), 'viram-voice-'));
+// `--missing` renders only clips that don't exist yet, leaving the rest untouched.
+const onlyMissing = process.argv.includes('--missing');
 
 /** Speaks `text`, trims silence, and writes a 44.1 kHz mono WAV. */
 function speak(id, text, rate) {
+  if (onlyMissing && existsSync(join(OUT, `${id}.wav`))) return;
   const aiff = join(work, `${id}.aiff`);
   const wav = join(work, `${id}.wav`);
   execFileSync('say', ['-v', VOICE, '-r', String(rate), '-o', aiff, text]);
@@ -29,9 +32,12 @@ function speak(id, text, rate) {
 }
 
 mkdirSync(OUT, { recursive: true });
-for (const [id, cue] of Object.entries(CUES)) speak(id, cue.text, cue.text.includes(' ') ? 210 : 180);
+// Counts are brisker so each fits its one-second slot.
+for (const [id, cue] of Object.entries(CUES)) speak(id, cue.text, id.startsWith('count-') ? 230 : cue.text.includes(' ') ? 210 : 180);
 for (const technique of LIBRARY) {
   speak(technique.guidance.introduction.clip, technique.guidance.introduction.lines.join(' [[slnc 500]] '), 150);
+  const long = technique.guidance.introduction.long;
+  if (long) speak(long.clip, long.lines.join(' [[slnc 500]] '), 150);
   if (technique.pronunciation) {
     const sayable = technique.pronunciation.respelling.toLowerCase().replace(/-/g, '');
     speak(technique.pronunciation.clip, sayable, 150);

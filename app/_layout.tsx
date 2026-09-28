@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import { Stack } from 'expo-router';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
@@ -14,6 +14,7 @@ import { AppText } from '../src/components/AppText';
 import { Button } from '../src/components/Button';
 import { QuickActionsBridge } from '../src/quickstart/QuickActionsBridge';
 import { ReminderBridge } from '../src/reminder/ReminderBridge';
+import { HealthBridge } from '../src/health/HealthBridge';
 import { PreferencesProvider } from '../src/settings/PreferencesProvider';
 import { stores } from '../src/storage';
 import { colors, fonts, spacing } from '../src/theme';
@@ -55,6 +56,7 @@ export default function RootLayout() {
       <StatusBar style="dark" />
       <QuickActionsBridge />
       <ReminderBridge />
+      <HealthBridge />
       <Stack
         screenOptions={{
           animation: 'fade',
@@ -83,6 +85,7 @@ export default function RootLayout() {
         <Stack.Screen name="session/[id]" options={{ title: 'Practice details' }} />
         <Stack.Screen name="settings/sound" options={{ title: 'Cues & sound' }} />
         <Stack.Screen name="settings/reminder" options={{ title: 'Daily reminder' }} />
+        <Stack.Screen name="health" options={{ title: Platform.OS === 'android' ? 'Health Connect' : 'Apple Health' }} />
         <Stack.Screen name="settings/data" options={{ title: 'Your data' }} />
         <Stack.Screen name="settings/safety" options={{ title: 'Safety & wellbeing' }} />
         <Stack.Screen name="settings/privacy" options={{ title: 'Privacy' }} />

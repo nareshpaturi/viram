@@ -32,10 +32,10 @@ export interface ExportFile {
 }
 
 /**
- * First-use state, one-time tips, and the reminder (it depends on this
- * device's notification permission) belong to the device, not the file.
+ * First-use state, one-time tips, the reminder, and the Health connection
+ * (both depend on this device's permissions) belong to the device, not the file.
  */
-const DEVICE_ONLY: (keyof Preferences)[] = ['firstUseComplete', 'lockTipSeen', 'introductionsHeard', 'reminder'];
+const DEVICE_ONLY: (keyof Preferences)[] = ['firstUseComplete', 'lockTipSeen', 'introductionsHeard', 'reminder', 'healthConnected', 'healthDismissed'];
 
 export function buildExport(stores: Stores, now = new Date()): ExportFile {
   const preferences: Partial<Preferences> = { ...stores.preferences.read() };

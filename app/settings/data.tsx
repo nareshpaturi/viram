@@ -63,7 +63,7 @@ export default function YourData() {
       <Screen edges={['left', 'right']}>
         <ConfirmPanel
           title="Delete local history?"
-          body="This removes every practice saved on this device. Your cue settings and saved rhythms stay the same."
+          body="This removes every practice saved on this device. Your cue settings, saved rhythms, and routines stay the same, and sessions already added to Apple Health or Health Connect stay there."
           cancelLabel="Keep history"
           confirmLabel="Delete local history"
           destructive

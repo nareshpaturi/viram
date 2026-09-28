@@ -66,7 +66,12 @@ export interface Technique {
     research: string;
     basedOn: SourceId[];
     /** Spoken before settling; each line is also a caption. */
-    introduction: { clip: string; lines: string[] };
+    introduction: {
+      clip: string;
+      lines: string[];
+      /** v1.1 fuller voice (FR-19): a longer version, chosen in Cues & sound. */
+      long?: { clip: string; lines: string[] };
+    };
   };
   /** “Reviewed by” renders only from this field. */
   review: Review | null;
