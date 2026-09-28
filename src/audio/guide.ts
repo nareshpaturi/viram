@@ -12,6 +12,13 @@ import NativeGuide, { type InterruptionReason, type RemoteCommand } from '../../
 import type { HapticStrength, SoundId } from '../breathing/timeline';
 import { CUES } from '../content/voice';
 import { CLIP_MS, SOUND_ASSETS } from './manifest.generated';
+import { TIMING_LOG_ENABLED, recordCue } from './timingLog';
+
+// Development and internal builds report every cue's actual timing.
+if (TIMING_LOG_ENABLED && NativeGuide) {
+  NativeGuide.setTimingLog(true);
+  NativeGuide.addListener('onCueTiming', recordCue);
+}
 
 export type { InterruptionReason, RemoteCommand };
 
@@ -31,6 +38,8 @@ export interface SegmentOptions {
 export interface GuideHandlers {
   onInterruption(reason: InterruptionReason): void;
   onRemoteCommand(command: RemoteCommand): void;
+  /** The native guide played the whole segment and released audio on its own. */
+  onSegmentEnded(): void;
 }
 
 const HAPTIC_LEVEL: Record<HapticStrength, number> = { light: 1, medium: 2, strong: 3 };
@@ -173,6 +182,7 @@ export function subscribe(handlers: GuideHandlers): () => void {
   const subscriptions = [
     NativeGuide.addListener('onInterruption', (e) => handlers.onInterruption(e.reason)),
     NativeGuide.addListener('onRemoteCommand', (e) => handlers.onRemoteCommand(e.command)),
+    NativeGuide.addListener('onSegmentEnded', () => handlers.onSegmentEnded()),
   ];
   return () => subscriptions.forEach((s) => s.remove());
 }

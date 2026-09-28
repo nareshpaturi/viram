@@ -30,6 +30,8 @@ type GuideEvents = {
   onRemoteCommand(event: { command: RemoteCommand }): void;
   onInterruption(event: { reason: InterruptionReason; positionMs: number }): void;
   onSegmentEnded(): void;
+  /** Developer timing log: how far from its planned time a cue reached the output. */
+  onCueTiming(event: { atMs: number; driftMs: number; sound: string }): void;
 };
 
 declare class ViramGuideModule extends NativeModule<GuideEvents> {
@@ -44,6 +46,7 @@ declare class ViramGuideModule extends NativeModule<GuideEvents> {
   setVolume(volume: number): void;
   setNowPlaying(title: string, subtitle: string): void;
   playOnce(sound: string, volume: number): void;
+  setTimingLog(enabled: boolean): void;
 }
 
 export default requireOptionalNativeModule<ViramGuideModule>('ViramGuide');

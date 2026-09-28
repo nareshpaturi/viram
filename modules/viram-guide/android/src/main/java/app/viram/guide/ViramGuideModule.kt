@@ -28,7 +28,7 @@ class ViramGuideModule : Module() {
   override fun definition() = ModuleDefinition {
     Name("ViramGuide")
 
-    Events("onRemoteCommand", "onInterruption", "onSegmentEnded")
+    Events("onRemoteCommand", "onInterruption", "onSegmentEnded", "onCueTiming")
 
     OnCreate {
       val context = appContext.reactContext ?: return@OnCreate
@@ -65,6 +65,8 @@ class ViramGuideModule : Module() {
     Function("setVolume") { volume: Double -> GuideEngine.setVolume(volume.toFloat()) }
 
     Function("setNowPlaying") { title: String, subtitle: String -> GuideEngine.setNowPlaying(title, subtitle) }
+
+    Function("setTimingLog") { enabled: Boolean -> GuideEngine.timingLog = enabled }
 
     Function("playOnce") { sound: String, volume: Double -> GuideEngine.playOnce(sound, volume.toFloat()) }
   }

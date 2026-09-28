@@ -56,3 +56,34 @@ None of these can come from a simulator. Record the results in this file.
 | Nothing plays after End; audio session released | ☐ | ☐ |
 
 If either platform can't hold ±250 ms, the owner decides the fallback before public release, because the v1.0 promise depends on it.
+
+### How to measure: the cue timing log
+
+Development builds, and internal builds made with `EXPO_PUBLIC_TIMING_LOG=1`, record every voice and tone cue's timing. The results are under **Settings › Developer › Cue timing**. Store builds never collect it.
+
+- **Drift** is when a cue actually reached the output, minus its planned time on the segment clock.
+  - On iOS, it comes from the buffer's played-back callback: the callback time minus the clip length. Callback delivery adds a few milliseconds of noise.
+  - On Android, it comes from `AudioTrack` timestamps: the frame's presentation time against the segment's first frame. Underruns and stalls show up as drift.
+- The **completion cue's drift** answers the “ends within ±250 ms of 5:04” row directly.
+- Markers record guidance starts and resumes, pauses with their reason, locking and unlocking, and the end.
+- **Share log (CSV)** exports one row per cue. Attach the CSV for each device run here.
+
+To run a check, begin the practice, lock the phone at once, and leave it until the end. Then unlock and open Cue timing.
+
+### Emulator and simulator smoke tests · 2026-09-27 (not device evidence)
+
+These show the mechanisms work. They don't replace the physical-device rows above.
+
+**Android emulator** (API 37, debug build, JDK 17):
+- A `mediaPlayback` foreground service with a MediaStyle notification (Pause, End) and an active media session starts with the practice. It stays up when the introduction is skipped (stop, then start).
+- With the screen locked for 30 s, the AudioTrack stayed `started`. The notification updated natively each round (“Round 2 of 19 · 4:48 left”, “Round 3 of 19 · 4:32 left”). After unlocking, the screen re-synced to the clock.
+- A media-session pause showed “Paused from the lock screen”, and play resumed with the three-second countdown.
+- A simulated incoming call (`adb emu gsm call`) in *Play alongside* paused with “Paused for a call”. While playing, other audio was ducked around each cue (focus request and abandon every 4 s).
+- A media-session stop (the notification's End) saved an ended-early record. The service and track were released.
+- A 1-minute box practice run **entirely locked** completed and saved while locked (1:04, 4 rounds). Cue timing reported 17 cues, 100% within ±250 ms, end cue ±0 ms. The emulator's audio clock is ideal, so zero drift is expected here.
+- App shortcuts are registered from History (“Begin last practice · Sama Vritti · 1 min”, “1-minute box breathing”). A `viram://r/…` link opens the preview, with Take care taken from the app's own content.
+- Bug found and fixed in this run: Android pauses JS timers while locked. A practice that ended locked was never completed, and the screen fell back to a settle countdown on return. The practice now completes on the native `onSegmentEnded` event.
+
+**iOS simulator** (iOS 26.5):
+- In the foreground: introduction, settle, pause, end early, and a full completion (1:04 and 4 rounds, as planned).
+- A 1-minute box practice run **entirely locked**, in the default *Pause other audio*, completed and saved (1:04, 4 rounds). Cue timing reported 17 cues, 100% within ±250 ms, mean |drift| 13 ms, max 22 ms, end cue +17 ms. The iOS figure includes a few milliseconds of completion-callback latency.

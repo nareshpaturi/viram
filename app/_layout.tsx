@@ -81,6 +81,7 @@ export default function RootLayout() {
         <Stack.Screen name="settings/privacy" options={{ title: 'Privacy' }} />
         <Stack.Screen name="settings/about" options={{ title: 'About' }} />
         <Stack.Screen name="settings/sources" options={{ title: 'Sources' }} />
+        <Stack.Screen name="settings/timing" options={{ title: 'Cue timing' }} />
       </Stack>
     </PreferencesProvider>
   );

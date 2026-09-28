@@ -74,6 +74,14 @@ Jest suites. CI runs the same, plus Android and iOS simulator builds
 These need physical devices; the simulator can't prove them. Record results in
 [`docs/decisions/locked-audio.md`](docs/decisions/locked-audio.md).
 
+Development builds have **Settings › Developer › Cue timing**. It shows how far
+each cue landed from its planned time, measured from the audio hardware, and
+the completion cue's drift. Share its CSV with the results. For an internal
+release build, set `EXPO_PUBLIC_TIMING_LOG=1` to keep it.
+
+Android builds need JDK 17 or 21. With Homebrew, `brew install openjdk@17`, then
+set `JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home`.
+
 1. **Locked-screen timing.** Begin box breathing at 5 minutes in Voice mode, lock the phone at once, and check that it ends within ±250 ms of 5:04. Repeat with Tones, 20 minutes, Low Power Mode or battery saver, and Doze.
 2. **Interruptions.** A phone call, headphones unplugged, and another app playing audio should each pause the practice and say why. Resume restarts the step after three seconds.
 3. **Music.** With *Play along*, music keeps playing (on Android it dips under each cue). With *Pause other audio*, Viram pauses it.

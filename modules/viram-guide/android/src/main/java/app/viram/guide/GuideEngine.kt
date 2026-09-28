@@ -39,6 +39,9 @@ object GuideEngine {
 
   private class Voice(val samples: FloatArray, val startFrame: Long, val gain: Float)
 
+  /** A cue written to the stream whose presentation time isn't known yet. */
+  private class PendingTiming(val atMs: Double, val frame: Long, val sound: String, val generation: Int)
+
   private lateinit var context: Context
   private var emit: ((String, Map<String, Any?>) -> Unit)? = null
   private val buffers = ConcurrentHashMap<String, FloatArray>()
@@ -61,6 +64,12 @@ object GuideEngine {
   private var mixWithOthers = true
   private var generation = 0
   private var focusRequest: AudioFocusRequest? = null
+  private val pendingTimings = ArrayList<PendingTiming>()
+  /** When the segment's first frame was (or will be) presented, from the track's timestamps. */
+  private var segmentStartNanos = -1L
+
+  /** Developer timing log: report when each cue actually reached the output. */
+  @Volatile var timingLog = false
   private var noisyRegistered = false
 
   var title = ""
@@ -134,6 +143,8 @@ object GuideEngine {
       this.title = title
       this.subtitle = subtitle
       segmentStartFrame = framesWritten
+      segmentStartNanos = -1L
+      pendingTimings.clear()
       frozenMs = null
       segmentActive = true
       finishing = false
@@ -156,6 +167,7 @@ object GuideEngine {
     frozenMs = position
     generation += 1
     voices.clear()
+    pendingTimings.clear()
     return position
   }
 
@@ -287,8 +299,38 @@ object GuideEngine {
         events.post { release(segmentEnded) }
         return
       }
+      if (timingLog) measureTimings(output)
       if (++blocks % 25 == 0) checkForCall()
     }
+  }
+
+  /**
+   * The track's timestamp pairs a presented frame with the time it was heard.
+   * Each cue's time is extrapolated from a timestamp taken just after it
+   * played, so underruns and stalls since the segment began show as drift.
+   */
+  private fun measureTimings(output: AudioTrack) {
+    val stamp = AudioTimestamp()
+    if (!output.getTimestamp(stamp)) return
+    val results = ArrayList<Map<String, Any?>>()
+    synchronized(lock) {
+      if (!segmentActive) return
+      val presented = { frame: Long -> stamp.nanoTime - (stamp.framePosition - frame) * 1_000_000_000L / RATE }
+      if (segmentStartNanos < 0 && stamp.framePosition >= segmentStartFrame) segmentStartNanos = presented(segmentStartFrame)
+      if (segmentStartNanos < 0) return
+      val iterator = pendingTimings.iterator()
+      while (iterator.hasNext()) {
+        val pending = iterator.next()
+        if (pending.generation != generation) {
+          iterator.remove()
+        } else if (pending.frame <= stamp.framePosition) {
+          val startedMs = (presented(pending.frame) - segmentStartNanos) / 1_000_000.0
+          results.add(mapOf("atMs" to pending.atMs, "driftMs" to startedMs - pending.atMs, "sound" to pending.sound))
+          iterator.remove()
+        }
+      }
+    }
+    results.forEach { result -> events.post { emit?.invoke("onCueTiming", result) } }
   }
 
   private fun release(segmentEnded: Boolean) {
@@ -308,7 +350,13 @@ object GuideEngine {
         val frame = segmentStartFrame + msToFrames(cue.atMs)
         if (frame >= blockStart + BLOCK) break
         if (frame >= blockStart - msToFrames(STALE_MS)) {
-          cue.sound?.let { buffers[it] }?.let { voices.add(Voice(it, maxOf(frame, blockStart), volume)) }
+          val sound = cue.sound
+          val samples = sound?.let { buffers[it] }
+          if (sound != null && samples != null) {
+            val startFrame = maxOf(frame, blockStart)
+            voices.add(Voice(samples, startFrame, volume))
+            if (timingLog) pendingTimings.add(PendingTiming(cue.atMs, startFrame, sound, generation))
+          }
           sideEffects(cue, frame)
         }
         nextCue += 1
