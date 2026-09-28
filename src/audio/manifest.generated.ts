@@ -58,6 +58,10 @@ export const SOUND_ASSETS = {
   'voice.intro.sheetali': require('../../assets/voice/intro.sheetali.wav'),
   'voice.intro.coherent': require('../../assets/voice/intro.coherent.wav'),
   'voice.intro.4-7-8': require('../../assets/voice/intro.4-7-8.wav'),
+  'voice.intro.dirgha': require('../../assets/voice/intro.dirgha.wav'),
+  'voice.intro.udgeeth': require('../../assets/voice/intro.udgeeth.wav'),
+  'voice.intro.chandra-bhedana': require('../../assets/voice/intro.chandra-bhedana.wav'),
+  'voice.intro.cyclic-sighing': require('../../assets/voice/intro.cyclic-sighing.wav'),
   'voice.intro-long.sama-vritti': require('../../assets/voice/intro-long.sama-vritti.wav'),
   'voice.intro-long.visama-vritti': require('../../assets/voice/intro-long.visama-vritti.wav'),
   'voice.intro-long.nadi-shodhana': require('../../assets/voice/intro-long.nadi-shodhana.wav'),
@@ -66,12 +70,19 @@ export const SOUND_ASSETS = {
   'voice.intro-long.sheetali': require('../../assets/voice/intro-long.sheetali.wav'),
   'voice.intro-long.coherent': require('../../assets/voice/intro-long.coherent.wav'),
   'voice.intro-long.4-7-8': require('../../assets/voice/intro-long.4-7-8.wav'),
+  'voice.intro-long.dirgha': require('../../assets/voice/intro-long.dirgha.wav'),
+  'voice.intro-long.udgeeth': require('../../assets/voice/intro-long.udgeeth.wav'),
+  'voice.intro-long.chandra-bhedana': require('../../assets/voice/intro-long.chandra-bhedana.wav'),
+  'voice.intro-long.cyclic-sighing': require('../../assets/voice/intro-long.cyclic-sighing.wav'),
   'voice.name.sama-vritti': require('../../assets/voice/name.sama-vritti.wav'),
   'voice.name.visama-vritti': require('../../assets/voice/name.visama-vritti.wav'),
   'voice.name.nadi-shodhana': require('../../assets/voice/name.nadi-shodhana.wav'),
   'voice.name.bhramari': require('../../assets/voice/name.bhramari.wav'),
   'voice.name.ujjayi': require('../../assets/voice/name.ujjayi.wav'),
   'voice.name.sheetali': require('../../assets/voice/name.sheetali.wav'),
+  'voice.name.dirgha': require('../../assets/voice/name.dirgha.wav'),
+  'voice.name.udgeeth': require('../../assets/voice/name.udgeeth.wav'),
+  'voice.name.chandra-bhedana': require('../../assets/voice/name.chandra-bhedana.wav'),
 } as const;
 
 /** Measured clip lengths in milliseconds, by clip ID. */
@@ -116,6 +127,10 @@ export const CLIP_MS: Record<string, number> = {
   "intro.sheetali": 19060,
   "intro.coherent": 17251,
   "intro.4-7-8": 19707,
+  "intro.dirgha": 17599,
+  "intro.udgeeth": 18400,
+  "intro.chandra-bhedana": 19342,
+  "intro.cyclic-sighing": 17379,
   "intro-long.sama-vritti": 43443,
   "intro-long.visama-vritti": 35246,
   "intro-long.nadi-shodhana": 45568,
@@ -124,12 +139,19 @@ export const CLIP_MS: Record<string, number> = {
   "intro-long.sheetali": 34041,
   "intro-long.coherent": 30916,
   "intro-long.4-7-8": 31473,
+  "intro-long.dirgha": 40215,
+  "intro-long.udgeeth": 37684,
+  "intro-long.chandra-bhedana": 39391,
+  "intro-long.cyclic-sighing": 34410,
   "name.sama-vritti": 1078,
   "name.visama-vritti": 1186,
   "name.nadi-shodhana": 1061,
   "name.bhramari": 767,
   "name.ujjayi": 894,
-  "name.sheetali": 750
+  "name.sheetali": 750,
+  "name.dirgha": 549,
+  "name.udgeeth": 595,
+  "name.chandra-bhedana": 1214
 };
 
 /** True while assets/voice holds text-to-speech placeholders (not for release). */
