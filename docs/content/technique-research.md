@@ -116,7 +116,7 @@ Also reviewed:
 
 **Teaching sources**
 - **Satyananda (APMB):** fingers in Nasagra mudra (index and middle on the eyebrow centre); breathing without holds at 1 : 1, then 1 : 2 from 5 : 10. Holds come only in later techniques, over years and with a teacher. The breath is silent and never forced.
-- **Iyengar (*Light on Pranayama*, ch. 22–23):** index and middle fingers folded into the palm, and he argues against resting them on the forehead. Fingertips should be sensitive, not strong, with short nails. Start with Ujjayi first. His stage without holds starts on the **right**, unlike HYP, Satyananda, and the AYUSH protocol.
+- **Iyengar (*Light on Pranayama*, ch. 22 and 28):** index and middle fingers folded into the palm, and he argues against resting them on the forehead. Fingertips should be sensitive, not strong, with short nails. Start with Ujjayi first. His stage without holds starts on the **right**, unlike HYP, Satyananda, and the AYUSH protocol.
 - **AYUSH Common Yoga Protocol:** starts on the left; its definition of one round matches Viram's four steps; beginners use equal counts, then move toward 1 : 2; breathing is slow and never forced.
 - **Viram's how-to offers both hand positions** (fold the two fingers, or rest them between the eyebrows) and starts on the left.
 - **Anulom Vilom:** research papers and Indian practitioners use it for alternate nostril breathing. In Iyengar's system *anuloma* and *viloma* are separate practices, so the alias is popular and regional rather than universal. The context copy says “many practitioners in India know it as Anulom Vilom.”
@@ -307,6 +307,200 @@ No rigorous trial tests 4-7-8 for falling asleep in the general population.
 
 ---
 
+## v1.1 library additions · draft for owner review
+
+Researched September 28, 2026 for delivery plan E12. **Draft, content version 1**: studies checked against PubMed (through NCBI E-utilities), classical verses checked in public-domain translations where noted, teaching-book points marked where they still need a print check; no instructor review; placeholder voice clips only. Sources are in `src/content/sources.ts`; the content is in `library.ts` after 4-7-8.
+
+| Technique | Rhythm | Planned |
+|---|---|---|
+| Dirgha | in 4 · out 6 | 30 rounds · 5:00 · 6 breaths/min |
+| Udgeeth | in 4 · Om 8 | 25 rounds · 5:00 · 5 breaths/min |
+| Chandra Bhedana | in 4 left · out 6 right | 30 rounds · 5:00 · 6 breaths/min |
+| Cyclic sighing | in 3 · top up 1 · out 6 through the mouth | 30 rounds · 5:00 · 6 breaths/min (the top-up is part of the same breath) |
+
+### Decisions
+
+| Technique | Default | Family | Why |
+|---|---|---|---|
+| **Dirgha** · three-part breath | in 4 · out 6 · 5 min · seated or lying | classical | Sanskrit name, so it needs a pronunciation (FR-09) and sits with Sama Vritti, whose named form is also 20th-century teaching. The context text says plainly that the three-part method is modern. |
+| **Udgeeth** · Om on the exhale | in 4 · Om 8 · 5 min · seated | classical | Rooted in the Chandogya Upanishad's *udgitha*; the named breathing practice is modern and the copy says so. Same 4 : 8 as Bhramari. |
+| **Chandra Bhedana** · in left, out right | in 4 left · out 6 right · 5 min · seated | classical | Not in HYP, GS, or Hatharatnavali (all verified: they list only Surya Bhedana). Taught by Iyengar (*Light on Pranayama* ch. 27, title verified). Copy says it is the later mirror of the classical sun practice. |
+| **Cyclic sighing** | in 3 · top up 1 · out 6 mouth · 5 min · seated or lying | modern | A 2023 Stanford research protocol; no Sanskrit name, no pronunciation, context headed “Where it comes from.” |
+
+Increment is 1 for all four (whole seconds everywhere; no half seconds are justified by any source).
+
+### Method
+
+- **Studies:** every PMID below was retrieved from the PubMed database through NCBI E-utilities (`esummary` for authors, year, title, journal, volume, pages, DOI; `efetch` for abstracts) on September 28, 2026. The pubmed.ncbi.nlm.nih.gov web pages themselves return a reCAPTCHA challenge to automated requests, so they were **not** fetched and the challenge was not bypassed; the E-utilities record is the same PubMed record. Full texts were read on PMC where open (Balban 2023, Bhavanani 2014, Bernardi 2001).
+- **Classical texts (public domain, archive.org):** HYP (Pancham Sinh 1914, `dli.csl.7087`), GS (Vasu, `Gheranda_Samhita`), Yoga Sutras (Woods 1914), Chandogya Upanishad (Max Müller, SBE vol. 1, 1879, `upanishads01mluoft`), and Yogi Ramacharaka, *The Hindu-Yogi Science of Breath* (1904, `scienceofbreathc00ramaiala`).
+- **Under copyright, read only to check facts:** *Hatharatnavali* (Gharote et al., Lonavla Yoga Institute 2002) and Satyananda's APMB, both in an unofficial archive.org upload (`yogic-texts`). Paraphrase only; **confirm against print copies** before release. *Light on Pranayama*: only the table of contents was available (archive.org metadata for `lightonprymaprym0000iyen`); chapter contents are **unverified**.
+- **Could not read:** the AYUSH Common Yoga Protocol PDF (text streams use CID fonts and could not be extracted), so `ayush-cyp` is not cited for any of the four.
+
+---
+
+### Dirgha · three-part breath
+
+**Classical sources**
+- Yoga Sutra 2.50 (Woods 1914): regulated breath, observed by place, time, and number, becomes “protracted and subtile” (*dirgha-sukshma*). **Fair link:** *dirgha* (“long”) is the sutra's own word for regulated breath. **Overstated:** “three-part breathing comes from the Yoga Sutras.” The sutra says nothing about belly, ribs, or chest.
+- No three-part method appears in HYP or GS (not found in either text).
+
+**Teaching sources**
+- **Yogi Ramacharaka, *The Hindu-Yogi Science of Breath* (1904)**, “The Yogi Complete Breath”: fill the lower lungs by lowering the diaphragm, then the middle (lower ribs, breastbone), then the upper chest; it is one continuous inhale, not three jerky movements; hold a few seconds; exhale slowly, drawing the abdomen in. This is the earliest English source found for the three-part method. “Ramacharaka” was a pen name of William Walker Atkinson, an American writer, so this is Western popular teaching, not an Indian classical text.
+- **Satyananda (APMB), “Yogic breathing”** (index p. 383 in the copy read): abdominal, then thoracic, then clavicular, as one continuous movement “like the swell of the sea,” without strain; exhale from the top down (upper chest and neck relax, chest contracts, then the abdomen draws in); a brief pause after the exhale; start with 5–10 rounds, build to 10 minutes. He says it should not be done continually, and that once control is learned the clavicular part is dropped and the breath becomes abdominal plus thoracic. Seated or lying in shavasana.
+- **The name “Dirgha pranayama”** is used by several modern schools (for example the Sivananda and Integral Yoga lineages; Kripalu). **Unverified — owner to confirm** which school first used the name; the copy avoids naming one.
+- **Viram's version:** no pause after the exhale (APMB's brief one is dropped); the upper chest “lifts a little,” reflecting APMB's note that the clavicular part is dropped once learned.
+
+**Rhythm.** in 4 · out 6 is a 10 s breath, six a minute, the most-studied slow pace (as for Visama Vritti). APMB's “5–10 rounds, build to 10 minutes” sits comfortably around a 5-minute default.
+
+**Take care basis.**
+- Overbreathing lowers CO₂ and causes lightheadedness and tingling (Cleveland Clinic, as in the general Take care), hence “fill comfortably, never to the limit.”
+- APMB: no strain; shoulders and collarbones rise only slightly; not to be practised continually. Hence “keep your shoulders and neck soft” and “the upper chest lifts only a little.”
+- No condition-specific contraindication was found in APMB or Ramacharaka.
+
+**Evidence**
+
+| Study | Design | Finding |
+|---|---|---|
+| Klinsophon 2020, *J Addict Nurs* · PMID 33264199 | Within-subject, 24 smokers abstaining 15 h; control, controlled deep breathing, and three-part breathing on separate days | Three-part breathing gave lower negative affect than control **and** than deep breathing, immediately after. The abstract also reports high-frequency HRV “significantly reduced” across the 30-minute session without saying in which condition; **full text not read**. |
+| Klinsophon 2022, *J Bodyw Mov Ther* · PMID 36180143 | Cluster-randomized trial, 43 smokers in 8 companies, 12 weeks, 6-month follow-up | **Null:** no difference in abstinence vs counselling alone; cravings, withdrawal, and affect improved within both groups. |
+| Kwon 2026, *Complement Ther Med* · PMID 41482169 | Systematic review, 48 RCTs of diaphragmatic breathing | Protocols very heterogeneous (2–10 breaths/min, 3–45 min); only about 2% of outcomes at low risk of bias; benefits reported for anxiety and some conditions; safety underreported, no serious adverse events. |
+| Laborde 2022 · PMID 35623448 (existing) | Meta-analysis, 223 studies | Slow breathing raises vagally mediated HRV. |
+
+Also reviewed:
+- Hopper 2019 (PMID 31436595): JBI systematic review of diaphragmatic breathing for stress; only three studies qualified (one RCT); no pooling.
+- Ma 2017 (PMID 28626434): 40 adults, 20 sessions over 8 weeks of feedback-guided diaphragmatic breathing at about 4/min; lower negative affect and cortisol and better sustained attention vs no training. Not three-part, and not unguided.
+- Yildiz 2022 (PMID 35764793): 18 adults in MRI; abdominal, diaphragmatic, and chest breathing (together “three-part breath”) increased cerebrospinal fluid movement during the breath. Physiology only, no health outcome.
+
+**Summary:** almost no research on the three-part breath itself: one small single-session study (positive for mood) and one small trial (null for quitting smoking). Belly-breathing trials are numerous but low in quality. What people feel is most plausibly slow breathing.
+
+### Udgeeth · Om on the exhale
+
+**Classical sources** (Chandogya Upanishad, Max Müller 1879; verses read)
+- **1.1.1:** meditate on the syllable Om, called the *udgitha*, because the udgitha (the chanted portion of the Sama Veda) begins with Om. Müller's note: Om connected with the Sama Veda is called udgitha; its usual name is *pranava*.
+- **1.1.5:** the Rik is speech, the Saman is breath, the udgitha is Om; speech and breath are joined in Om (1.1.6).
+- **1.2.7:** after trying the senses and the mind, the gods meditated on the udgitha as the breath in the mouth, which the demons could not pierce.
+- **Fair link:** the Upanishad ties Om, chant, and breath together. **Overstated:** “Udgeeth pranayama is described in the Upanishads.” The text is about meditation on the chanted syllable in Vedic ritual, not a breathing exercise with counts.
+
+**Teaching sources**
+- Udgeeth as a named pranayama (a long Om on each exhale, usually closing a pranayama sequence) is **modern**. It is widely attributed to Swami Ramdev's seven-pranayama sequence (Patanjali Yogpeeth). **Unverified — owner to confirm** from a primary source (e.g. Ramdev's own pranayama book); only secondary web pages were found, so the copy says only “modern, and popular in India.”
+- Secondary descriptions differ on the O-to-M balance (a long O and short M, or roughly equal). The draft says “an open O that closes into a hum” and doesn't fix a ratio.
+- APMB was searched and has no Om-chanting pranayama.
+
+**Rhythm.** in 4 · Om 8 is a 12 s breath, 5 a minute, identical to Bhramari (a long voiced exhale naturally runs about twice the inhale). Bernardi 2001 found spoken mantra recitation settled at about 5.7 breaths/min without instruction; trained chanters in Hotho 2022 took about 20 s per Om (3/min), which is too long for a gentle default.
+
+**Take care basis.**
+- Vocal or throat strain: keep the volume low (judgment, by analogy with Satyananda's “soft, steady” Bhramari hum and the Ujjayi throat cautions).
+- “Skip it with a blocked nose or a sore throat”: **judgment**, by analogy with Bhramari (APMB: skip with ear or nose infection). No source was found specific to Om chanting.
+- Om is sacred in Hindu, Buddhist, and Jain practice. Offering a plain hum respects users who don't want to chant it; the hum keeps the same breath shape. This is an **owner decision** (open question 5).
+- Seated only, as for Bhramari.
+
+**Evidence**
+
+| Study | Design | Finding |
+|---|---|---|
+| Bernardi 2001, *BMJ* · PMID 11751348 | Within-subject, 23 healthy adults | Reciting a yoga mantra (“om-mani-padme-om”) or the rosary aloud slowed breathing to about 6/min and raised baroreflex sensitivity. The effect followed the 6/min rhythm, not the words. Not a single Om, and no health outcome. |
+| Inbaraj 2022, *Int J Yoga* · PMID 35444369 | 19 yoga practitioners vs 17 yoga-naive; 5 min of loud Om | High-frequency HRV rose more in experienced practitioners. **No non-chanting or slow-breathing control.** |
+| Laborde 2022 · PMID 35623448 (existing) | Meta-analysis | Slow breathing raises HRV; the likely source of what people feel. |
+
+Also reviewed:
+- Hotho 2022 (PMID 35620613): 9 trained speech practitioners; Om at about 3 breaths/min strongly synchronized heart rate, blood pressure, and breathing. Physiology only.
+- Kalyani 2011 (PMID 21654968): pilot fMRI, 12 people; limbic deactivation during audible Om vs rest, none for “ssss.” The authors' comparison with vagus nerve stimulation is speculation.
+- Anjana 2022 (PMID 36375220): 80 people with hypertension; Om chanting plus yoga nidra vs usual care over 2 months lowered BP and LDL. Combined intervention, unblinded, no active control.
+- Mooventhan 2025 (PMID 40064007): narrative (not systematic) review of 21 articles, uniformly positive; no quality appraisal.
+- Bhoot 2025 (PMID 41395351): *listening* to recorded Om, not chanting; not applicable.
+- No study was found comparing Om chanting with plain slow breathing, or silent exhale, at the same pace (PubMed search, September 28, 2026). The research copy's “hasn't been compared” rests on this search.
+
+**Summary:** small, mostly Indian studies without active controls. Chanting slows the breath to around the resonance pace on its own, which likely explains most of the reported effects. The copy says so.
+
+### Chandra Bhedana · in left, out right
+
+**Classical sources**
+- **HYP 2.44** (Sinh): the eight kumbhakas are Surya Bhedana, Ujjayi, Sitkari, Sitali, Bhastrika, Bhramari, Murchha, and Plavini. **No Chandra Bhedana.**
+- **HYP 2.48–50:** Surya Bhedana is in through the right nostril, hold, out through the left, said to clear the frontal sinuses and vata disorders. Pancham Sinh adds a note (not in the verse) that it is done “alternately... and vice versa,” which is one reason some later readers treat the moon version as implied. The Jyotsna reading usually given is right-in every time; **owner to confirm** if this matters.
+- **HYP 2.7–8** (nadi shodhana): Sinh glosses *chandra* as the left nostril and *surya* as the right. This is the basis for “left is linked with the moon.”
+- **GS 5.46 (Vasu numbering):** eight kumbhakas, namely Sahita, Surya-bheda, Ujjayi, Sitali, Bhastrika, Bhramari, Murchha, and Kevali. **No Chandra.** **GS 5.58–68:** Surya-bheda with jalandhara and a long hold; “the air is always inspired” through the right.
+- **Hatharatnavali 2.5–6** (Gharote et al. 2002 ed.): eight kumbhakas, Surya-bhedana among them, **no Chandra-bhedana**. Chapter number inferred from the copy read; **owner to confirm**.
+- Not checked: *Kumbhaka Paddhati* (17th c.), which describes many more kumbhakas and might include a moon form. **Unverified.** The copy therefore says “later teaching,” not “no classical text.”
+
+**Teaching sources**
+- **Iyengar, *Light on Pranayama* ch. 27, “Surya bhedana and chandra bhedana pranayama”** (chapter title verified from the table of contents). Chandra Bhedana is commonly described as the mirror of Surya Bhedana: in left, out right. **The chapter's contents (holds, cautions, stages) are unverified — owner to confirm against print.**
+- **Satyananda (APMB):** has Surya Bheda only, and his version is in **and out** through the right, which differs from HYP. It is contraindicated for heart disease, hypertension, epilepsy, and anxiety, and to be done under a teacher. No Chandra Bheda.
+- **Bhavanani (Gitananda tradition), as used in the 2014 study:** Chandra Bhedana is in left and out right, using nasika mudra, at 5–6 breaths/min.
+- **Distinct practices, don't confuse:** *Chandra nadi* or *chandra anga* pranayama is in **and** out through the left only; much of the “left nostril” research is this, not Chandra Bhedana.
+- **Hand position:** the same as Nadi Shodhana (Viram offers both folding and resting the two fingers), so users learn one hand shape.
+
+**Rhythm.** in 4 left · out 6 right is 10 s, 6 a minute, the same per-breath timing as Nadi Shodhana's half-round and inside Bhavanani's 5–6/min. No holds (HYP and GS forms have long holds).
+
+**Take care basis.** The same as Nadi Shodhana: skip it with a blocked nose, a cold, or sinus pain (APMB, for nostril practices), don't force air through a nostril, use a light touch, and stop if the rhythm can't be kept (HYP 2.9, 2.15–17). Popular teaching often adds “avoid with low blood pressure or low mood, or in cold weather” for Chandra Bhedana, on the traditional idea that the moon side cools. **Not found in any verified source, so left out**; see open question 3.
+
+**Evidence**
+
+| Study | Design | Finding |
+|---|---|---|
+| Bhavanani 2014, *Int J Yoga* · PMID 25035609 | Crossover, 20 yoga-trained adults, six conditions on six days, 9 rounds each at 5–6/min | After Chandra Bhedana (in left, out right), heart rate and systolic BP fell; right-initiated forms raised them; normal breathing changed nothing. **No slow-breathing control at the same pace**; small; mixed health status; nasal dominance not measured. |
+| Raghuraj &amp; Telles 2008, *Appl Psychophysiol Biofeedback* · PMID 18347974 | Crossover, 21 experienced men, 30 min per practice | Left-nostril breathing lowered systolic and mean BP; right-nostril breathing raised BP. Left-only breathing, not in-left-out-right. |
+| Nivethitha 2016, *Anc Sci Life* · PMID 28446827 | Narrative review | Slow techniques generally beneficial; results for specific-nostril breathing **inconsistent**, and the mechanisms unclear. |
+| Vanutelli 2024, *Brain Sci* · PMID 38671954 | Pilot, 20 people, 8 days of right- or left-only breathing | **Right**-nostril breathing gave more stress reduction and relaxation; left reduced mind-wandering. Contrary to the tradition that the left calms. |
+
+Also reviewed:
+- Bhavanani 2012 (PMID 22869993): 22 people with hypertension, 27 rounds left-only at 6/min; HR and systolic BP fell; no control.
+- Pal 2014 (PMID 24741554): 85 students, 1 h a day for 6 weeks; left-only breathing shifted HRV toward parasympathetic and right-only toward sympathetic; groups “divided,” randomization unclear.
+- Santhanam Kumar 2020 (PMID 32344403): pilot RCT, 20 people; 15 min of left-only breathing was **no different** from breath awareness on cognition.
+- Price &amp; Eccles 2016 (PMID 27477330): review of theories linking nasal airflow to brain activity.
+- Bhavanani co-authors two of these; most come from a few Indian groups.
+
+**Summary:** one small crossover study tests exactly this practice; the wider one-nostril literature is small, short, and inconsistent, and no study compares it with slow two-nostril breathing at the same pace.
+
+### Cyclic sighing
+
+**Origins (modern; no classical source)**
+- Spontaneous sighs are deeper breaths that occur every few minutes and reinflate collapsed air sacs (Li 2016, a mouse study of the brainstem sigh circuit, PMID 26855425). Vlemincx 2013 (PMID 23261937) proposes that sighs act as a psychophysiological “reset” (a model, not a trial).
+- **Balban 2023 protocol** (PMC full text): inhale slowly through the nose; once the lungs are expanded, inhale once more to fill them fully; then exhale slowly and fully. 5 min a day, **self-paced (no fixed counts)**. The PMC summary read describes the mouth exhale as flexible; **owner to confirm** in the methods before keeping the “exhale through your nose instead” Take care item.
+- **Stanford Medicine news, February 9, 2023** (Hadley Leggett, “‘Cyclic sighing’ can help breathe away anxiety”): nose inhale, a second deeper inhale, slow mouth exhale until empty, about five minutes a day; the study excluded people with moderate to severe psychiatric conditions. A search snippet dated it February 10; the page itself shows February 9.
+- Popular name: “physiological sigh” (Huberman). Used only as a search alias.
+
+**Rhythm.** Balban was self-paced, so Viram's 3 · top up 1 · out 6 is **a pacing choice, not a replication**. It keeps the exhale longer than the combined inhale (4 : 6) at 6 breaths/min. A search result attributed a 1 : 2 ratio to a Stanford write-up; **not verified**. A 3 · 1 · 8 pattern would give 1 : 2 at 5/min (open question 6). The 1 s top-up needs its cue clip to be ≤ 0.8 s, or the tone plays instead (FR-03); `voice.ts` already sets 0.8 s.
+
+**Take care basis.**
+- Overbreathing (Cleveland Clinic): a large double inhale repeated for 5 minutes could over-ventilate if breaths are big or fast. Hence “keep the top-up small, the exhale unhurried,” and the tingling item.
+- Deliberate single sighs briefly raise heart rate and blood pressure (Muzumdar 2026; Vaschillo 2015). This isn't a risk at gentle volumes, but it supports “gentle, not forced.”
+- Stanford excluded people with moderate to severe psychiatric conditions. The general first-use Take care already covers “if focusing on your breath makes you more anxious, stop.”
+
+**Evidence**
+
+| Study | Design | Finding |
+|---|---|---|
+| Balban 2023, *Cell Rep Med* · PMID 36630953 (existing) | Remote RCT, 108 enrolled; cyclic sighing 30 randomized, 27 analysed; 5 min/day for 28 days vs box breathing, cyclic hyperventilation, and mindfulness | Positive affect rose more than with mindfulness, and resting respiratory rate fell more. **State anxiety and negative affect: no difference from mindfulness. Heart rate and HRV: no change in any arm.** Remote, self-reported adherence, retrospectively registered; one author advises WHOOP. |
+| Riedl 2026, *Anxiety Stress Coping* · PMID 42002307 | Preregistered pilot, 47 students, 1-min exercises during real-life stress moments | Both cyclic sighing and box breathing lowered state anxiety vs a passive control; reaction times were **slower** afterwards. |
+| Hanley 2025, *J Behav Med* · PMID 39904867 | Single-site pilot RCT, orthopaedic x-ray waiting room, 4 min | Lower pain intensity and unpleasantness vs a time- and attention-matched injury-management control; **anxiety and depression no different**. Sample size not in the abstract. |
+
+Also reviewed:
+- Jones 2026 (PMID 41839180): RCT, 62 cadets after maximal exercise; cyclic sighing and box breathing both sped high-frequency HRV recovery vs spontaneous breathing.
+- Muzumdar 2026 (PMID 41546440), Vaschillo 2015 (PMID 25720947): paced single sighs (one every 15–50 s) produce sympathetic-type cardiovascular responses; a different pattern from cyclic sighing, but relevant to “gentle.”
+
+**Summary:** one small-per-arm, month-long trial showing a mood benefit over mindfulness but no anxiety or HRV advantage, plus brief pilot studies. Nothing long-term, and nothing in clinical anxiety.
+
+---
+
+### Proposed pronunciation rows (for the lexicon table)
+
+| Term | Devanagari | Respelling (shown in app) | IPA target (proposed) | Lexicon alias | Listener note |
+|---|---|---|---|---|---|
+| Dirgha | दीर्घ | DEER-guh | ˈd̪iːrɡʱə | Deer-guh | Breathy gh simplified to g. Hindi speech often drops the final vowel (“deergh”). |
+| Udgeeth | उद्गीथ | ood-GEET | ʊd̪ˈɡiːt̪ʰ | Ood-geet | Final *th* is an aspirated dental t, **not** English “th”; the respelling avoids “th” for that reason. Sanskrit keeps a final vowel (*udgitha*, ood-GEE-tuh); Viram follows the Hindi “Udgeeth” the PRD uses. |
+| Chandra Bhedana | चन्द्र भेदन | CHUN-druh BAY-duh-nuh | ˈt͡ʃən̪d̪rə ˈbʱeːd̪ənə | Chun-druh Bay-duh-nuh | Breathy bh simplified to B, as for Bhramari. Some say “CHAHN-druh.” |
+
+All three pass the respelling and Devanagari rules in `check-content.mjs`.
+
+### Voice notes
+
+- `om` (“Om”) plays on each Udgeeth exhale; `top-up` (“Top up”) on the 1 s step, so its clip must measure ≤ 0.8 s, or a tone plays.
+- Cyclic sighing's exhale speaks “Out through the mouth” on round 1 and “Exhale” after, as 4-7-8 does. The screen shows the route every round.
+- Chandra Bhedana uses the existing “Inhale left” and “Exhale right” phrases on every breath.
+- New clips: `name.dirgha`, `name.udgeeth`, `name.chandra-bhedana`, plus `intro.*` and `intro-long.*` for all four. Short introductions run 45–56 words; long ones 87–116.
+
+---
+
 ## General Take care · proposed for first use and Settings → Safety & wellbeing
 
 These apply to every practice, so technique pages keep only the specific points.
@@ -429,3 +623,18 @@ The PRD requires each draft to be checked against its listed sources before rele
    - Visama Vritti and Nadi Shodhana move toward the classical 1 : 2 exhale.
    - Ujjayi goes to 6 · 6.
    - Sama Vritti goes to 6 · 6 · 6 · 6. Iyengar would build the holds last, so the path should lengthen inhale and exhale before the holds.
+
+### v1.1 library additions
+
+1. **Chandra Bhedana classical status.** Verified: HYP 2.44, GS 5.46 (Vasu), and Hatharatnavali 2.5–6 list only Surya Bhedana. Not checked: *Kumbhaka Paddhati*. The copy says the moon version “comes from later teaching, including B.K.S. Iyengar's.” Confirm this in *Light on Pranayama* ch. 27 (only the chapter title was verifiable), and note there whether Iyengar gives cautions or a hold-free stage.
+2. **Book checks against print copies:** APMB “Yogic breathing” (p. 383 per the copy's index) and Surya Bheda (p. 416); *Light on Pranayama* ch. 27; Hatharatnavali chapter number. The Nadi Shodhana entry cited *Light on Pranayama* “ch. 22–23”; the table of contents has ch. 22 “Digital pranayama and the art of placing the fingers on the nose,” ch. 23 Bhastrika and Kapalabhati, and ch. 28 “Nadi sodhana pranayama,” so it now cites ch. 22 and 28. Confirm the page references against print.
+3. **Chandra Bhedana cautions.** Popular teaching adds “avoid with low blood pressure, low mood, or in cold weather” (the moon side said to cool). No verified source was found, so it's left out. Add it only if Iyengar ch. 27 supports it.
+4. **Udgeeth attribution.** Is it fine to leave Swami Ramdev unnamed (“modern, and popular in India”)? Naming him needs a primary source. Also confirm “Udgeet” and “Udgitha” as search aliases.
+5. **Om and inclusivity.** The draft offers “hum instead” for people who'd rather not chant Om, and the voice still says “Om.” Keep it, or drop it as unnecessary?
+6. **Cyclic sighing ratio.** Balban was self-paced; the PRD's 3 · 1 · 6 is Viram's pacing (4 : 6). A 1 : 2 pattern (3 · 1 · 8, 5/min) may be closer to how Stanford describes it, but the “1 : 2” attribution is unverified. Keep the PRD default?
+7. **Mouth exhale alternative** (cyclic sighing Take care: “breathe out slowly through your nose instead”) relies on a PMC summary saying Balban's mouth exhale was flexible. Confirm in the paper's methods, or remove the item.
+8. **Subtitles.** Proposed: “Three-part breath,” “Om on the exhale,” “In left, out right,” and “Double inhale, long exhale.” For Chandra Bhedana, the alternative “Moon breath” matches the Sanskrit but is less descriptive.
+9. **Family for Dirgha and Udgeeth.** Both are marked `classical` because they have Sanskrit names and need pronunciations (FR-09), even though both named practices are modern. Their context copy says so, as Sama Vritti's does. Alternatively they could be `modern`, but then the check wouldn't require a pronunciation. Confirm.
+10. **Pronunciations for the listener:** Udgeeth (Hindi ood-GEET vs Sanskrit ood-GEE-tuh; aspirated t), Dirgha (final vowel), Chandra (CHUN vs CHAHN).
+11. **Chandogya source date** “c. 8th–6th century BCE” is a conventional scholarly range, not from the translation. Confirm the wording, or use “c. 1st millennium BCE.”
+12. **Klinsophon 2020 HRV detail:** the abstract says high-frequency HRV was “significantly reduced throughout the 30-minute session” without naming the condition. The research copy doesn't mention HRV for that study; the full text would settle it.

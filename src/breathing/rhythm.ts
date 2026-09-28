@@ -15,12 +15,21 @@ export interface RhythmStep {
   side?: 'left' | 'right';
   /** Omitted means through the nose. */
   route?: 'mouth';
-  /** Shown and spoken instead of the kind word. */
-  cue?: 'hum';
+  /**
+   * Shown and spoken instead of the kind word: Hum (Bhramari) and Om
+   * (Udgeeth) are exhales; Top up (cyclic sighing) is a second, short
+   * inhale that belongs to the same breath.
+   */
+  cue?: StepCue;
 }
 
+export type StepCue = 'hum' | 'om' | 'top-up';
+export const STEP_CUES: readonly StepCue[] = ['hum', 'om', 'top-up'];
+
+/** The minute choices in Adjust rhythm and share links (FR-01). */
 export type MinuteTarget = 1 | 3 | 5 | 10;
-export type Target = { minutes: MinuteTarget } | { rounds: number };
+/** Routines and programs set any whole number of minutes per practice (FR-14, FR-20). */
+export type Target = { minutes: number } | { rounds: number };
 export type Increment = 1 | 0.5;
 
 export const STEP_KINDS: readonly StepKind[] = ['inhale', 'hold', 'exhale', 'rest'];
@@ -28,6 +37,8 @@ export const MINUTE_TARGETS: readonly MinuteTarget[] = [1, 3, 5, 10];
 export const ROUND_SHORTCUTS = [11, 21, 27] as const;
 export const MAX_ROUNDS = 108;
 export const MAX_STEP_SECONDS = 20;
+/** Longest single practice inside a routine or program. */
+export const MAX_SEGMENT_MINUTES = 30;
 
 export function minSeconds(kind: StepKind): number {
   return kind === 'inhale' || kind === 'exhale' ? 1 : 0;
@@ -42,8 +53,16 @@ export function isValidSeconds(kind: StepKind, seconds: number, increment: Incre
   );
 }
 
-export function isValidTarget(target: Target): boolean {
-  if ('minutes' in target) return MINUTE_TARGETS.includes(target.minutes);
+/**
+ * Adjust rhythm and share links offer 1, 3, 5, or 10 minutes; routine and
+ * program parts may use any whole number of minutes up to 30.
+ */
+export function isValidTarget(target: Target, anyMinutes = false): boolean {
+  if ('minutes' in target) {
+    return anyMinutes
+      ? Number.isInteger(target.minutes) && target.minutes >= 1 && target.minutes <= MAX_SEGMENT_MINUTES
+      : MINUTE_TARGETS.includes(target.minutes as MinuteTarget);
+  }
   return Number.isInteger(target.rounds) && target.rounds >= 1 && target.rounds <= MAX_ROUNDS;
 }
 
@@ -70,25 +89,99 @@ export function roundMs(steps: readonly RhythmStep[]): number {
   return steps.reduce((sum, step) => sum + stepMs(step), 0);
 }
 
+/**
+ * Gradual slowing (FR-24): the inhale and exhale move evenly, round by
+ * round, from the rhythm's own lengths to these, in tenths of a second.
+ * Holds and rests are unchanged.
+ */
+export interface Slowing {
+  inhale: number;
+  exhale: number;
+}
+
 export interface Plan {
+  /** The first round's length. */
   roundMs: number;
   rounds: number;
   durationMs: number;
-  /** Inhale steps per minute. Always presented as guided, never measured. */
+  /** Inhale steps per minute at the start. Always presented as guided, never measured. */
   breathsPerMinute: number;
+  /** The same in the last round; differs only with gradual slowing. */
+  endBreathsPerMinute: number;
+  /** With gradual slowing, where each round starts, then the end; null when every round is equal. */
+  roundStartsMs: number[] | null;
 }
 
-/** Planned rounds round up, so the round that reaches a minutes target finishes. */
-export function planFor(steps: readonly RhythmStep[], target: Target): Plan {
+const tenths = (seconds: number) => Math.round(seconds * 10) / 10;
+
+/** Round `round`'s steps (0-based) when slowing across `rounds` rounds. */
+export function slowedSteps(steps: readonly RhythmStep[], slowing: Slowing, round: number, rounds: number): RhythmStep[] {
+  const f = rounds > 1 ? Math.min(1, round / (rounds - 1)) : 0;
+  return steps.map((step) => {
+    const end = step.kind === 'inhale' ? slowing.inhale : step.kind === 'exhale' ? slowing.exhale : null;
+    return end === null ? step : { ...step, seconds: tenths(step.seconds + (end - step.seconds) * f) };
+  });
+}
+
+function slowedStarts(steps: readonly RhythmStep[], slowing: Slowing, rounds: number): number[] {
+  const starts = [0];
+  for (let r = 0; r < rounds; r++) starts.push(starts[r] + roundMs(slowedSteps(steps, slowing, r, rounds)));
+  return starts;
+}
+
+/**
+ * Planned rounds round up, so the round that reaches a minutes target
+ * finishes. With slowing, the fewest rounds whose slowed total reaches it.
+ */
+export function planFor(steps: readonly RhythmStep[], target: Target, slowing: Slowing | null = null): Plan {
   const perRound = roundMs(steps);
-  const rounds = 'rounds' in target ? target.rounds : Math.ceil((target.minutes * 60_000) / perRound);
-  const breaths = steps.filter((s) => s.kind === 'inhale' && s.seconds > 0).length;
+  // A top-up is part of the breath before it, so it isn't a breath of its own.
+  const breaths = steps.filter((s) => s.kind === 'inhale' && s.seconds > 0 && s.cue !== 'top-up').length;
+  const pace = (ms: number) => (breaths * 60_000) / ms;
+  if (!slowing) {
+    const rounds = 'rounds' in target ? target.rounds : Math.ceil((target.minutes * 60_000) / perRound);
+    const bpm = pace(perRound);
+    return { roundMs: perRound, rounds, durationMs: rounds * perRound, breathsPerMinute: bpm, endBreathsPerMinute: bpm, roundStartsMs: null };
+  }
+  let rounds: number;
+  let starts: number[];
+  if ('rounds' in target) {
+    rounds = target.rounds;
+    starts = slowedStarts(steps, slowing, rounds);
+  } else {
+    // Every round is at most as long as the slowest, so this starts at or below the answer.
+    const goal = target.minutes * 60_000;
+    const slowest = roundMs(slowedSteps(steps, slowing, 1, 2));
+    rounds = Math.max(1, Math.floor(goal / slowest));
+    starts = slowedStarts(steps, slowing, rounds);
+    while (starts[rounds] < goal) starts = slowedStarts(steps, slowing, ++rounds);
+  }
   return {
-    roundMs: perRound,
+    roundMs: starts[1],
     rounds,
-    durationMs: rounds * perRound,
-    breathsPerMinute: (breaths * 60_000) / perRound,
+    durationMs: starts[rounds],
+    breathsPerMinute: pace(starts[1]),
+    endBreathsPerMinute: pace(starts[rounds] - starts[rounds - 1]),
+    roundStartsMs: starts,
   };
+}
+
+/** Slowing is offered for coherent breathing and custom rhythms (FR-24). */
+export const SLOWING_TECHNIQUES: readonly (string | null)[] = [null, 'coherent'];
+
+/**
+ * A slowing that fits: one inhale and one exhale to move, each ending
+ * within bounds, no shorter than it starts, and at least one longer.
+ */
+export function isValidSlowing(steps: readonly RhythmStep[], slowing: unknown): slowing is Slowing {
+  if (typeof slowing !== 'object' || slowing === null) return false;
+  const s = slowing as Slowing;
+  const inhale = steps.filter((x) => x.kind === 'inhale');
+  const exhale = steps.filter((x) => x.kind === 'exhale');
+  if (inhale.length !== 1 || exhale.length !== 1) return false;
+  const fits = (end: unknown, start: number) =>
+    typeof end === 'number' && Number.isFinite(end) && tenths(end) === end && end >= start && end >= 1 && end <= MAX_STEP_SECONDS;
+  return fits(s.inhale, inhale[0].seconds) && fits(s.exhale, exhale[0].seconds) && (s.inhale > inhale[0].seconds || s.exhale > exhale[0].seconds);
 }
 
 /** One decimal place; whole numbers without a decimal (3.8, 6, 5.5). */
@@ -150,4 +243,60 @@ export function boundaries(
     } while (stepMs(steps[index]) === 0);
   }
   return result;
+}
+
+/** A plan with the steps it runs, and its slowing when it has one. */
+export interface StepPlan extends Plan {
+  steps: readonly RhythmStep[];
+  slowing?: Slowing | null;
+}
+
+/** The steps of one round of a plan (0-based). */
+export function roundSteps(plan: StepPlan, round: number): readonly RhythmStep[] {
+  return plan.slowing && plan.roundStartsMs ? slowedSteps(plan.steps, plan.slowing, round, plan.rounds) : plan.steps;
+}
+
+/** `stepAt` for a plan, including rounds that lengthen with gradual slowing. */
+export function planStepAt(plan: StepPlan, elapsedMs: number): StepPosition {
+  const starts = plan.roundStartsMs;
+  if (!starts) return stepAt(plan.steps, elapsedMs);
+  const clamped = Math.max(0, elapsedMs);
+  // The last round that starts at or before this moment.
+  let lo = 0;
+  let hi = plan.rounds - 1;
+  while (lo < hi) {
+    const mid = Math.ceil((lo + hi) / 2);
+    if (starts[mid] <= clamped) lo = mid;
+    else hi = mid - 1;
+  }
+  const within = stepAt(roundSteps(plan, lo), Math.min(clamped - starts[lo], starts[lo + 1] - starts[lo] - 1));
+  return { ...within, round: lo, startMs: starts[lo] + within.startMs };
+}
+
+/** `boundaries` for a plan, with each step as it plays in its round. */
+export function planBoundaries(
+  plan: StepPlan,
+  fromMs: number,
+  untilMs: number,
+): { atMs: number; round: number; index: number; step: RhythmStep }[] {
+  const starts = plan.roundStartsMs;
+  if (!starts) return boundaries(plan.steps, fromMs, untilMs).map((b) => ({ ...b, step: plan.steps[b.index] }));
+  const result: { atMs: number; round: number; index: number; step: RhythmStep }[] = [];
+  for (let round = planStepAt(plan, fromMs).round; round < plan.rounds && starts[round] < untilMs; round++) {
+    const steps = roundSteps(plan, round);
+    let atMs = starts[round];
+    steps.forEach((step, index) => {
+      if (stepMs(step) === 0) return;
+      if (atMs >= fromMs && atMs < untilMs) result.push({ atMs, round, index, step });
+      atMs += stepMs(step);
+    });
+  }
+  return result;
+}
+
+/** A stored or received slowing: null when there is none, false when it doesn't fit. */
+export function checkSlowing(techniqueId: string | null, steps: readonly RhythmStep[], value: unknown): Slowing | null | false {
+  if (value === undefined || value === null) return null;
+  if (!SLOWING_TECHNIQUES.includes(techniqueId) || !isValidSlowing(steps, value)) return false;
+  return { inhale: value.inhale, exhale: value.exhale };
 }

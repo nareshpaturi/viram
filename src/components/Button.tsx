@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet, View, type PressableProps, type ViewStyle } from 'react-native';
+import { NIGHT, useSurface } from '../night/surface';
 import { colors, primaryHeight, radius, spacing, touchTarget } from '../theme';
 import { AppText } from './AppText';
 
@@ -28,17 +29,29 @@ const LABEL: Record<Variant, string> = {
   onPineQuiet: colors.practiceText,
 };
 
+/** Night practice: quiet dark fills and outlines, no bright surfaces (FR-23). */
+const NIGHT_SURFACE: Record<Variant, ViewStyle> = {
+  primary: { backgroundColor: NIGHT.button, minHeight: primaryHeight },
+  secondary: { backgroundColor: 'transparent', borderWidth: 1, borderColor: NIGHT.buttonBorder },
+  quiet: { backgroundColor: 'transparent' },
+  destructive: { backgroundColor: 'transparent', borderWidth: 1, borderColor: NIGHT.danger },
+  onPine: { backgroundColor: NIGHT.button, minHeight: primaryHeight },
+  onPineQuiet: { backgroundColor: 'transparent', borderWidth: 1, borderColor: NIGHT.buttonBorder },
+};
+
 /** One filled action per light screen: Begin, Resume, Done. Labels wrap at large text. */
 export function Button({ title, variant = 'primary', style, disabled, ...props }: Props) {
+  const { night } = useSurface();
+  const label = night && (variant === 'primary' || variant === 'onPine') ? NIGHT.textStrong : LABEL[variant];
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityState={{ disabled: !!disabled }}
       disabled={disabled}
       {...props}
-      style={({ pressed }) => [styles.base, SURFACE[variant], pressed && styles.pressed, disabled && styles.disabled, style]}
+      style={({ pressed }) => [styles.base, (night ? NIGHT_SURFACE : SURFACE)[variant], pressed && styles.pressed, disabled && styles.disabled, style]}
     >
-      <AppText variant="control" style={[styles.label, { color: LABEL[variant] }]}>
+      <AppText variant="control" style={[styles.label, { color: label }]}>
         {title}
       </AppText>
     </Pressable>

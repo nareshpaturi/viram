@@ -75,8 +75,30 @@ export default function CuesAndSound() {
             { value: 'never', label: 'Never' },
           ]}
         />
-        <Button title="Hear a sample" variant="secondary" onPress={() => void playOnce('voice.intro.sama-vritti', preferences.cueVolume)} />
+        <Segmented
+          label="Introduction length"
+          value={preferences.introLength}
+          onChange={(introLength) => update({ introLength })}
+          options={[
+            { value: 'short', label: 'Short', accessibilityLabel: 'Short, about 30 seconds' },
+            { value: 'long', label: 'Longer', accessibilityLabel: 'Longer, about a minute' },
+          ]}
+        />
+        <Button
+          title="Hear a sample"
+          variant="secondary"
+          onPress={() => void playOnce(preferences.introLength === 'long' ? 'voice.intro-long.sama-vritti' : 'voice.intro.sama-vritti', preferences.cueVolume)}
+        />
       </Section>
+
+      {preferences.cueMode === 'voice' ? (
+        <SwitchRow
+          label="Count within steps"
+          description="“Two, three, four” after each step’s cue"
+          value={preferences.voiceCounting}
+          onChange={(voiceCounting) => update({ voiceCounting })}
+        />
+      ) : null}
 
       <AppText variant="label">
         When a step is too short for its spoken cue, Viram plays a tone instead. Voice guidance is AI-generated from scripts written for Viram.

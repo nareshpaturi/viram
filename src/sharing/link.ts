@@ -17,7 +17,9 @@ import { LIBRARY } from '../content/library';
 import type { Technique } from '../content/types';
 import {
   MINUTE_TARGETS,
+  STEP_CUES,
   isValidSeconds,
+  type StepCue,
   isValidTarget,
   type MinuteTarget,
   type RhythmStep,
@@ -125,21 +127,22 @@ export function findTechnique(id: string): Technique | undefined {
 
 /**
  * Without a technique the steps must fit the custom builder: exactly
- * inhale, hold, exhale, rest in whole seconds. With one they must match that
+ * inhale, hold, exhale, rest in whole or half seconds. With one they must match that
  * installed, shareable technique's structure and sides, and its route and
  * cue come from the library.
  */
-export function validateRhythm(input: SharedRhythm): SharedRhythm | null {
+export function validateRhythm(input: SharedRhythm, options: { anyMinutes?: boolean } = {}): SharedRhythm | null {
   // Callers pass data from storage and files too, so check shapes first.
   if (typeof input.name !== 'string' || typeof input.target !== 'object' || input.target === null) return null;
   if (!Array.isArray(input.steps) || !input.steps.every(isStepShape)) return null;
   const name = cleanName(input.name);
-  if (!name || !isValidTarget(input.target)) return null;
+  if (!name || !isValidTarget(input.target, options.anyMinutes)) return null;
   if (input.techniqueId === null) {
     const fits =
       input.steps.length === 4 &&
       input.steps.every(
-        (s, i) => s.kind === CUSTOM_KINDS[i] && !s.side && !s.route && !s.cue && isValidSeconds(s.kind, s.seconds, 1),
+        // v1.1: the custom builder offers half seconds (FR-01).
+        (s, i) => s.kind === CUSTOM_KINDS[i] && !s.side && !s.route && !s.cue && isValidSeconds(s.kind, s.seconds, 0.5),
       );
     return fits ? { name, steps: input.steps.map(({ kind, seconds }) => ({ kind, seconds })), target: input.target, techniqueId: null } : null;
   }
@@ -166,7 +169,7 @@ function isStepShape(step: unknown): step is RhythmStep {
     typeof s.seconds === 'number' &&
     (s.side === undefined || s.side === 'left' || s.side === 'right') &&
     (s.route === undefined || s.route === 'mouth') &&
-    (s.cue === undefined || s.cue === 'hum')
+    (s.cue === undefined || STEP_CUES.includes(s.cue as StepCue))
   );
 }
 

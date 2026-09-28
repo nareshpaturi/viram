@@ -50,7 +50,14 @@ export default function SaveRhythm() {
       return router.back();
     }
     const origin: RhythmOrigin = params.from === 'link' ? 'link' : practice?.source.kind === 'custom' ? 'custom' : 'adjusted';
-    const result = stores().rhythms.save({ name, steps: subject.steps, target: subject.target, techniqueId: subject.techniqueId, origin });
+    const result = stores().rhythms.save({
+      name,
+      steps: subject.steps,
+      target: subject.target,
+      techniqueId: subject.techniqueId,
+      slowing: subject.slowing ?? null,
+      origin,
+    });
     if (result.ok) {
       AccessibilityInfo.announceForAccessibility('Saved to My rhythms');
       return router.back();

@@ -4,15 +4,18 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useReducedMotion } from '../src/accessibility/motion';
-import { formatClock, routeLabel, stepLabel } from '../src/breathing/describe';
+import { describeRhythm, describeTarget, formatClock, routeLabel, stepLabel } from '../src/breathing/describe';
 import type { PauseReason } from '../src/breathing/session';
 import { AppText } from '../src/components/AppText';
 import { BreathingGuide } from '../src/components/BreathingGuide';
 import { Button } from '../src/components/Button';
 import { SideIndicator } from '../src/components/SideIndicator';
 import { practicePath } from '../src/practice/launch';
-import { captionFor, parsePractice, subtitleOf, type Practice } from '../src/practice/practice';
+import { captionFor, subtitleOf } from '../src/practice/practice';
+import { parseRun, type PracticeRun } from '../src/practice/run';
+import { findTechnique } from '../src/sharing/link';
 import { usePracticeSession, type SessionView } from '../src/practice/usePracticeSession';
+import { SurfaceProvider, useSurface } from '../src/night/surface';
 import { usePreferences } from '../src/settings/PreferencesProvider';
 import { colors, spacing, touchTarget } from '../src/theme';
 
@@ -25,35 +28,41 @@ const PAUSE_TITLE: Record<PauseReason, string> = {
   locked: 'Paused when your phone locked.',
 };
 
-function readPractice(raw: string | undefined): Practice | null {
+function readRun(raw: string | undefined): PracticeRun | null {
   try {
-    return raw ? parsePractice(JSON.parse(raw)) : null;
+    return raw ? parseRun(JSON.parse(raw)) : null;
   } catch {
     return null;
   }
 }
 
-/** The practice route: validates its practice, then runs it. */
+/** The practice route: validates its practice or routine, then runs it. */
 export default function PracticeRoute() {
-  const params = useLocalSearchParams<{ practice?: string; quick?: string }>();
-  const practice = useMemo(() => readPractice(params.practice), [params.practice]);
+  const params = useLocalSearchParams<{ run?: string; quick?: string }>();
+  const run = useMemo(() => readRun(params.run), [params.run]);
   const { preferences } = usePreferences();
 
-  if (!practice) return <Redirect href="/" />;
+  if (!run) return <Redirect href="/" />;
   if (!preferences.firstUseComplete) {
-    return <Redirect href={{ pathname: '/welcome', params: { next: practicePath(practice, { quickStart: params.quick === '1' }) } }} />;
+    return <Redirect href={{ pathname: '/welcome', params: { next: practicePath(run, { quickStart: params.quick === '1' }) } }} />;
   }
-  return <PracticeScreen practice={practice} quickStart={params.quick === '1'} />;
+  return (
+    <SurfaceProvider setting={preferences.nightPractice}>
+      <PracticeScreen run={run} quickStart={params.quick === '1'} />
+    </SurfaceProvider>
+  );
 }
 
-function PracticeScreen({ practice, quickStart }: { practice: Practice; quickStart: boolean }) {
+function PracticeScreen({ run, quickStart }: { run: PracticeRun; quickStart: boolean }) {
   const { preferences, update } = usePreferences();
   const reducedMotion = useReducedMotion(preferences.motion);
   const { width, height } = useWindowDimensions();
-  const { plan, view, actions } = usePracticeSession({
-    practice,
+  const surface = useSurface();
+  const { plans, view, actions } = usePracticeSession({
+    run,
     preferences,
     quickStart,
+    night: surface.night,
     onIntroHeard: (id) =>
       update({ introductionsHeard: [...new Set([...preferences.introductionsHeard, id])] }),
   });
@@ -69,7 +78,9 @@ function PracticeScreen({ practice, quickStart }: { practice: Practice; quickSta
   }, [actions, view]);
 
   useEffect(() => {
-    if (view.kind === 'finished') router.replace({ pathname: '/complete', params: { record: JSON.stringify(view.record) } });
+    if (view.kind === 'finished') {
+      router.replace({ pathname: '/complete', params: { record: JSON.stringify(view.record), ...(surface.night ? { night: '1' } : {}) } });
+    }
     if (view.kind === 'cancelled') router.back();
   }, [view]);
 
@@ -82,13 +93,12 @@ function PracticeScreen({ practice, quickStart }: { practice: Practice; quickSta
   const guideSize = Math.max(180, Math.min(300, width - spacing.xxl * 2, height * 0.36));
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right', 'bottom']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: surface.background }]} edges={['top', 'left', 'right', 'bottom']}>
       <StatusBar style="light" />
       <Body
         view={view}
-        practice={practice}
-        rounds={plan.rounds}
-        roundsTarget={'rounds' in practice.target}
+        run={run}
+        rounds={plans.map((p) => p.rounds)}
         guideSize={guideSize}
         reducedMotion={reducedMotion}
         showLockTip={showLockTip}
@@ -101,9 +111,8 @@ function PracticeScreen({ practice, quickStart }: { practice: Practice; quickSta
 
 interface BodyProps {
   view: SessionView;
-  practice: Practice;
-  rounds: number;
-  roundsTarget: boolean;
+  run: PracticeRun;
+  rounds: number[];
   guideSize: number;
   reducedMotion: boolean;
   showLockTip: boolean;
@@ -111,7 +120,10 @@ interface BodyProps {
   actions: ReturnType<typeof usePracticeSession>['actions'];
 }
 
-function Body({ view, practice, rounds, roundsTarget, guideSize, reducedMotion, showLockTip, quickStart, actions }: BodyProps) {
+function Body({ view, run, rounds, guideSize, reducedMotion, showLockTip, quickStart, actions }: BodyProps) {
+  const routine = run.parts.length > 1;
+  const practiceOf = (part: number) => run.parts[part];
+  const partLabel = (part: number) => (routine ? `Practice ${part + 1} of ${run.parts.length}` : null);
   switch (view.kind) {
     case 'loading':
       return (
@@ -128,7 +140,7 @@ function Body({ view, practice, rounds, roundsTarget, guideSize, reducedMotion, 
           <TopBar left={{ label: 'Cancel', onPress: actions.cancel }} right={`Introduction · ${formatClock(view.remainingMs)} left`} />
           <View style={styles.introBody}>
             <AppText variant="phase" accessibilityRole="header">
-              {practice.name}
+              {run.parts[0].name}
             </AppText>
             {view.lines.slice(0, view.line + 1).map((line, i) => (
               <AppText key={i} style={[styles.caption, i < view.line && styles.captionPast]} accessibilityLiveRegion={i === view.line ? 'polite' : 'none'}>
@@ -141,6 +153,32 @@ function Body({ view, practice, rounds, roundsTarget, guideSize, reducedMotion, 
       );
 
     case 'countdown': {
+      if (view.purpose === 'transition') {
+        const next = practiceOf(view.part);
+        // The technique's first how-to line is its setup, such as hand position.
+        const setup = next.techniqueId ? findTechnique(next.techniqueId)?.guidance.howTo[0] : undefined;
+        return (
+          <View style={styles.fill}>
+            <TopBar left={{ label: 'End', onPress: actions.askToEnd }} right={partLabel(view.part) ?? ''} />
+            <Centered>
+              <AppText variant="countdown" style={styles.bigCount} maxFontSizeMultiplier={1.4} accessibilityLabel={`${view.seconds} seconds`}>
+                {view.seconds}
+              </AppText>
+              <AppText variant="label" style={styles.muted}>
+                Up next
+              </AppText>
+              <AppText variant="phase" accessibilityRole="header" style={styles.centerText}>
+                {next.name}
+              </AppText>
+              <AppText style={styles.muted}>
+                {describeTarget(next.target)} · {describeRhythm(next.steps)}
+              </AppText>
+              {setup ? <AppText style={[styles.muted, styles.centerText]}>{setup}</AppText> : null}
+            </Centered>
+            <Button title="Pause" variant="onPine" onPress={actions.pause} />
+          </View>
+        );
+      }
       const settling = view.purpose === 'settle';
       return (
         <View style={styles.fill}>
@@ -170,10 +208,14 @@ function Body({ view, practice, rounds, roundsTarget, guideSize, reducedMotion, 
 
     case 'running': {
       const { position } = view;
+      const practice = practiceOf(view.part);
+      const roundsTarget = 'rounds' in practice.target;
       const step = practice.steps[position.step.index];
       const activeSteps = practice.steps.filter((s) => s.seconds > 0);
       const stepNumber = practice.steps.slice(0, position.step.index + 1).filter((s) => s.seconds > 0).length;
-      const halfSeconds = practice.steps.some((s) => !Number.isInteger(s.seconds));
+      // Half-second rhythms and gradual slowing show a ring instead of whole-second counts.
+      const seconds = position.step.durationMs / 1000;
+      const halfSeconds = !!practice.slowing || practice.steps.some((s) => !Number.isInteger(s.seconds));
       const secondsLeft = halfSeconds ? null : Math.ceil((position.step.durationMs - position.step.elapsedMs) / 1000);
       const route = routeLabel(step);
       const caption = captionFor(practice, position.step.index) ?? [practice.name, subtitleOf(practice)].filter(Boolean).join(' · ');
@@ -184,13 +226,13 @@ function Body({ view, practice, rounds, roundsTarget, guideSize, reducedMotion, 
         <View style={styles.fill}>
           <TopBar left={{ label: 'End', onPress: actions.askToEnd }} right={remaining} />
           <AppText variant="label" style={styles.progress}>
-            Round {position.roundNumber} of {rounds} · Step {stepNumber} of {activeSteps.length}
+            {routine ? `${practice.name} · ` : ''}Round {position.roundNumber} of {rounds[view.part]} · Step {stepNumber} of {activeSteps.length}
           </AppText>
           <View style={styles.center}>
             {step.side ? <SideIndicator open={step.side} /> : null}
             <BreathingGuide
               kind={step.kind}
-              hum={step.cue === 'hum'}
+              hum={step.cue === 'hum' || step.cue === 'om'}
               stepKey={view.stepKey}
               durationMs={position.step.durationMs}
               elapsedMs={position.step.elapsedMs}
@@ -203,7 +245,7 @@ function Body({ view, practice, rounds, roundsTarget, guideSize, reducedMotion, 
               {stepLabel(step)}
             </AppText>
             {route ? <AppText variant="bodyStrong" style={[styles.centerText, styles.route]}>{route}</AppText> : null}
-            <AppText style={[styles.centerText, styles.muted]}>{halfSeconds ? `${caption} ${step.seconds} seconds.` : caption}</AppText>
+            <AppText style={[styles.centerText, styles.muted]}>{halfSeconds ? `${caption} ${seconds} seconds.` : caption}</AppText>
           </View>
           <Button title="Pause" variant="onPine" onPress={actions.pause} />
         </View>

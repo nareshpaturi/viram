@@ -20,6 +20,10 @@ const record = (id: string, practiceId: string): SessionRecord => {
     outcome: 'completed',
     cueMode: 'voice',
     haptics: true,
+    parts: null,
+    program: null,
+    health: 'none',
+  slowing: null,
   };
 };
 

@@ -1,4 +1,5 @@
 import { StyleSheet, Text, useWindowDimensions, type TextProps } from 'react-native';
+import { surfaceText, useSurface } from '../night/surface';
 import { textStyles } from '../theme';
 
 export type TextVariant = keyof typeof textStyles;
@@ -28,11 +29,14 @@ const MAX_SCALE: Record<TextVariant, number> = {
  */
 export function AppText({ variant = 'body', style, ...props }: TextProps & { variant?: TextVariant }) {
   const { fontScale } = useWindowDimensions();
+  const surface = useSurface();
   const flat = StyleSheet.flatten([textStyles[variant], style]);
   const scale = Math.min(fontScale, MAX_SCALE[variant]);
   const sized = {
     fontSize: (flat.fontSize ?? 16) * scale,
     lineHeight: flat.lineHeight ? flat.lineHeight * scale : undefined,
+    // Night practice maps day colors to its own (FR-23).
+    color: surfaceText(surface, flat.color as string | undefined),
   };
   return <Text {...props} allowFontScaling={false} style={[flat, sized]} />;
 }

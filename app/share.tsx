@@ -18,14 +18,17 @@ import { colors, radius, spacing } from '../src/theme';
 export default function SharePreview() {
   const params = useLocalSearchParams<{ practice?: string }>();
   const [copied, setCopied] = useState(false);
-  const rhythm = useMemo(() => {
+  const practice = useMemo(() => {
     try {
-      const practice = params.practice ? parsePractice(JSON.parse(params.practice)) : null;
-      return practice && validateRhythm({ name: practice.name, steps: practice.steps, target: practice.target, techniqueId: practice.techniqueId });
+      return params.practice ? parsePractice(JSON.parse(params.practice)) : null;
     } catch {
       return null;
     }
   }, [params.practice]);
+  const rhythm = useMemo(
+    () => practice && validateRhythm({ name: practice.name, steps: practice.steps, target: practice.target, techniqueId: practice.techniqueId }),
+    [practice],
+  );
 
   if (!rhythm) {
     return (
@@ -74,6 +77,7 @@ export default function SharePreview() {
         </AppText>
       </View>
       <AppText>The link carries the name, rhythm, and length. Instructions and safety notes always come from the app.</AppText>
+      {practice?.slowing ? <AppText variant="label">The link shares the starting rhythm. Gradual slowing isn’t included.</AppText> : null}
       <AppText variant="label">Anyone with the link can see this. Viram doesn’t see who you share with.</AppText>
     </Screen>
   );

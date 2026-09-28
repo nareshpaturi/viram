@@ -132,5 +132,64 @@ export const TECHNIQUES = {
         "kind": "rest"
       }
     ]
+  },
+  "dirgha": {
+    "name": "Dirgha",
+    "subtitle": "Three-part breath",
+    "increment": 1,
+    "steps": [
+      {
+        "kind": "inhale"
+      },
+      {
+        "kind": "exhale"
+      }
+    ]
+  },
+  "udgeeth": {
+    "name": "Udgeeth",
+    "subtitle": "Om on the exhale",
+    "increment": 1,
+    "steps": [
+      {
+        "kind": "inhale"
+      },
+      {
+        "kind": "exhale",
+        "cue": "om"
+      }
+    ]
+  },
+  "chandra-bhedana": {
+    "name": "Chandra Bhedana",
+    "subtitle": "In left, out right",
+    "increment": 1,
+    "steps": [
+      {
+        "kind": "inhale",
+        "side": "left"
+      },
+      {
+        "kind": "exhale",
+        "side": "right"
+      }
+    ]
+  },
+  "cyclic-sighing": {
+    "name": "Cyclic sighing",
+    "subtitle": "Double inhale, long exhale",
+    "increment": 1,
+    "steps": [
+      {
+        "kind": "inhale"
+      },
+      {
+        "kind": "inhale",
+        "cue": "top-up"
+      },
+      {
+        "kind": "exhale"
+      }
+    ]
   }
 };

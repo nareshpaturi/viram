@@ -1,0 +1,32 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <!-- Health session writing (PRD FR-18): write mindful sessions only. Viram
+       never asks to read health data. -->
+  <uses-permission android:name="android.permission.health.WRITE_MINDFULNESS" />
+
+  <queries>
+    <package android:name="com.google.android.apps.healthdata" />
+  </queries>
+
+  <application>
+    <!-- Health Connect shows why Viram asks (Android 13 and earlier) and, from
+         Android 14, links to how the permission is used. Both open the privacy page. -->
+    <activity
+      android:name="app.viram.health.HealthRationaleActivity"
+      android:exported="true"
+      android:theme="@android:style/Theme.Translucent.NoTitleBar">
+      <intent-filter>
+        <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE" />
+      </intent-filter>
+    </activity>
+    <activity-alias
+      android:name="app.viram.health.ViewPermissionUsageActivity"
+      android:exported="true"
+      android:targetActivity="app.viram.health.HealthRationaleActivity"
+      android:permission="android.permission.START_VIEW_PERMISSION_USAGE">
+      <intent-filter>
+        <action android:name="android.intent.action.VIEW_PERMISSION_USAGE" />
+        <category android:name="android.intent.category.HEALTH_PERMISSIONS" />
+      </intent-filter>
+    </activity-alias>
+  </application>
+</manifest>

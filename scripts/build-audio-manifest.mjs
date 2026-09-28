@@ -29,6 +29,7 @@ for (const set of TONE_SETS) {
 const clipIds = [
   ...Object.keys(CUES),
   ...LIBRARY.map((t) => t.guidance.introduction.clip),
+  ...LIBRARY.flatMap((t) => (t.guidance.introduction.long ? [t.guidance.introduction.long.clip] : [])),
   ...LIBRARY.flatMap((t) => (t.pronunciation ? [t.pronunciation.clip] : [])),
 ];
 for (const id of clipIds) {

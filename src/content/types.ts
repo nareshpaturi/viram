@@ -32,6 +32,8 @@ export interface Technique {
   family: 'classical' | 'modern';
   name: string;
   subtitle: string;
+  /** Other names people search for, e.g. “Anulom Vilom” (v1.1). */
+  aliases?: string[];
   /** Present for Sanskrit names. Common romanization only; the fonts lack IAST underdots. */
   pronunciation?: {
     devanagari: string;
@@ -43,6 +45,16 @@ export interface Technique {
     increment: Increment;
     target: Target;
     posture: 'seated' | 'seated-or-lying';
+    /**
+     * v1.1 gentle progression (FR-15): the rhythms after the default, one
+     * step at a time. Each lists every step's seconds in order. Offered,
+     * never applied automatically.
+     */
+    progression?: {
+      steps: number[][];
+      /** The completion screen's question, e.g. “Try a slightly longer exhale next time?” */
+      prompt: string;
+    };
   };
   guidance: {
     /** Opening paragraph of the guide, below the rhythm card and Take care. */
@@ -56,7 +68,12 @@ export interface Technique {
     research: string;
     basedOn: SourceId[];
     /** Spoken before settling; each line is also a caption. */
-    introduction: { clip: string; lines: string[] };
+    introduction: {
+      clip: string;
+      lines: string[];
+      /** v1.1 fuller voice (FR-19): a longer version, chosen in Cues & sound. */
+      long?: { clip: string; lines: string[] };
+    };
   };
   /** “Reviewed by” renders only from this field. */
   review: Review | null;

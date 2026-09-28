@@ -85,6 +85,50 @@ for (const [foreground, background] of nonTextPairs) {
   );
 }
 
+// Night practice (FR-23): lower-contrast labels that still pass AA, and a
+// dimmer guide whose count stays as legible as the day guide's.
+const night = readFileSync(new URL('../src/night/surface.tsx', import.meta.url), 'utf8');
+
+function nightColor(token) {
+  const match = night.match(new RegExp(`\\b${token}: '(#[0-9A-Fa-f]{6})'`));
+  assert(match, `Missing night hex token: ${token}`);
+  return match[1];
+}
+
+const nightTextPairs = [
+  ['text', 'background'],
+  ['textStrong', 'background'],
+  ['textMuted', 'background'],
+  ['accent', 'background'],
+  ['danger', 'background'],
+  ['text', 'card'],
+  ['textMuted', 'card'],
+  ['accent', 'card'],
+  ['text', 'cardMuted'],
+  ['textMuted', 'cardMuted'],
+  ['textStrong', 'button'],
+];
+const nightLargePairs = [
+  ['count', 'inhale'],
+  ['count', 'hold'],
+  ['count', 'exhale'],
+  ['count', 'rest'],
+];
+const nightNonTextPairs = [['buttonBorder', 'background']];
+
+for (const [pairs, minimum] of [
+  [nightTextPairs, 4.5],
+  [nightLargePairs, 3],
+  [nightNonTextPairs, 3],
+]) {
+  for (const [foreground, background] of pairs) {
+    const a = luminance(nightColor(foreground));
+    const b = luminance(nightColor(background));
+    const ratio = (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+    assert(ratio >= minimum, `night ${foreground} on ${background} is ${ratio.toFixed(2)}:1; expected at least ${minimum}:1`);
+  }
+}
+
 console.log(
-  `Theme contrast passed: ${normalTextPairs.length} normal-text, ${largePhaseNumberPairs.length} large phase-number, and ${nonTextPairs.length} non-text pairs.`,
+  `Theme contrast passed: ${normalTextPairs.length} normal-text, ${largePhaseNumberPairs.length} large phase-number, and ${nonTextPairs.length} non-text pairs; night ${nightTextPairs.length} text, ${nightLargePairs.length} large, and ${nightNonTextPairs.length} non-text pairs.`,
 );

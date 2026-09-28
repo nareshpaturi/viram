@@ -3,13 +3,16 @@
  * share preview, and the lock screen. Labels always carry the meaning;
  * colors and shapes only reinforce it.
  */
-import { planFor, type RhythmStep, type Target } from './rhythm';
+import { formatPace, planFor, slowedSteps, type Plan, type RhythmStep, type Slowing, type Target } from './rhythm';
 
 const KIND_LABEL = { inhale: 'Inhale', hold: 'Hold after inhale', exhale: 'Exhale', rest: 'Rest' } as const;
 
-/** “Inhale left”, “Hum”, “Hold after inhale”. */
+const CUE_LABEL = { hum: 'Hum', om: 'Om', 'top-up': 'Top up' } as const;
+const CUE_WORD = { hum: 'hum', om: 'Om', 'top-up': 'top up' } as const;
+
+/** “Inhale left”, “Hum”, “Om”, “Top up”, “Hold after inhale”. */
 export function stepLabel(step: RhythmStep): string {
-  if (step.cue === 'hum') return 'Hum';
+  if (step.cue) return CUE_LABEL[step.cue];
   return step.side ? `${KIND_LABEL[step.kind]} ${step.side}` : KIND_LABEL[step.kind];
 }
 
@@ -57,7 +60,7 @@ export function describeRhythm(steps: readonly RhythmStep[]): string {
   return steps
     .filter((step) => step.seconds > 0)
     .map((step) => {
-      const word = step.cue === 'hum' ? 'hum' : step.kind === 'inhale' ? 'in' : step.kind === 'exhale' ? 'out' : step.kind;
+      const word = step.cue ? CUE_WORD[step.cue] : step.kind === 'inhale' ? 'in' : step.kind === 'exhale' ? 'out' : step.kind;
       return `${word} ${s(step.seconds)}${step.side ? ` ${step.side}` : ''}`;
     })
     .join(' · ');
@@ -85,9 +88,21 @@ export function formatClock(ms: number): string {
 }
 
 /** “19 rounds · 5:04” */
-export function describePlan(steps: readonly RhythmStep[], target: Target): string {
-  const plan = planFor(steps, target);
+export function describePlan(steps: readonly RhythmStep[], target: Target, slowing: Slowing | null = null): string {
+  const plan = planFor(steps, target, slowing);
   return `${plan.rounds} ${plan.rounds === 1 ? 'round' : 'rounds'} · ${formatClock(plan.durationMs)}`;
+}
+
+/** Guided breaths per minute: “6”, or “5.5 → 4.6” with gradual slowing (FR-24). */
+export function describePace(plan: Pick<Plan, 'breathsPerMinute' | 'endBreathsPerMinute'>): string {
+  const start = formatPace(plan.breathsPerMinute);
+  const end = formatPace(plan.endBreathsPerMinute);
+  return start === end ? start : `${start} → ${end}`;
+}
+
+/** “Slows to in 6.5 · out 6.5” */
+export function describeSlowing(steps: readonly RhythmStep[], slowing: Slowing): string {
+  return `Slows to ${describeRhythm(slowedSteps(steps, slowing, 1, 2))}`;
 }
 
 /** “5 min · 15 rounds · 5:00”, or “21 rounds · 7:42” when the target is rounds. */

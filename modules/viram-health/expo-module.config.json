@@ -1,0 +1,9 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": {
+    "modules": ["ViramHealthModule"]
+  },
+  "android": {
+    "modules": ["app.viram.health.ViramHealthModule"]
+  }
+}

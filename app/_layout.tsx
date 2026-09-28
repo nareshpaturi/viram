@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import { Stack } from 'expo-router';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
@@ -13,6 +13,8 @@ import { Newsreader_600SemiBold } from '@expo-google-fonts/newsreader/600SemiBol
 import { AppText } from '../src/components/AppText';
 import { Button } from '../src/components/Button';
 import { QuickActionsBridge } from '../src/quickstart/QuickActionsBridge';
+import { ReminderBridge } from '../src/reminder/ReminderBridge';
+import { HealthBridge } from '../src/health/HealthBridge';
 import { PreferencesProvider } from '../src/settings/PreferencesProvider';
 import { stores } from '../src/storage';
 import { colors, fonts, spacing } from '../src/theme';
@@ -53,6 +55,8 @@ export default function RootLayout() {
     <PreferencesProvider>
       <StatusBar style="dark" />
       <QuickActionsBridge />
+      <ReminderBridge />
+      <HealthBridge />
       <Stack
         screenOptions={{
           animation: 'fade',
@@ -72,10 +76,16 @@ export default function RootLayout() {
         <Stack.Screen name="adjust" options={{ title: 'Adjust rhythm' }} />
         <Stack.Screen name="save-rhythm" options={{ title: 'Save rhythm' }} />
         <Stack.Screen name="rhythms" options={{ title: 'My rhythms' }} />
+        <Stack.Screen name="routine/[id]" options={{ title: '' }} />
+        <Stack.Screen name="routine/edit" options={{ title: 'Routine' }} />
+        <Stack.Screen name="program/[id]" options={{ title: '' }} />
+        <Stack.Screen name="program/start" options={{ title: 'Make a plan' }} />
         <Stack.Screen name="share" options={{ title: 'Share' }} />
         <Stack.Screen name="r/[payload]" options={{ title: 'Shared with you' }} />
         <Stack.Screen name="session/[id]" options={{ title: 'Practice details' }} />
         <Stack.Screen name="settings/sound" options={{ title: 'Cues & sound' }} />
+        <Stack.Screen name="settings/reminder" options={{ title: 'Daily reminder' }} />
+        <Stack.Screen name="health" options={{ title: Platform.OS === 'android' ? 'Health Connect' : 'Apple Health' }} />
         <Stack.Screen name="settings/data" options={{ title: 'Your data' }} />
         <Stack.Screen name="settings/safety" options={{ title: 'Safety & wellbeing' }} />
         <Stack.Screen name="settings/privacy" options={{ title: 'Privacy' }} />

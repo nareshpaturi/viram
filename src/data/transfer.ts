@@ -4,14 +4,19 @@
  * rules and every record for shape; any problem rejects the whole file.
  * Merging is by record ID, so importing the same file twice adds nothing.
  */
+import { checkSlowing } from '../breathing/rhythm';
 import { parseRecord, type SessionRecord } from '../history/repository';
 import { MAX_RHYTHMS, type SavedRhythm } from '../rhythms/repository';
+import { MAX_ROUTINES, validateRoutine, type Routine } from '../routines/repository';
 import { parsePreferences, type Preferences } from '../settings/preferences';
 import { findTechnique, validateRhythm } from '../sharing/link';
+import type { Enrollment } from '../programs/engine';
+import { enrollmentFrom } from '../programs/repository';
 import type { Stores } from '../storage/stores';
 
 export const EXPORT_FORMAT = 'viram-export';
-export const EXPORT_VERSION = 1;
+/** 2 adds routines and programs (v1.1); version 1 files still import. */
+export const EXPORT_VERSION = 2;
 const MAX_SESSIONS = 100_000;
 
 export interface ExportFile {
@@ -19,12 +24,18 @@ export interface ExportFile {
   version: number;
   exportedAt: string;
   rhythms: SavedRhythm[];
+  routines: Routine[];
+  /** Program progress (FR-20). */
+  programs: Enrollment[];
   sessions: SessionRecord[];
   preferences: Partial<Preferences>;
 }
 
-/** First-use state and one-time tips belong to the device, not the file. */
-const DEVICE_ONLY: (keyof Preferences)[] = ['firstUseComplete', 'lockTipSeen', 'introductionsHeard'];
+/**
+ * First-use state, one-time tips, the reminder, and the Health connection
+ * (both depend on this device's permissions) belong to the device, not the file.
+ */
+const DEVICE_ONLY: (keyof Preferences)[] = ['firstUseComplete', 'lockTipSeen', 'introductionsHeard', 'reminder', 'healthConnected', 'healthDismissed'];
 
 export function buildExport(stores: Stores, now = new Date()): ExportFile {
   const preferences: Partial<Preferences> = { ...stores.preferences.read() };
@@ -34,6 +45,8 @@ export function buildExport(stores: Stores, now = new Date()): ExportFile {
     version: EXPORT_VERSION,
     exportedAt: now.toISOString(),
     rhythms: stores.rhythms.list(),
+    routines: stores.routines.list(),
+    programs: stores.programs.all(),
     sessions: stores.history.list(MAX_SESSIONS),
     preferences,
   };
@@ -45,9 +58,12 @@ export function exportFileName(now = new Date()): string {
 
 export interface ImportPlan {
   rhythms: { found: number; newItems: SavedRhythm[] };
+  routines: { found: number; newItems: Routine[] };
   sessions: { found: number; newItems: SessionRecord[] };
   /** Applied only when this device has no rhythms or history yet. */
   preferences: Partial<Preferences> | null;
+  /** Program progress, restored only when this device has none of its own. */
+  programs: Enrollment[];
 }
 
 export type ImportCheck =
@@ -60,7 +76,17 @@ function checkRhythm(value: unknown): SavedRhythm | null {
   if (typeof r.id !== 'string' || !r.id || !['custom', 'adjusted', 'link'].includes(r.origin)) return null;
   if (!Number.isFinite(r.createdAt) || !Number.isFinite(r.updatedAt)) return null;
   const checked = validateRhythm({ name: r.name, steps: r.steps, target: r.target, techniqueId: r.techniqueId ?? null });
-  return checked && { id: r.id, ...checked, origin: r.origin, createdAt: r.createdAt, updatedAt: r.updatedAt };
+  const slowing = checked && checkSlowing(checked.techniqueId, checked.steps, r.slowing);
+  if (!checked || slowing === false) return null;
+  return { id: r.id, ...checked, slowing, origin: r.origin, createdAt: r.createdAt, updatedAt: r.updatedAt };
+}
+
+function checkRoutine(value: unknown): Routine | null {
+  if (typeof value !== 'object' || value === null) return null;
+  const r = value as Routine;
+  if (typeof r.id !== 'string' || !r.id || !Number.isFinite(r.createdAt) || !Number.isFinite(r.updatedAt)) return null;
+  const checked = validateRoutine(r.name, r.segments);
+  return checked && { id: r.id, ...checked, createdAt: r.createdAt, updatedAt: r.updatedAt };
 }
 
 function checkSession(value: unknown): SessionRecord | null {
@@ -82,15 +108,25 @@ export function checkImport(text: string, stores: Stores): ImportCheck {
   if (!Array.isArray(file.rhythms) || !Array.isArray(file.sessions) || file.sessions.length > MAX_SESSIONS) {
     return { ok: false, reason: 'invalid' };
   }
+  if (file.routines !== undefined && !Array.isArray(file.routines)) return { ok: false, reason: 'invalid' };
+  if (file.programs !== undefined && !Array.isArray(file.programs)) return { ok: false, reason: 'invalid' };
+  const programs = (file.programs ?? []).map(enrollmentFrom);
+  if (programs.some((e) => e === null) || programs.filter((e) => e?.state === 'active').length > 1) return { ok: false, reason: 'invalid' };
   const rhythms = file.rhythms.map(checkRhythm);
+  const routines = (file.routines ?? []).map(checkRoutine);
   const sessions = file.sessions.map(checkSession);
-  if (rhythms.some((r) => r === null) || sessions.some((s) => s === null)) return { ok: false, reason: 'invalid' };
+  if (rhythms.some((r) => r === null) || routines.some((r) => r === null) || sessions.some((s) => s === null)) {
+    return { ok: false, reason: 'invalid' };
+  }
 
   const existingRhythms = new Set(stores.rhythms.list().map((r) => r.id));
   const newRhythms = (rhythms as SavedRhythm[]).filter((r) => !existingRhythms.has(r.id));
   if (existingRhythms.size + newRhythms.length > MAX_RHYTHMS) return { ok: false, reason: 'limit' };
+  const existingRoutines = new Set(stores.routines.list().map((r) => r.id));
+  const newRoutines = (routines as Routine[]).filter((r) => !existingRoutines.has(r.id));
+  if (existingRoutines.size + newRoutines.length > MAX_ROUTINES) return { ok: false, reason: 'limit' };
   const newSessions = (sessions as SessionRecord[]).filter((s) => !stores.history.has(s.id));
-  const fresh = existingRhythms.size === 0 && stores.history.count() === 0;
+  const fresh = existingRhythms.size === 0 && existingRoutines.size === 0 && stores.history.count() === 0;
   const preferences = typeof file.preferences === 'object' && file.preferences !== null ? parsePreferences(file.preferences) : {};
   for (const key of DEVICE_ONLY) delete preferences[key];
 
@@ -98,8 +134,10 @@ export function checkImport(text: string, stores: Stores): ImportCheck {
     ok: true,
     plan: {
       rhythms: { found: rhythms.length, newItems: newRhythms },
+      routines: { found: routines.length, newItems: newRoutines },
       sessions: { found: sessions.length, newItems: newSessions },
       preferences: fresh ? preferences : null,
+      programs: stores.programs.all().length === 0 ? (programs as Enrollment[]) : [],
     },
   };
 }
@@ -108,7 +146,9 @@ export function checkImport(text: string, stores: Stores): ImportCheck {
 export function applyImport(plan: ImportPlan, stores: Stores): void {
   stores.transaction(() => {
     for (const rhythm of plan.rhythms.newItems) stores.rhythms.insertImported(rhythm);
+    for (const routine of plan.routines.newItems) stores.routines.save(routine);
     for (const session of plan.sessions.newItems) stores.history.save(session);
     if (plan.preferences) stores.preferences.write(plan.preferences);
+    for (const enrollment of plan.programs ?? []) stores.programs.save(enrollment);
   });
 }

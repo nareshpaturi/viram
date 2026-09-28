@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Animated, Easing, StyleSheet, View } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 import type { StepKind } from '../breathing/rhythm';
-import { colors, phaseColors, textStyles } from '../theme';
+import { useSurface } from '../night/surface';
 import { AppText } from './AppText';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
@@ -39,6 +39,7 @@ interface Props {
  * fixed-size guide with the count, labels, and cues.
  */
 export function BreathingGuide({ kind, hum, stepKey, durationMs, elapsedMs, secondsLeft, frozen, reducedMotion, size }: Props) {
+  const surface = useSurface();
   const scale = useRef(new Animated.Value(scaleAt(kind, elapsedMs / durationMs))).current;
   const ring = useRef(new Animated.Value(elapsedMs / durationMs)).current;
   const showRing = secondsLeft === null && !reducedMotion;
@@ -65,14 +66,14 @@ export function BreathingGuide({ kind, hum, stepKey, durationMs, elapsedMs, seco
   return (
     <View style={{ width: size, height: size + (hum ? 28 : 0), alignItems: 'center' }} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
       <View style={[styles.center, { width: size, height: size }]}>
-        <View style={[styles.outline, { width: size, height: size, borderRadius: size / 2 }]} />
+        <View style={[styles.outline, { width: size, height: size, borderRadius: size / 2, borderColor: surface.line }]} />
         <Animated.View
           style={{
             position: 'absolute',
             width: disc,
             height: disc,
             borderRadius: disc / 2,
-            backgroundColor: phaseColors[kind],
+            backgroundColor: surface.phase[kind],
             transform: [{ scale }],
           }}
         />
@@ -82,7 +83,7 @@ export function BreathingGuide({ kind, hum, stepKey, durationMs, elapsedMs, seco
               cx={size / 2}
               cy={size / 2}
               r={radius}
-              stroke={colors.sky}
+              stroke={surface.ring}
               strokeWidth={4}
               fill="none"
               strokeLinecap="round"
@@ -93,27 +94,26 @@ export function BreathingGuide({ kind, hum, stepKey, durationMs, elapsedMs, seco
           </Svg>
         ) : null}
         {secondsLeft !== null ? (
-          <AppText variant="countdown" maxFontSizeMultiplier={1.4} style={styles.count}>
+          <AppText variant="countdown" maxFontSizeMultiplier={1.4} style={{ color: surface.count }}>
             {secondsLeft}
           </AppText>
         ) : null}
       </View>
-      {hum ? <HumWave /> : null}
+      {hum ? <HumWave color={surface.hum} /> : null}
     </View>
   );
 }
 
 /** Coral, under the exhale guide, only for Bhramari's Hum. */
-function HumWave() {
+function HumWave({ color }: { color: string }) {
   return (
     <Svg width={96} height={20} viewBox="0 0 96 20">
-      <Path d="M4 10c6-8 10-8 16 0s10 8 16 0 10-8 16 0 10 8 16 0 10-8 16 0" stroke={colors.coral} strokeWidth={2.2} fill="none" strokeLinecap="round" />
+      <Path d="M4 10c6-8 10-8 16 0s10 8 16 0 10-8 16 0 10 8 16 0 10-8 16 0" stroke={color} strokeWidth={2.2} fill="none" strokeLinecap="round" />
     </Svg>
   );
 }
 
 const styles = StyleSheet.create({
   center: { alignItems: 'center', justifyContent: 'center' },
-  outline: { position: 'absolute', borderWidth: 1, borderColor: colors.practiceLine },
-  count: { color: textStyles.countdown.color },
+  outline: { position: 'absolute', borderWidth: 1 },
 });

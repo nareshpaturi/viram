@@ -1,9 +1,11 @@
 import type { ReactNode } from 'react';
 import { StyleSheet, View, type ViewStyle } from 'react-native';
+import { NIGHT, useSurface } from '../night/surface';
 import { colors, radius, spacing } from '../theme';
 
 export function Card({ children, muted, style }: { children: ReactNode; muted?: boolean; style?: ViewStyle }) {
-  return <View style={[styles.card, muted && styles.muted, style]}>{children}</View>;
+  const { night } = useSurface();
+  return <View style={[styles.card, muted && styles.muted, night && (muted ? styles.nightMuted : styles.night), style]}>{children}</View>;
 }
 
 const styles = StyleSheet.create({
@@ -16,4 +18,6 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   muted: { backgroundColor: colors.surfaceMuted, borderColor: colors.surfaceMuted },
+  night: { backgroundColor: NIGHT.card, borderColor: NIGHT.cardBorder },
+  nightMuted: { backgroundColor: NIGHT.cardMuted, borderColor: NIGHT.cardMuted },
 });

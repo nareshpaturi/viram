@@ -1,6 +1,6 @@
 export interface WebPractice {
   name: string;
-  steps: { kind: 'inhale' | 'hold' | 'exhale' | 'rest'; seconds: number; side?: 'left' | 'right'; cue?: 'hum' }[];
+  steps: { kind: 'inhale' | 'hold' | 'exhale' | 'rest'; seconds: number; side?: 'left' | 'right'; cue?: 'hum' | 'om' | 'top-up' }[];
   target: { minutes: number } | { rounds: number };
   technique: { id: string; name: string; subtitle: string } | null;
 }

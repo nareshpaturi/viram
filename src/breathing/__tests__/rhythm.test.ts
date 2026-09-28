@@ -144,3 +144,17 @@ describe('describeRhythm', () => {
     expect(describePlan(four(4, 4, 4, 4), { minutes: 5 })).toBe('19 rounds · 5:04');
   });
 });
+
+describe('v1.1 step cues', () => {
+  it('counts a top-up as part of the breath before it: cyclic sighing is 6 guided breaths/min', () => {
+    const plan = planFor(
+      [
+        { kind: 'inhale', seconds: 3 },
+        { kind: 'inhale', seconds: 1, cue: 'top-up' },
+        { kind: 'exhale', seconds: 6, route: 'mouth' },
+      ],
+      { minutes: 5 },
+    );
+    expect(plan).toMatchObject({ rounds: 30, durationMs: 300_000, breathsPerMinute: 6 });
+  });
+});

@@ -4,12 +4,20 @@
  */
 import { Platform } from 'react-native';
 import type { CueMode, HapticStrength, ToneSet } from '../breathing/timeline';
+import type { NightSetting } from '../night/surface';
 import type { Db } from '../storage/db';
 import { parsePractice, type Practice } from '../practice/practice';
 
 export type OtherAudio = 'alongside' | 'pause';
 export type Introductions = 'first' | 'always' | 'never';
 export type Motion = 'system' | 'reduced';
+export type IntroLength = 'short' | 'long';
+/** FR-17: one local reminder a day, off until the practitioner turns it on. */
+export interface Reminder {
+  enabled: boolean;
+  hour: number;
+  minute: number;
+}
 
 export interface Preferences {
   firstUseComplete: boolean;
@@ -28,6 +36,21 @@ export interface Preferences {
   /** The settle screen says once that the phone can be locked. */
   lockTipSeen: boolean;
   lastPractice: Practice | null;
+  /** Technique IDs whose progression offers were turned off (FR-15). */
+  progressionStopped: string[];
+  /** “Not now”: per technique, only sessions after this time count toward the next offer. */
+  progressionSnoozed: Record<string, number>;
+  reminder: Reminder;
+  /** FR-23: Off, 9 PM–6 AM, or Always. */
+  nightPractice: NightSetting;
+  /** FR-19: count each second within a step (Voice mode). */
+  voiceCounting: boolean;
+  /** FR-19: the short or the longer spoken introduction. */
+  introLength: IntroLength;
+  /** FR-18: the practitioner chose to add sessions to Apple Health / Health Connect. */
+  healthConnected: boolean;
+  /** “Not now” on the Health offer: it isn't offered after practices again (Settings still is). */
+  healthDismissed: boolean;
 }
 
 export const DEFAULT_PREFERENCES: Preferences = {
@@ -47,6 +70,14 @@ export const DEFAULT_PREFERENCES: Preferences = {
   motion: 'system',
   lockTipSeen: false,
   lastPractice: null,
+  progressionStopped: [],
+  progressionSnoozed: {},
+  reminder: { enabled: false, hour: 7, minute: 30 },
+  nightPractice: 'off',
+  healthConnected: false,
+  healthDismissed: false,
+  voiceCounting: false,
+  introLength: 'short',
 };
 
 const oneOf =
@@ -54,6 +85,7 @@ const oneOf =
   (v: unknown): v is T =>
     typeof v === 'string' && (values as string[]).includes(v);
 const isBoolean = (v: unknown): v is boolean => typeof v === 'boolean';
+const isInt = (v: unknown, min: number, max: number) => Number.isInteger(v) && (v as number) >= min && (v as number) <= max;
 
 const VALIDATORS: { [K in keyof Preferences]: (v: unknown) => Preferences[K] | undefined } = {
   firstUseComplete: (v) => (isBoolean(v) ? v : undefined),
@@ -70,6 +102,23 @@ const VALIDATORS: { [K in keyof Preferences]: (v: unknown) => Preferences[K] | u
   motion: (v) => (oneOf('system', 'reduced')(v) ? v : undefined),
   lockTipSeen: (v) => (isBoolean(v) ? v : undefined),
   lastPractice: (v) => (v === null ? null : (parsePractice(v) ?? undefined)),
+  progressionStopped: (v) =>
+    Array.isArray(v) && v.every((x) => typeof x === 'string') ? (v as string[]).slice(0, 50) : undefined,
+  progressionSnoozed: (v) =>
+    typeof v === 'object' && v !== null && !Array.isArray(v) && Object.values(v).every((x) => typeof x === 'number' && Number.isFinite(x))
+      ? (v as Record<string, number>)
+      : undefined,
+  nightPractice: (v) => (oneOf('off', 'evening', 'always')(v) ? v : undefined),
+  healthConnected: (v) => (isBoolean(v) ? v : undefined),
+  voiceCounting: (v) => (isBoolean(v) ? v : undefined),
+  introLength: (v) => (oneOf('short', 'long')(v) ? v : undefined),
+  healthDismissed: (v) => (isBoolean(v) ? v : undefined),
+  reminder: (v) => {
+    const r = v as Reminder;
+    return typeof v === 'object' && v !== null && isBoolean(r.enabled) && isInt(r.hour, 0, 23) && isInt(r.minute, 0, 59)
+      ? { enabled: r.enabled, hour: r.hour, minute: r.minute }
+      : undefined;
+  },
 };
 
 export const PREFERENCE_KEYS = Object.keys(DEFAULT_PREFERENCES) as (keyof Preferences)[];
