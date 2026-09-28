@@ -48,3 +48,6 @@ CLAUDE.md
 # local native module build output
 modules/*/android/build/
 modules/*/android/.cxx/
+
+# Local simulator builds (xcodebuild -derivedDataPath build/dd)
+/build

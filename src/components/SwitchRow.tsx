@@ -1,4 +1,4 @@
-import { StyleSheet, Switch, View } from 'react-native';
+import { Pressable, StyleSheet, Switch, View } from 'react-native';
 import { colors, spacing, touchTarget } from '../theme';
 import { AppText } from './AppText';
 
@@ -9,23 +9,30 @@ interface Props {
   onChange: (value: boolean) => void;
 }
 
+/** The whole row is the target, and screen readers hear one switch. */
 export function SwitchRow({ label, description, value, onChange }: Props) {
   return (
-    <View style={styles.row}>
-      <View style={styles.text} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
+    <Pressable
+      onPress={() => onChange(!value)}
+      accessibilityRole="switch"
+      accessibilityLabel={label}
+      accessibilityHint={description}
+      accessibilityState={{ checked: value }}
+      style={styles.row}
+    >
+      <View style={styles.text}>
         <AppText variant="bodyStrong">{label}</AppText>
         {description ? <AppText variant="label">{description}</AppText> : null}
       </View>
-      <Switch
-        value={value}
-        onValueChange={onChange}
-        accessibilityLabel={label}
-        accessibilityHint={description}
-        trackColor={{ true: colors.primary, false: colors.line }}
-        thumbColor={colors.white}
-        ios_backgroundColor={colors.line}
-      />
-    </View>
+      <View pointerEvents="none" importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
+        <Switch
+          value={value}
+          trackColor={{ true: colors.primary, false: colors.line }}
+          thumbColor={colors.white}
+          ios_backgroundColor={colors.line}
+        />
+      </View>
+    </Pressable>
   );
 }
 

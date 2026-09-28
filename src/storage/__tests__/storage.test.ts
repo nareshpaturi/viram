@@ -164,7 +164,7 @@ describe('export and import', () => {
     stores.history.save(record('a'));
     stores.history.save(record('b', { outcome: 'ended', completedRounds: 2 }));
     stores.rhythms.save({ name: 'Evening', steps: custom, target: { minutes: 5 }, techniqueId: null, origin: 'custom' });
-    stores.preferences.write({ firstUseComplete: true, toneSet: 'wood' });
+    stores.preferences.write({ firstUseComplete: true, toneSet: 'wood', reminder: { enabled: true, hour: 6, minute: 30 } });
     return stores;
   };
 
@@ -179,6 +179,8 @@ describe('export and import', () => {
     expect(target.history.list()).toHaveLength(2);
     expect(target.rhythms.list()[0].name).toBe('Evening');
     expect(target.preferences.read()).toMatchObject({ toneSet: 'wood', firstUseComplete: false });
+    // The reminder needs this device's notification permission, so it stays off.
+    expect(target.preferences.read().reminder.enabled).toBe(false);
   });
 
   it('adds nothing twice and keeps settings in a populated install', () => {

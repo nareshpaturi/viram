@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AccessibilityInfo, StyleSheet, View } from 'react-native';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { describePlan, describeRhythm, describeTarget, formatClock } from '../src/breathing/describe';
 import { formatPace } from '../src/breathing/rhythm';
 import { AppText } from '../src/components/AppText';
@@ -16,6 +17,7 @@ import { subtitleOf, type Practice } from '../src/practice/practice';
 import { easierPractice, OFFER_WINDOW_MS, progressionOffer, type Offer } from '../src/progression/progression';
 import { practiceFromRecord } from '../src/quickstart/quickActions';
 import { refreshQuickActions } from '../src/quickstart/QuickActionsBridge';
+import { NIGHT, SurfaceProvider, useSurface } from '../src/night/surface';
 import { usePreferences } from '../src/settings/PreferencesProvider';
 import { stores } from '../src/storage';
 import { colors, spacing } from '../src/theme';
@@ -40,7 +42,19 @@ function save(record: SessionRecord): SaveState {
  * interrupts this screen, and there is never a rating prompt.
  */
 export default function Complete() {
+  const { night } = useLocalSearchParams<{ night?: string }>();
+  // Night practice finishes on the same surface it ran on (FR-23).
+  return (
+    <SurfaceProvider setting="off" night={night === '1'}>
+      {night === '1' ? <StatusBar style="light" /> : null}
+      <CompleteScreen />
+    </SurfaceProvider>
+  );
+}
+
+function CompleteScreen() {
   const params = useLocalSearchParams<{ record?: string }>();
+  const surface = useSurface();
   const record = useMemo(() => {
     try {
       return params.record ? parseRecord(JSON.parse(params.record)) : null;
@@ -131,7 +145,7 @@ export default function Complete() {
         )
       }
     >
-      <View style={styles.mark} importantForAccessibility="no">
+      <View style={[styles.mark, surface.night && styles.nightMark]} importantForAccessibility="no">
         <AppText variant="heading" style={styles.check}>
           ✓
         </AppText>
@@ -221,6 +235,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: spacing.lg,
   },
+  nightMark: { backgroundColor: NIGHT.cardMuted },
   check: { color: colors.pine },
   muted: { color: colors.inkSoft },
   warning: { color: colors.danger },

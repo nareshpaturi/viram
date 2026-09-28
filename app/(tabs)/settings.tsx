@@ -7,6 +7,7 @@ import { Screen } from '../../src/components/Screen';
 import { Segmented } from '../../src/components/Segmented';
 import { TONE_SET_LABEL } from '../../src/audio/toneSets';
 import { TIMING_LOG_ENABLED } from '../../src/audio/timingLog';
+import { reminderTime } from '../../src/reminder/reminder';
 import { usePreferences } from '../../src/settings/PreferencesProvider';
 import { stores } from '../../src/storage';
 
@@ -44,7 +45,26 @@ export default function Settings() {
           { value: 'reduced', label: 'Reduced' },
         ]}
       />
+      <AppText variant="overline" accessibilityRole="header">
+        NIGHT PRACTICE
+      </AppText>
+      <AppText variant="label">A true-black screen, a dimmer guide, and a soft finish for practice at bedtime.</AppText>
+      <Segmented
+        label="Night practice"
+        value={preferences.nightPractice}
+        onChange={(nightPractice) => update({ nightPractice })}
+        options={[
+          { value: 'off', label: 'Off' },
+          { value: 'evening', label: '9 PM–6 AM', accessibilityLabel: '9 PM to 6 AM' },
+          { value: 'always', label: 'Always' },
+        ]}
+      />
       <RowGroup title="Practice">
+        <ListRow
+          title="Daily reminder"
+          subtitle={preferences.reminder.enabled ? reminderTime(preferences.reminder) : 'Off'}
+          onPress={() => router.push('/settings/reminder')}
+        />
         <ListRow title="My rhythms" subtitle={`${saved} saved`} onPress={() => router.push('/rhythms')} />
       </RowGroup>
       <RowGroup title="Your data">

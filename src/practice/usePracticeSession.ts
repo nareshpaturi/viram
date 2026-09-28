@@ -67,6 +67,8 @@ interface Options {
   run: PracticeRun;
   preferences: Preferences;
   quickStart: boolean;
+  /** Night practice: a soft completion cue (FR-23). */
+  night: boolean;
   onIntroHeard: (techniqueId: string) => void;
 }
 
@@ -123,13 +125,14 @@ function buildRecord(
   };
 }
 
-export function usePracticeSession({ run, preferences, quickStart, onIntroHeard }: Options) {
+export function usePracticeSession({ run, preferences, quickStart, night, onIntroHeard }: Options) {
   // Settings are fixed for the length of a practice.
   const [settings] = useState(() => ({
     cues: {
       mode: preferences.cueMode,
       toneSet: preferences.toneSet,
       haptics: preferences.haptics ? preferences.hapticStrength : null,
+      softFinish: night,
     } satisfies CueSettings,
     volume: preferences.cueVolume,
     mixWithOthers: preferences.otherAudio === 'alongside',

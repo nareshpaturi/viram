@@ -1,5 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 import Svg, { Ellipse, Line } from 'react-native-svg';
+import { useSurface } from '../night/surface';
 import { colors, spacing } from '../theme';
 import { AppText } from './AppText';
 
@@ -9,6 +10,7 @@ import { AppText } from './AppText';
  * the side, so this is never the only cue.
  */
 export function SideIndicator({ open }: { open: 'left' | 'right' }) {
+  const { text } = useSurface();
   return (
     <View style={styles.row} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
       {(['left', 'right'] as const).map((side) => (
@@ -19,11 +21,11 @@ export function SideIndicator({ open }: { open: 'left' | 'right' }) {
               cy={18}
               rx={10}
               ry={14}
-              fill={side === open ? colors.practiceText : 'none'}
-              stroke={colors.practiceText}
+              fill={side === open ? text : 'none'}
+              stroke={text}
               strokeWidth={2}
             />
-            {side !== open ? <Line x1={5} y1={29} x2={23} y2={7} stroke={colors.practiceText} strokeWidth={2} /> : null}
+            {side !== open ? <Line x1={5} y1={29} x2={23} y2={7} stroke={text} strokeWidth={2} /> : null}
           </Svg>
           <AppText variant="label" style={styles.label}>
             {side === 'left' ? 'Left' : 'Right'}

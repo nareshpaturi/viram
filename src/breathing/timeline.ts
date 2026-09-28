@@ -17,6 +17,8 @@ export interface CueSettings {
   mode: CueMode;
   toneSet: ToneSet;
   haptics: HapticStrength | null;
+  /** Night practice (FR-23): the softest completion tone and a light tap. */
+  softFinish?: boolean;
 }
 
 export type SoundId = `tone.${ToneSet}.${StepKind | 'complete'}` | `voice.${CueId}`;
@@ -84,8 +86,8 @@ export function buildSchedule(
   if (!withCompletion) return { cues, endMs };
   cues.push({
     atMs: endMs,
-    sound: settings.mode === 'silent' ? null : toneFor(settings.toneSet, 'complete'),
-    haptic: settings.haptics,
+    sound: settings.mode === 'silent' ? null : toneFor(settings.softFinish ? 'soft-bells' : settings.toneSet, 'complete'),
+    haptic: settings.softFinish && settings.haptics ? 'light' : settings.haptics,
     nowPlaying: 'Practice complete',
   });
   return { cues, endMs };

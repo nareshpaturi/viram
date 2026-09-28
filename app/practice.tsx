@@ -15,6 +15,7 @@ import { captionFor, subtitleOf } from '../src/practice/practice';
 import { parseRun, type PracticeRun } from '../src/practice/run';
 import { findTechnique } from '../src/sharing/link';
 import { usePracticeSession, type SessionView } from '../src/practice/usePracticeSession';
+import { SurfaceProvider, useSurface } from '../src/night/surface';
 import { usePreferences } from '../src/settings/PreferencesProvider';
 import { colors, spacing, touchTarget } from '../src/theme';
 
@@ -45,17 +46,23 @@ export default function PracticeRoute() {
   if (!preferences.firstUseComplete) {
     return <Redirect href={{ pathname: '/welcome', params: { next: practicePath(run, { quickStart: params.quick === '1' }) } }} />;
   }
-  return <PracticeScreen run={run} quickStart={params.quick === '1'} />;
+  return (
+    <SurfaceProvider setting={preferences.nightPractice}>
+      <PracticeScreen run={run} quickStart={params.quick === '1'} />
+    </SurfaceProvider>
+  );
 }
 
 function PracticeScreen({ run, quickStart }: { run: PracticeRun; quickStart: boolean }) {
   const { preferences, update } = usePreferences();
   const reducedMotion = useReducedMotion(preferences.motion);
   const { width, height } = useWindowDimensions();
+  const surface = useSurface();
   const { plans, view, actions } = usePracticeSession({
     run,
     preferences,
     quickStart,
+    night: surface.night,
     onIntroHeard: (id) =>
       update({ introductionsHeard: [...new Set([...preferences.introductionsHeard, id])] }),
   });
@@ -71,7 +78,9 @@ function PracticeScreen({ run, quickStart }: { run: PracticeRun; quickStart: boo
   }, [actions, view]);
 
   useEffect(() => {
-    if (view.kind === 'finished') router.replace({ pathname: '/complete', params: { record: JSON.stringify(view.record) } });
+    if (view.kind === 'finished') {
+      router.replace({ pathname: '/complete', params: { record: JSON.stringify(view.record), ...(surface.night ? { night: '1' } : {}) } });
+    }
     if (view.kind === 'cancelled') router.back();
   }, [view]);
 
@@ -84,7 +93,7 @@ function PracticeScreen({ run, quickStart }: { run: PracticeRun; quickStart: boo
   const guideSize = Math.max(180, Math.min(300, width - spacing.xxl * 2, height * 0.36));
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right', 'bottom']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: surface.background }]} edges={['top', 'left', 'right', 'bottom']}>
       <StatusBar style="light" />
       <Body
         view={view}

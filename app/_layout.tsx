@@ -13,6 +13,7 @@ import { Newsreader_600SemiBold } from '@expo-google-fonts/newsreader/600SemiBol
 import { AppText } from '../src/components/AppText';
 import { Button } from '../src/components/Button';
 import { QuickActionsBridge } from '../src/quickstart/QuickActionsBridge';
+import { ReminderBridge } from '../src/reminder/ReminderBridge';
 import { PreferencesProvider } from '../src/settings/PreferencesProvider';
 import { stores } from '../src/storage';
 import { colors, fonts, spacing } from '../src/theme';
@@ -53,6 +54,7 @@ export default function RootLayout() {
     <PreferencesProvider>
       <StatusBar style="dark" />
       <QuickActionsBridge />
+      <ReminderBridge />
       <Stack
         screenOptions={{
           animation: 'fade',
@@ -78,6 +80,7 @@ export default function RootLayout() {
         <Stack.Screen name="r/[payload]" options={{ title: 'Shared with you' }} />
         <Stack.Screen name="session/[id]" options={{ title: 'Practice details' }} />
         <Stack.Screen name="settings/sound" options={{ title: 'Cues & sound' }} />
+        <Stack.Screen name="settings/reminder" options={{ title: 'Daily reminder' }} />
         <Stack.Screen name="settings/data" options={{ title: 'Your data' }} />
         <Stack.Screen name="settings/safety" options={{ title: 'Safety & wellbeing' }} />
         <Stack.Screen name="settings/privacy" options={{ title: 'Privacy' }} />

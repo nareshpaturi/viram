@@ -4,12 +4,19 @@
  */
 import { Platform } from 'react-native';
 import type { CueMode, HapticStrength, ToneSet } from '../breathing/timeline';
+import type { NightSetting } from '../night/surface';
 import type { Db } from '../storage/db';
 import { parsePractice, type Practice } from '../practice/practice';
 
 export type OtherAudio = 'alongside' | 'pause';
 export type Introductions = 'first' | 'always' | 'never';
 export type Motion = 'system' | 'reduced';
+/** FR-17: one local reminder a day, off until the practitioner turns it on. */
+export interface Reminder {
+  enabled: boolean;
+  hour: number;
+  minute: number;
+}
 
 export interface Preferences {
   firstUseComplete: boolean;
@@ -32,6 +39,9 @@ export interface Preferences {
   progressionStopped: string[];
   /** “Not now”: per technique, only sessions after this time count toward the next offer. */
   progressionSnoozed: Record<string, number>;
+  reminder: Reminder;
+  /** FR-23: Off, 9 PM–6 AM, or Always. */
+  nightPractice: NightSetting;
 }
 
 export const DEFAULT_PREFERENCES: Preferences = {
@@ -53,6 +63,8 @@ export const DEFAULT_PREFERENCES: Preferences = {
   lastPractice: null,
   progressionStopped: [],
   progressionSnoozed: {},
+  reminder: { enabled: false, hour: 7, minute: 30 },
+  nightPractice: 'off',
 };
 
 const oneOf =
@@ -60,6 +72,7 @@ const oneOf =
   (v: unknown): v is T =>
     typeof v === 'string' && (values as string[]).includes(v);
 const isBoolean = (v: unknown): v is boolean => typeof v === 'boolean';
+const isInt = (v: unknown, min: number, max: number) => Number.isInteger(v) && (v as number) >= min && (v as number) <= max;
 
 const VALIDATORS: { [K in keyof Preferences]: (v: unknown) => Preferences[K] | undefined } = {
   firstUseComplete: (v) => (isBoolean(v) ? v : undefined),
@@ -82,6 +95,13 @@ const VALIDATORS: { [K in keyof Preferences]: (v: unknown) => Preferences[K] | u
     typeof v === 'object' && v !== null && !Array.isArray(v) && Object.values(v).every((x) => typeof x === 'number' && Number.isFinite(x))
       ? (v as Record<string, number>)
       : undefined,
+  nightPractice: (v) => (oneOf('off', 'evening', 'always')(v) ? v : undefined),
+  reminder: (v) => {
+    const r = v as Reminder;
+    return typeof v === 'object' && v !== null && isBoolean(r.enabled) && isInt(r.hour, 0, 23) && isInt(r.minute, 0, 59)
+      ? { enabled: r.enabled, hour: r.hour, minute: r.minute }
+      : undefined;
+  },
 };
 
 export const PREFERENCE_KEYS = Object.keys(DEFAULT_PREFERENCES) as (keyof Preferences)[];
