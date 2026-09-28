@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AccessibilityInfo, StyleSheet, View } from 'react-native';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
-import { describeRhythm, formatClock } from '../src/breathing/describe';
+import { describePlan, describeRhythm, describeTarget, formatClock } from '../src/breathing/describe';
 import { formatPace } from '../src/breathing/rhythm';
 import { AppText } from '../src/components/AppText';
-import { Button } from '../src/components/Button';
+import { Button, ButtonRow } from '../src/components/Button';
 import { Card } from '../src/components/Card';
 import { ConfirmPanel } from '../src/components/ConfirmPanel';
 import { RoutineParts } from '../src/components/RoutineParts';
@@ -12,7 +12,8 @@ import { Stat, StatRow } from '../src/components/Stat';
 import { Screen } from '../src/components/Screen';
 import { parseRecord, type SessionRecord } from '../src/history/repository';
 import { practiceHref } from '../src/practice/launch';
-import { subtitleOf } from '../src/practice/practice';
+import { subtitleOf, type Practice } from '../src/practice/practice';
+import { easierPractice, OFFER_WINDOW_MS, progressionOffer, type Offer } from '../src/progression/progression';
 import { practiceFromRecord } from '../src/quickstart/quickActions';
 import { refreshQuickActions } from '../src/quickstart/QuickActionsBridge';
 import { usePreferences } from '../src/settings/PreferencesProvider';
@@ -20,6 +21,8 @@ import { stores } from '../src/storage';
 import { colors, spacing } from '../src/theme';
 
 type SaveState = 'saving' | 'saved' | 'failed' | 'leaving';
+/** What the practitioner chose for next time, if anything (FR-15). */
+type NextTime = { kind: 'next' | 'easier'; practice: Practice } | { kind: 'notNow' | 'stopped' } | null;
 
 function save(record: SessionRecord): SaveState {
   try {
@@ -45,14 +48,26 @@ export default function Complete() {
       return null;
     }
   }, [params.record]);
-  const { preferences } = usePreferences();
+  const { preferences, update } = usePreferences();
   const [state, setState] = useState<SaveState>('saving');
+  const [offer, setOffer] = useState<Offer | null>(null);
+  const [nextTime, setNextTime] = useState<NextTime>(null);
+  const easier = useMemo(() => (record ? easierPractice(record) : null), [record]);
 
   useEffect(() => {
     if (!record) return;
     const result = save(record);
     setState(result);
-    if (result === 'saved') refreshQuickActions(preferences);
+    if (result === 'saved') {
+      refreshQuickActions(preferences);
+      // Worked out once, so answering it doesn't make it disappear mid-sentence.
+      const now = Date.now();
+      try {
+        setOffer(progressionOffer(record, stores().history.between(now - OFFER_WINDOW_MS, now + 1), preferences, now));
+      } catch {
+        // No offer is better than an interrupted completion screen.
+      }
+    }
     AccessibilityInfo.announceForAccessibility(result === 'saved' ? 'Practice complete. Saved on this device.' : 'Practice finished. It could not be saved yet.');
     // Save once per record.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -86,7 +101,19 @@ export default function Complete() {
     );
   }
 
+  const chooseNext = (choice: NonNullable<NextTime>) => {
+    const snooze = offer ? { progressionSnoozed: { ...preferences.progressionSnoozed, [offer.techniqueId]: Date.now() } } : {};
+    if (choice.kind === 'next') update({ lastPractice: choice.practice, ...snooze });
+    if (choice.kind === 'easier') update({ lastPractice: choice.practice });
+    if (choice.kind === 'notNow') update(snooze);
+    if (choice.kind === 'stopped' && offer) update({ progressionStopped: [...preferences.progressionStopped, offer.techniqueId] });
+    setNextTime(choice);
+    AccessibilityInfo.announceForAccessibility(nextTimeMessage(choice, offer) ?? 'Not now');
+  };
+
   const failed = state === 'failed';
+  const saved = state === 'saved';
+  const message = nextTimeMessage(nextTime, offer);
   return (
     <Screen
       edges={['top', 'left', 'right']}
@@ -137,12 +164,52 @@ export default function Complete() {
         </Card>
       )}
       <AppText variant="label" style={failed ? styles.warning : undefined}>
-        {failed ? 'Try saving again before leaving this screen.' : state === 'saved' ? '✓ Saved on this device' : 'Saving…'}
+        {failed ? 'Try saving again before leaving this screen.' : saved ? '✓ Saved on this device' : 'Saving…'}
       </AppText>
+      {saved && offer && !nextTime ? (
+        <Card>
+          <AppText variant="overline" accessibilityRole="header">
+            WHEN YOU’RE READY
+          </AppText>
+          <AppText>
+            You’ve completed {offer.current.name} at {describeRhythm(offer.current.steps)} {timesWord(offer.count)} in the last two weeks. {offer.prompt}
+          </AppText>
+          <Card muted>
+            <AppText variant="bodyStrong">
+              {describeRhythm(offer.next.steps)} · {describePlan(offer.next.steps, offer.next.target)}
+            </AppText>
+          </Card>
+          <ButtonRow>
+            <Button title="Try next time" style={styles.flex} onPress={() => chooseNext({ kind: 'next', practice: offer.next })} />
+            <Button title="Not now" variant="secondary" style={styles.flex} onPress={() => chooseNext({ kind: 'notNow' })} />
+          </ButtonRow>
+          <Button title="Stop suggesting for this practice" variant="quiet" onPress={() => chooseNext({ kind: 'stopped' })} />
+        </Card>
+      ) : null}
+      {message ? (
+        <AppText variant="label" style={styles.nextTime}>
+          {message}
+        </AppText>
+      ) : null}
+      {saved && easier && !nextTime ? (
+        <Button title="Make it easier next time" variant="quiet" onPress={() => chooseNext({ kind: 'easier', practice: easier })} />
+      ) : null}
     </Screen>
   );
 }
 
+const TIMES = ['', 'once', 'twice', 'three times', 'four times', 'five times', 'six times', 'seven times', 'eight times', 'nine times', 'ten times'];
+const timesWord = (count: number) => TIMES[count] ?? `${count} times`;
+
+function nextTimeMessage(choice: NextTime, offer: Offer | null): string | null {
+  if (!choice) return null;
+  if (choice.kind === 'next' || choice.kind === 'easier') {
+    const { practice } = choice;
+    return `✓ Next time, Breathe starts ${practice.name} at ${describeRhythm(practice.steps)} for ${describeTarget(practice.target)}.`;
+  }
+  if (choice.kind === 'stopped' && offer) return `Viram won’t suggest changes to ${offer.current.name} again.`;
+  return null;
+}
 
 const styles = StyleSheet.create({
   mark: {
@@ -157,4 +224,6 @@ const styles = StyleSheet.create({
   check: { color: colors.pine },
   muted: { color: colors.inkSoft },
   warning: { color: colors.danger },
+  nextTime: { color: colors.pine },
+  flex: { flexGrow: 1, flexBasis: 140 },
 });

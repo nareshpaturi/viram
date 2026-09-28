@@ -43,6 +43,16 @@ export interface Technique {
     increment: Increment;
     target: Target;
     posture: 'seated' | 'seated-or-lying';
+    /**
+     * v1.1 gentle progression (FR-15): the rhythms after the default, one
+     * step at a time. Each lists every step's seconds in order. Offered,
+     * never applied automatically.
+     */
+    progression?: {
+      steps: number[][];
+      /** The completion screen's question, e.g. “Try a slightly longer exhale next time?” */
+      prompt: string;
+    };
   };
   guidance: {
     /** Opening paragraph of the guide, below the rhythm card and Take care. */

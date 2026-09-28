@@ -28,6 +28,10 @@ export interface Preferences {
   /** The settle screen says once that the phone can be locked. */
   lockTipSeen: boolean;
   lastPractice: Practice | null;
+  /** Technique IDs whose progression offers were turned off (FR-15). */
+  progressionStopped: string[];
+  /** “Not now”: per technique, only sessions after this time count toward the next offer. */
+  progressionSnoozed: Record<string, number>;
 }
 
 export const DEFAULT_PREFERENCES: Preferences = {
@@ -47,6 +51,8 @@ export const DEFAULT_PREFERENCES: Preferences = {
   motion: 'system',
   lockTipSeen: false,
   lastPractice: null,
+  progressionStopped: [],
+  progressionSnoozed: {},
 };
 
 const oneOf =
@@ -70,6 +76,12 @@ const VALIDATORS: { [K in keyof Preferences]: (v: unknown) => Preferences[K] | u
   motion: (v) => (oneOf('system', 'reduced')(v) ? v : undefined),
   lockTipSeen: (v) => (isBoolean(v) ? v : undefined),
   lastPractice: (v) => (v === null ? null : (parsePractice(v) ?? undefined)),
+  progressionStopped: (v) =>
+    Array.isArray(v) && v.every((x) => typeof x === 'string') ? (v as string[]).slice(0, 50) : undefined,
+  progressionSnoozed: (v) =>
+    typeof v === 'object' && v !== null && !Array.isArray(v) && Object.values(v).every((x) => typeof x === 'number' && Number.isFinite(x))
+      ? (v as Record<string, number>)
+      : undefined,
 };
 
 export const PREFERENCE_KEYS = Object.keys(DEFAULT_PREFERENCES) as (keyof Preferences)[];

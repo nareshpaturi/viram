@@ -6,6 +6,8 @@ import { CUES, cueFor } from '../src/content/voice.ts';
 import { planFor as enginePlan, isValidSeconds } from '../src/breathing/rhythm.ts';
 
 const MINUTE_TARGETS = [1, 3, 5, 10];
+/** PRD library defaults table: the only techniques with a v1.1 progression path. */
+const PROGRESSION_PATHS = ['sama-vritti', 'visama-vritti', 'nadi-shodhana', 'ujjayi'];
 // About 40 seconds at a calm 120–130 words per minute (brand voice spec).
 const INTRO_WORD_LIMIT = 85;
 // Treatment, diagnosis, and outcome words are release blockers in copy.
@@ -73,6 +75,24 @@ export function checkLibrary() {
     if (breathingSteps.some((s) => s.side) && !breathingSteps.every((s) => s.side)) fail(at, 'side labels must cover every inhale and exhale');
     if ('minutes' in target && !MINUTE_TARGETS.includes(target.minutes)) fail(at, 'minutes target must be 1, 3, 5, or 10');
     if ('rounds' in target && !(Number.isInteger(target.rounds) && target.rounds >= 1 && target.rounds <= 108)) fail(at, 'rounds target must be 1–108');
+
+    // Gentle progression (FR-15): only where the PRD defines a path; each
+    // step stays within bounds and changes the rhythm from the one before.
+    if (practice.progression) {
+      const { steps: path, prompt } = practice.progression;
+      if (!PROGRESSION_PATHS.includes(at)) fail(at, 'progression paths are defined only for Sama Vritti, Visama Vritti, Nadi Shodhana, and Ujjayi');
+      if (!prompt || prompt.length > 80 || !prompt.endsWith('?')) fail(at, 'progression prompt must be a question of 1–80 characters');
+      let previous = steps.map((step) => step.seconds);
+      for (const [n, seconds] of path.entries()) {
+        const where = `${at} progression ${n + 1}`;
+        if (seconds.length !== steps.length) fail(where, 'lists every step');
+        for (const [i, value] of seconds.entries()) {
+          if (!isValidSeconds(steps[i].kind, value, increment)) fail(where, `${steps[i].kind} must be within bounds in steps of ${increment} s`);
+        }
+        if (seconds.join() === previous.join()) fail(where, 'must change the rhythm');
+        previous = seconds;
+      }
+    }
 
     // Names and pronunciation (FR-09).
     if (pronunciation) {

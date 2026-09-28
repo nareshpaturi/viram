@@ -25,6 +25,7 @@ export const LIBRARY: Technique[] = [
       increment: 1,
       target: { minutes: 5 },
       posture: 'seated-or-lying',
+      progression: { steps: [[5, 5, 5, 5], [6, 6, 6, 6]], prompt: 'Try one second longer on every step next time?' },
     },
     guidance: {
       lead: 'Four equal steps: breathe in, pause, breathe out, pause. An even count gives a busy mind something simple to follow.',
@@ -82,6 +83,7 @@ export const LIBRARY: Technique[] = [
       increment: 1,
       target: { minutes: 5 },
       posture: 'seated-or-lying',
+      progression: { steps: [[4, 0, 7, 0], [4, 0, 8, 0]], prompt: 'Try a slightly longer exhale next time?' },
     },
     guidance: {
       lead: 'A breath where the exhale is longer than the inhale. Viram starts with the gentlest form: in for 4, out for 6, with no holds.',
@@ -136,6 +138,7 @@ export const LIBRARY: Technique[] = [
       increment: 1,
       target: { minutes: 5 },
       posture: 'seated',
+      progression: { steps: [[4, 7, 4, 7], [4, 8, 4, 8]], prompt: 'Try a slightly longer exhale next time?' },
     },
     guidance: {
       lead: 'Breathe through one nostril at a time, switching sides with your right hand. Slow, silent, and without holds.',
@@ -242,6 +245,7 @@ export const LIBRARY: Technique[] = [
       increment: 1,
       target: { minutes: 5 },
       posture: 'seated-or-lying',
+      progression: { steps: [[6, 6]], prompt: 'Try a slightly slower breath next time?' },
     },
     guidance: {
       lead: 'Slow breathing through the nose with a gentle narrowing at the back of the throat, so each breath makes a soft, even sound, like distant waves.',
