@@ -90,7 +90,7 @@ export const PROGRAMS: readonly Program[] = [
     shortName: 'Nadi Shodhana Path',
     eyebrow: '21 sessions · 3 phases',
     description:
-      'Alternate nostril breathing, three weeks at a time. Each phase lengthens the exhale by one second and the practice a little. There is no breath retention.',
+      'Alternate nostril breathing in three phases of seven sessions. Each phase lengthens the exhale by one second and the practice a little. There is no breath retention.',
     summary: 'Alternate nostril breathing, lengthening the exhale gently over three phases.',
     sessions: [
       ...Array.from({ length: 7 }, (): ProgramSession => ({ parts: [nadi([4, 6, 4, 6], 5)] })),
