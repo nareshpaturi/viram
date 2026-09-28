@@ -12,6 +12,7 @@ The direction is **“Steady breath. Steady mind.” · Pranayama, guided at you
 | [UX mocks](ux-design.html) | Feature map linked to 81 screen specimens across v1.0, v1.1, and later concepts; journeys; state contract; guidance and accessibility handoff |
 | [Product requirements](product-requirements.html) | v2.0 scope and testable behavior for v1.0 and v1.1 |
 | [Delivery plan](delivery-plan.md) | Build order: 25 small v1.0 deliverables and 12 for v1.1, each with a demo, scope, dependencies, size, and the gate it closes |
+| [Locked-screen audio decision](decisions/locked-audio.md) | D02: how cues stay on the audio clock when locked, the platform limits found, and the device evidence still owed |
 | [Launch implementation plan](mvp-launch-implementation-plan.md) | Gated checkpoints for v1.0, the v1.1 track, and historical implementation evidence |
 | [Market research](market-research.html) | Research snapshot and opportunity hypotheses |
 | [Research notes](research/market-fit-report.md) | Supporting research and unverified items behind the market brief |
@@ -26,4 +27,6 @@ The HTML files contain their own styles and mockup markup. Open them directly in
 
 The September 22 revision is **documentation and mockups**, plus the brand refresh: the app icon, adaptive and monochrome icons, favicon, and splash were regenerated (`npm run brand:assets`) and the in-app tagline updated. Other application code, native configuration, and implementation checkpoint status are unchanged. `src/theme.ts` is the existing runtime mapping, not evidence that the design has been implemented.
 
-The September 23 content pass adds the bundled library data in `src/content/` (schema, eight techniques, sources, and voice cue scripts) with `npm run check:content` and `npm run content:preview`. No screen reads it yet; that is CP2b.
+The September 23 content pass adds the bundled library data in `src/content/` (schema, eight techniques, sources, and voice cue scripts) with `npm run check:content` and `npm run content:preview`.
+
+The September 27 implementation builds the v1.0 app on this design. The screens read the library, and a native guide module keeps cues on the audio clock with the screen locked. `site/` holds the static viram.app pages. What's done and what device evidence is still owed are in the delivery plan's [implementation status](delivery-plan.md#implementation-status--2026-09-27). The audio approach and its platform limits are in [decisions/locked-audio.md](decisions/locked-audio.md).

@@ -1,33 +1,52 @@
 {
   "expo": {
-    "android": {
-      "adaptiveIcon": {
-        "backgroundColor": "#12372F",
-        "foregroundImage": "./assets/android-icon-foreground.png"
-      },
-      "package": "app.viram",
-      "predictiveBackGestureEnabled": false
-    },
+    "name": "Viram",
+    "slug": "viram",
+    "version": "1.0.0",
+    "scheme": "viram",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
     "icon": "./assets/icon.png",
     "ios": {
       "bundleIdentifier": "app.viram",
-      "supportsTablet": true
+      "supportsTablet": false,
+      "associatedDomains": ["applinks:viram.app"],
+      "infoPlist": {
+        "UIBackgroundModes": ["audio"],
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
-    "name": "Viram",
-    "orientation": "portrait",
+    "android": {
+      "package": "app.viram",
+      "adaptiveIcon": {
+        "backgroundColor": "#12372F",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "allowBackup": true,
+      "blockedPermissions": ["android.permission.RECORD_AUDIO", "android.permission.MODIFY_AUDIO_SETTINGS"],
+      "predictiveBackGestureEnabled": false,
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [{ "scheme": "https", "host": "viram.app", "pathPrefix": "/r/" }],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
+    },
     "plugins": [
       "expo-router",
-      "expo-audio",
       "expo-sqlite",
+      "expo-asset",
+      "expo-quick-actions",
       [
-        "react-native-health",
+        "expo-build-properties",
         {
-          "healthSharePermission": "Viram reads heart rate, HRV, respiratory rate, sleep and blood oxygen to show how your practice trends over time. Your health data never leaves your device.",
-          "healthUpdatePermission": "Viram saves your breathing sessions as mindful minutes in Apple Health."
+          "ios": { "deploymentTarget": "16.4" },
+          "android": { "minSdkVersion": 26, "compileSdkVersion": 36, "targetSdkVersion": 36 }
         }
       ],
-      "react-native-health-connect",
-      "expo-asset",
       [
         "expo-splash-screen",
         {
@@ -38,10 +57,6 @@
         }
       ]
     ],
-    "scheme": "viram",
-    "slug": "viram",
-    "userInterfaceStyle": "light",
-    "version": "1.0.0",
     "web": {
       "favicon": "./assets/favicon.png"
     }

@@ -3,6 +3,7 @@
 import { LIBRARY } from '../src/content/library.ts';
 import { SOURCES } from '../src/content/sources.ts';
 import { CUES, cueFor } from '../src/content/voice.ts';
+import { planFor as enginePlan, isValidSeconds } from '../src/breathing/rhythm.ts';
 
 const MINUTE_TARGETS = [1, 3, 5, 10];
 // About 40 seconds at a calm 120–130 words per minute (brand voice spec).
@@ -15,14 +16,10 @@ const NOT_A_TREATMENT = /\b(not|isn't|is not) a treatment\b/i;
 // Common romanization only: the bundled fonts lack IAST underdots, so no accented Latin letters.
 const ACCENTED_LATIN = /[À-ɏḀ-ỿ]/;
 
-export const roundSeconds = (steps) => steps.reduce((sum, step) => sum + step.seconds, 0);
-
-/** Planned rounds and duration for a minutes or rounds target (FR-01). */
+/** Planned rounds and duration for a technique's default target, from the step engine (FR-01). */
 export function planFor({ steps, target }) {
-  const perRound = roundSeconds(steps);
-  const rounds = 'rounds' in target ? target.rounds : Math.ceil((target.minutes * 60) / perRound);
-  const breaths = steps.filter((step) => step.kind === 'inhale' && step.seconds > 0).length;
-  return { rounds, seconds: rounds * perRound, breathsPerMinute: (breaths * 60) / perRound };
+  const plan = enginePlan(steps, target);
+  return { rounds: plan.rounds, seconds: plan.durationMs / 1000, breathsPerMinute: plan.breathsPerMinute };
 }
 
 function copyOf(technique) {
@@ -64,9 +61,7 @@ export function checkLibrary() {
     for (const [i, step] of steps.entries()) {
       const where = `${at} step ${i + 1}`;
       const breathing = step.kind === 'inhale' || step.kind === 'exhale';
-      const [min, max] = breathing ? [1, 20] : [0, 20];
-      if (step.seconds < min || step.seconds > max) fail(where, `${step.kind} must be ${min}–${max} s`);
-      if (Math.round(step.seconds / increment) * increment !== step.seconds) fail(where, `seconds must be a multiple of ${increment}`);
+      if (!isValidSeconds(step.kind, step.seconds, increment)) fail(where, `${step.kind} must be within bounds in steps of ${increment} s`);
       if (step.cue === 'hum' && step.kind !== 'exhale') fail(where, 'Hum is an exhale');
       if ((step.side || step.route) && !breathing) fail(where, 'only inhale and exhale take a side or route');
       if (step.side && step.route) fail(where, 'a side step breathes through the nose');

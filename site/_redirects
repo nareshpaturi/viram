@@ -1,0 +1,2 @@
+# Every shared link is served by the one static fallback page.
+/r/*  /r/index.html  200

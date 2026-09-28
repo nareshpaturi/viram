@@ -2,7 +2,7 @@
  * Voice cue inventory and the rule that picks each step's cue. Clips are
  * generated once from these scripts and bundled (docs/content/technique-research.md#voice).
  */
-import type { Step } from './types';
+import type { RhythmStep } from '../breathing/rhythm';
 
 /** maxSeconds is checked against each generated clip's measured length. */
 export const CUES = {
@@ -26,7 +26,7 @@ export type CueId = keyof typeof CUES;
  * A step speaks its kind word (or Hum) with its side. A mouth step names its
  * route on the first round only; later rounds use the plain word.
  */
-export function cueFor(step: Step, round: number): CueId {
+export function cueFor(step: RhythmStep, round: number): CueId {
   if (step.cue) return step.cue;
   if (step.kind === 'inhale' || step.kind === 'exhale') {
     if (step.side) return `${step.kind}-${step.side}`;

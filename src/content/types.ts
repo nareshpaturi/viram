@@ -2,23 +2,16 @@
  * Technique content contract (PRD section 05). Library data lives in
  * library.ts; scripts/check-content.mjs enforces the rules types can't express.
  */
-import type { Phase } from '../engine/types';
+import type { Increment, RhythmStep, Target } from '../breathing/rhythm';
 import type { SourceId } from './sources';
 
-export interface Step {
-  kind: Phase;
-  /** Inhale and exhale 1–20 s; hold and rest 0–20 s (0 = Off). Halves only when the increment is 0.5. */
-  seconds: number;
-  side?: 'left' | 'right';
-  /** Omitted means through the nose. The route is spoken on the first round only. */
-  route?: 'mouth';
-  /** Shown and spoken instead of the kind word. */
-  cue?: 'hum';
+/** A rhythm step with its practice caption. Bounds live in src/breathing/rhythm.ts. */
+export interface Step extends RhythmStep {
   /** One line under the step name during practice. */
   caption: string;
 }
 
-export type Target = { minutes: 1 | 3 | 5 | 10 } | { rounds: number };
+export type { Target };
 
 export interface Review {
   reviewer: string;
@@ -47,7 +40,7 @@ export interface Technique {
   };
   practice: {
     steps: Step[];
-    increment: 1 | 0.5;
+    increment: Increment;
     target: Target;
     posture: 'seated' | 'seated-or-lying';
   };

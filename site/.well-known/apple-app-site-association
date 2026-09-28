@@ -1,0 +1,10 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["TEAM_ID.app.viram"],
+        "components": [{ "/": "/r/*", "comment": "Shared practice links open the in-app preview." }]
+      }
+    ]
+  }
+}

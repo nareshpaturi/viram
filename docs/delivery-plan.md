@@ -18,6 +18,36 @@ Drafted September 24, 2026. This is the **build order** for v1.0 and v1.1. It br
 
   Accessibility and privacy are built into each deliverable, not left to a final phase. D22 only closes the gate.
 
+## Implementation status · 2026-09-27
+
+The v1.0 code for D01–D22 is in place on branch `claude/implement-v1`. It is verified by `npm run check` (typecheck, content, theme contrast, audio manifest, site data, and 107 unit tests) and by a walkthrough on the iOS 26.5 simulator. **No gate is closed.** Every gate still needs the device, listener, or owner evidence listed below. “Code done” means the demo runs; it doesn't mean the “Done when” evidence exists.
+
+| # | State | Evidence still required |
+|---|---|---|
+| D01 | Code done: Health, streak, Progress, and trend code removed; iOS 16.4 / Android min SDK 26 / target 36 locked; iPad off; background audio and `mediaPlayback` declared; Jest; CI (`.github/workflows/ci.yml`) | First CI run; installs on physical phones; release `Info.plist` and manifest inspection |
+| D02 | Decided: native scheduler ([decision](decisions/locked-audio.md)) | Drift measurements per device; owner decision on the iOS “Play alongside” limits |
+| D03 | Done: `src/breathing/rhythm.ts`, tests for every PRD example; `check:content` uses the engine | — |
+| D04 | Code done: session state machine, settle and resume countdowns, pause, end confirmation | ±250 ms of 5:04 on a device |
+| D05 | Code done: `modules/viram-guide` (Swift + Kotlin), Now Playing, media notification, interruption reasons, Silent-mode lock rule, one-time lock tip | CP1b device matrix (locked 5/20 min, Low Power Mode, battery saver, Doze, calls, headphones) |
+| D06 | Done: schema v1, forward-only transactional migrations, repositories, tests | Backup and restore by hand on both platforms |
+| D07 | Done: first use once, four tabs, no permission prompts | 200% reading-order check on Android |
+| D08 | Done: Breathe, cue chip sheet, persisted preferences | — |
+| D09 | Done: completion (save with retry), History by day, detail, empty and error states | — |
+| D10 | Done: Adjust rhythm, minutes or rounds (1–108, shortcuts 11/21/27), live plan | — |
+| D11 | Done: My rhythms, 20 limit, 1–40 plain-text names, rename and delete, snapshot tests | — |
+| D12 | Done: library and guides from `src/content`; “Reviewed by” only from a record; “Hear it” hidden until D23 | Coherent-breathing name decision |
+| D13 | Done: side indicator, Hum wave, route labels, progress ring for half seconds, library adjust keeps structure | Eyes-closed tests (Alpha 2) |
+| D14 | Code done with placeholder `say` clips: manifest with limits in CI, voice-or-tone rule, captioned introductions (First time / Always / Never), About disclosure | Locked voice session within ±250 ms |
+| D15 | Code done: cue volume, Play along / Pause it, three generated tone sets, haptic strength, keep screen on | Sound-design lane's final tone sets; music ducking on devices |
+| D16 | Done: `src/sharing/link.ts`, round trips, 10,000-link fuzz, length budget | — |
+| D17 | Done: share preview (Share sheet and Copy), incoming preview, invalid state, save from link, first use first | — |
+| D18 | Code done: `site/` (fallback page with a decoder matched to the app's in tests, privacy, support, AASA, assetlinks), associated domains and verified intent filter | Register and host viram.app; Team ID, Play signing fingerprint, App Store URL; three messaging apps on devices |
+| D19 | Code done: `expo-quick-actions` 6.0.2 builds with SDK 57; items from History; cold and warm routing; first use first | Both platforms on devices; Android build needs JDK 17/21 locally (JDK 25+ breaks AGP's CMake step) |
+| D20 | Done: Settings, Safety & wellbeing (general Take care), Privacy, About (free promise, sources in two groups, AI voice), delete with confirmation | — |
+| D21 | Done: versioned JSON export (share sheet), import with summary, all-or-nothing, merge by ID | Import across two real phones |
+| D22 | In progress: labels, roles, adjustable steppers, step announcements, reduced-motion still guide, 48 pt targets, text scaled to 200% (display text less) | VoiceOver and TalkBack passes on devices |
+| D23–D25 | Not started (voice lane, beta, store) | — |
+
 ## v1.0 at a glance
 
 Sizes are engineering days for one experienced full-time engineer. “Week” is the week each deliverable finishes if built in order.
