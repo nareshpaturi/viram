@@ -67,7 +67,8 @@ export function checkLibrary() {
       const where = `${at} step ${i + 1}`;
       const breathing = step.kind === 'inhale' || step.kind === 'exhale';
       if (!isValidSeconds(step.kind, step.seconds, increment)) fail(where, `${step.kind} must be within bounds in steps of ${increment} s`);
-      if (step.cue === 'hum' && step.kind !== 'exhale') fail(where, 'Hum is an exhale');
+      if ((step.cue === 'hum' || step.cue === 'om') && step.kind !== 'exhale') fail(where, 'Hum and Om are exhales');
+      if (step.cue === 'top-up' && (step.kind !== 'inhale' || steps[i - 1]?.kind !== 'inhale')) fail(where, 'a top-up is an inhale that follows an inhale');
       if ((step.side || step.route) && !breathing) fail(where, 'only inhale and exhale take a side or route');
       if (step.side && step.route) fail(where, 'a side step breathes through the nose');
       if (!step.caption || step.caption.length > 80) fail(where, 'caption must be 1–80 characters');

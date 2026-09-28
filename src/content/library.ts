@@ -152,6 +152,7 @@ export const LIBRARY: Technique[] = [
     family: 'classical',
     name: 'Nadi Shodhana',
     subtitle: 'Alternate nostril breathing',
+    aliases: ['Anulom Vilom'],
     pronunciation: { devanagari: 'नाडी शोधन', respelling: 'NAH-dee SHOH-duh-nuh', clip: 'name.nadi-shodhana' },
     practice: {
       steps: [

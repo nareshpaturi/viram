@@ -88,7 +88,9 @@ export function decodePayload(payload) {
   }
 }
 
-/** “in 4 · out 6, each side”, “4 · 4 · 6 · 4”, “in 4 · hum 8”. */
+const CUE_WORD = { hum: 'hum', om: 'Om', 'top-up': 'top up' };
+
+/** “in 4 · out 6, each side”, “4 · 4 · 6 · 4”, “in 4 · hum 8”, “in 3 · top up 1 · out 6”. */
 export function describeSteps(steps) {
   const alternate =
     steps.length === 4 && steps[0].side && steps.every((s, i) => s.kind === ['inhale', 'exhale', 'inhale', 'exhale'][i]) &&
@@ -102,7 +104,7 @@ export function describeSteps(steps) {
   }
   return steps
     .filter((s) => s.seconds > 0)
-    .map((s) => `${s.cue === 'hum' ? 'hum' : s.kind === 'inhale' ? 'in' : s.kind === 'exhale' ? 'out' : s.kind} ${s.seconds}${s.side ? ` ${s.side}` : ''}`)
+    .map((s) => `${s.cue ? CUE_WORD[s.cue] : s.kind === 'inhale' ? 'in' : s.kind === 'exhale' ? 'out' : s.kind} ${s.seconds}${s.side ? ` ${s.side}` : ''}`)
     .join(' · ');
 }
 

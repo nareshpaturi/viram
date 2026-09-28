@@ -7,9 +7,12 @@ import { formatPace, planFor, slowedSteps, type Plan, type RhythmStep, type Slow
 
 const KIND_LABEL = { inhale: 'Inhale', hold: 'Hold after inhale', exhale: 'Exhale', rest: 'Rest' } as const;
 
-/** “Inhale left”, “Hum”, “Hold after inhale”. */
+const CUE_LABEL = { hum: 'Hum', om: 'Om', 'top-up': 'Top up' } as const;
+const CUE_WORD = { hum: 'hum', om: 'Om', 'top-up': 'top up' } as const;
+
+/** “Inhale left”, “Hum”, “Om”, “Top up”, “Hold after inhale”. */
 export function stepLabel(step: RhythmStep): string {
-  if (step.cue === 'hum') return 'Hum';
+  if (step.cue) return CUE_LABEL[step.cue];
   return step.side ? `${KIND_LABEL[step.kind]} ${step.side}` : KIND_LABEL[step.kind];
 }
 
@@ -57,7 +60,7 @@ export function describeRhythm(steps: readonly RhythmStep[]): string {
   return steps
     .filter((step) => step.seconds > 0)
     .map((step) => {
-      const word = step.cue === 'hum' ? 'hum' : step.kind === 'inhale' ? 'in' : step.kind === 'exhale' ? 'out' : step.kind;
+      const word = step.cue ? CUE_WORD[step.cue] : step.kind === 'inhale' ? 'in' : step.kind === 'exhale' ? 'out' : step.kind;
       return `${word} ${s(step.seconds)}${step.side ? ` ${step.side}` : ''}`;
     })
     .join(' · ');

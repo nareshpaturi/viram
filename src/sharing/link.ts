@@ -17,7 +17,9 @@ import { LIBRARY } from '../content/library';
 import type { Technique } from '../content/types';
 import {
   MINUTE_TARGETS,
+  STEP_CUES,
   isValidSeconds,
+  type StepCue,
   isValidTarget,
   type MinuteTarget,
   type RhythmStep,
@@ -167,7 +169,7 @@ function isStepShape(step: unknown): step is RhythmStep {
     typeof s.seconds === 'number' &&
     (s.side === undefined || s.side === 'left' || s.side === 'right') &&
     (s.route === undefined || s.route === 'mouth') &&
-    (s.cue === undefined || s.cue === 'hum')
+    (s.cue === undefined || STEP_CUES.includes(s.cue as StepCue))
   );
 }
 

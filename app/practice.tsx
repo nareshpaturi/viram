@@ -232,7 +232,7 @@ function Body({ view, run, rounds, guideSize, reducedMotion, showLockTip, quickS
             {step.side ? <SideIndicator open={step.side} /> : null}
             <BreathingGuide
               kind={step.kind}
-              hum={step.cue === 'hum'}
+              hum={step.cue === 'hum' || step.cue === 'om'}
               stepKey={view.stepKey}
               durationMs={position.step.durationMs}
               elapsedMs={position.step.elapsedMs}

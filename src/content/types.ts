@@ -32,6 +32,8 @@ export interface Technique {
   family: 'classical' | 'modern';
   name: string;
   subtitle: string;
+  /** Other names people search for, e.g. “Anulom Vilom” (v1.1). */
+  aliases?: string[];
   /** Present for Sanskrit names. Common romanization only; the fonts lack IAST underdots. */
   pronunciation?: {
     devanagari: string;

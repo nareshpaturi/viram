@@ -23,7 +23,7 @@ const list = (items, tag = 'ul') => `<${tag}>${items.map((item) => `<li>${esc(it
 
 const STEP_LABEL = { inhale: 'Inhale', hold: 'Hold', exhale: 'Exhale', rest: 'Rest' };
 const stepLabel = (step) =>
-  [step.cue === 'hum' ? 'Hum' : STEP_LABEL[step.kind], step.side, step.route === 'mouth' ? '· mouth' : '']
+  [step.cue ? { hum: 'Hum', om: 'Om', 'top-up': 'Top up' }[step.cue] : STEP_LABEL[step.kind], step.side, step.route === 'mouth' ? '· mouth' : '']
     .filter(Boolean)
     .join(' ');
 

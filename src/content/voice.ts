@@ -11,6 +11,9 @@ export const CUES = {
   exhale: { text: 'Exhale', maxSeconds: 0.8 },
   rest: { text: 'Rest', maxSeconds: 0.8 },
   hum: { text: 'Hum', maxSeconds: 0.8 },
+  // v1.1 library additions: Udgeeth's exhale and cyclic sighing's short second inhale.
+  om: { text: 'Om', maxSeconds: 0.8 },
+  'top-up': { text: 'Top up', maxSeconds: 0.8 },
   // Side phrases are recorded whole so they sound like one calm instruction.
   'inhale-left': { text: 'Inhale left', maxSeconds: 1.2 },
   'inhale-right': { text: 'Inhale right', maxSeconds: 1.2 },

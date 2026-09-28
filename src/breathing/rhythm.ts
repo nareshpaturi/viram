@@ -15,9 +15,16 @@ export interface RhythmStep {
   side?: 'left' | 'right';
   /** Omitted means through the nose. */
   route?: 'mouth';
-  /** Shown and spoken instead of the kind word. */
-  cue?: 'hum';
+  /**
+   * Shown and spoken instead of the kind word: Hum (Bhramari) and Om
+   * (Udgeeth) are exhales; Top up (cyclic sighing) is a second, short
+   * inhale that belongs to the same breath.
+   */
+  cue?: StepCue;
 }
+
+export type StepCue = 'hum' | 'om' | 'top-up';
+export const STEP_CUES: readonly StepCue[] = ['hum', 'om', 'top-up'];
 
 /** The minute choices in Adjust rhythm and share links (FR-01). */
 export type MinuteTarget = 1 | 3 | 5 | 10;
@@ -128,7 +135,8 @@ function slowedStarts(steps: readonly RhythmStep[], slowing: Slowing, rounds: nu
  */
 export function planFor(steps: readonly RhythmStep[], target: Target, slowing: Slowing | null = null): Plan {
   const perRound = roundMs(steps);
-  const breaths = steps.filter((s) => s.kind === 'inhale' && s.seconds > 0).length;
+  // A top-up is part of the breath before it, so it isn't a breath of its own.
+  const breaths = steps.filter((s) => s.kind === 'inhale' && s.seconds > 0 && s.cue !== 'top-up').length;
   const pace = (ms: number) => (breaths * 60_000) / ms;
   if (!slowing) {
     const rounds = 'rounds' in target ? target.rounds : Math.ceil((target.minutes * 60_000) / perRound);
