@@ -1,12 +1,15 @@
 import { useCallback, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
-import { describeRhythm, formatClock } from '../../src/breathing/describe';
+import { formatClock } from '../../src/breathing/describe';
 import { AppText } from '../../src/components/AppText';
 import { Button } from '../../src/components/Button';
 import { ListRow, RowGroup } from '../../src/components/ListRow';
+import { MonthCalendar } from '../../src/components/MonthCalendar';
 import { recordLine } from '../../src/components/RoutineParts';
 import { Screen } from '../../src/components/Screen';
+import { Segmented } from '../../src/components/Segmented';
+import { monthOf, monthSummary, shiftMonth, type Month } from '../../src/history/calendar';
 import { groupByDay, timeLabel } from '../../src/history/format';
 import type { SessionRecord } from '../../src/history/repository';
 import { stores } from '../../src/storage';
@@ -22,10 +25,20 @@ function load(): Load {
   }
 }
 
-/** History (FR-05): a quiet record, grouped by day. No streaks, scores, or charts. */
+type HistoryView = 'list' | 'calendar';
+
+/**
+ * History (FR-05, FR-16): a quiet record, as a list grouped by day or as a
+ * month calendar. No streaks, scores, or charts.
+ */
 export default function History() {
   const [state, setState] = useState<Load>({ status: 'loading' });
+  const [view, setView] = useState<HistoryView>('list');
+  const [month, setMonth] = useState<Month>(() => monthOf(Date.now()));
   useFocusEffect(useCallback(() => setState(load()), []));
+  const thisMonth = monthOf(Date.now());
+  const isThisMonth = month.year === thisMonth.year && month.month === thisMonth.month;
+  const hasRecords = state.status === 'ready' && state.records.length > 0;
 
   return (
     <Screen>
@@ -33,6 +46,25 @@ export default function History() {
         Your practice
       </AppText>
       <AppText style={styles.muted}>A record of the space you made.</AppText>
+      {hasRecords ? (
+        <Segmented
+          label="Show history as"
+          options={[
+            { value: 'list', label: 'List' },
+            { value: 'calendar', label: 'Calendar' },
+          ]}
+          value={view}
+          onChange={setView}
+        />
+      ) : null}
+      {hasRecords && view === 'calendar' ? (
+        <MonthCalendar
+          summary={monthSummary(state.records, month)}
+          today={isThisMonth ? new Date().getDate() : null}
+          onPrevious={() => setMonth(shiftMonth(month, -1))}
+          onNext={isThisMonth ? undefined : () => setMonth(shiftMonth(month, 1))}
+        />
+      ) : null}
       {state.status === 'loading' ? <AppText variant="label">Loading your practice…</AppText> : null}
       {state.status === 'failed' ? (
         <View style={styles.empty}>
@@ -50,7 +82,7 @@ export default function History() {
           <Button title="Go to Breathe" onPress={() => router.navigate('/')} />
         </View>
       ) : null}
-      {state.status === 'ready'
+      {state.status === 'ready' && view === 'list'
         ? groupByDay(state.records).map((group) => (
             <RowGroup key={group.title} title={group.title}>
               {group.data.map((record) => (
