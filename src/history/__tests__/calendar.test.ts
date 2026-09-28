@@ -22,6 +22,7 @@ const record = (startedAt: Date, minutes: number, change: Partial<SessionRecord>
   parts: null,
   program: null,
   health: 'none',
+  slowing: null,
   ...change,
 });
 

@@ -47,6 +47,7 @@ export default function Breathe() {
         subtitle={subtitleOf(practice)}
         steps={practice.steps}
         target={practice.target}
+        slowing={practice.slowing}
         nameHint={technique?.pronunciation?.respelling}
       />
       <ButtonRow>

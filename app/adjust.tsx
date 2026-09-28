@@ -1,16 +1,18 @@
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
-import { describePlan, stepLabel } from '../src/breathing/describe';
+import { describePace, describePlan, stepLabel } from '../src/breathing/describe';
 import {
   MAX_ROUNDS,
   MAX_STEP_SECONDS,
   MINUTE_TARGETS,
   ROUND_SHORTCUTS,
   formatPace,
+  isValidSlowing,
   minSeconds,
   nudgeSeconds,
   planFor,
+  type Slowing,
   type Target,
 } from '../src/breathing/rhythm';
 import { AppText } from '../src/components/AppText';
@@ -18,7 +20,9 @@ import { Button, ButtonRow } from '../src/components/Button';
 import { Segmented } from '../src/components/Segmented';
 import { Screen } from '../src/components/Screen';
 import { Stepper } from '../src/components/Stepper';
+import { SwitchRow } from '../src/components/SwitchRow';
 import {
+  canSlow,
   customPractice,
   incrementOf,
   practiceFromTechnique,
@@ -41,29 +45,54 @@ function initialDraft(params: { technique?: string; rhythm?: string; custom?: st
   return fallback();
 }
 
+/** Keeps a slowing only while it still lengthens the breath from the current steps. */
+function withValidSlowing(draft: Practice): Practice {
+  return draft.slowing && !isValidSlowing(draft.steps, draft.slowing) ? { ...draft, slowing: null } : draft;
+}
+
 /**
- * Adjust rhythm (FR-01). Library practices keep their steps and sides and
- * move in their own increment; the custom builder has four whole-second
- * rows. Only the out-of-range stepper action is ever disabled.
+ * Adjust rhythm (FR-01, FR-24). Library practices keep their steps and
+ * sides and move in their own increment; the custom builder has four rows
+ * in whole seconds, or half seconds when chosen. Coherent breathing and
+ * custom rhythms can slow down gradually. Only the out-of-range stepper
+ * action is ever disabled.
  */
 export default function AdjustRhythm() {
   const params = useLocalSearchParams<{ technique?: string; rhythm?: string; custom?: string }>();
   const { preferences, update } = usePreferences();
   const [draft, setDraft] = useState(() => initialDraft(params, () => readyPractice(preferences, stores())));
-  const increment = incrementOf(draft);
-  const plan = planFor(draft.steps, draft.target);
+  const custom = draft.techniqueId === null;
+  const [halfSteps, setHalfSteps] = useState(() => custom && draft.steps.some((s) => !Number.isInteger(s.seconds)));
+  const increment = custom ? (halfSteps ? 0.5 : 1) : incrementOf(draft);
+  const slowing = draft.slowing ?? null;
+  const plan = planFor(draft.steps, draft.target, slowing);
+  const inhale = draft.steps.find((s) => s.kind === 'inhale');
+  const exhale = draft.steps.find((s) => s.kind === 'exhale');
   const byRounds = 'rounds' in draft.target;
   const rounds = 'rounds' in draft.target ? draft.target.rounds : plan.rounds;
 
   const setTarget = (target: Target) => setDraft({ ...draft, target });
-  const setSeconds = (index: number, direction: 1 | -1) =>
+  const setSeconds = (index: number, direction: 1 | -1) => {
+    const steps = draft.steps.map((step, i) => (i === index ? { ...step, seconds: nudgeSeconds(step.kind, step.seconds, direction, increment) } : step));
+    // The end of a slowing never starts shorter than the breath it slows.
+    const floor = (kind: 'inhale' | 'exhale', end: number) => Math.max(end, steps.find((s) => s.kind === kind)?.seconds ?? end);
+    setDraft({ ...draft, steps, slowing: slowing && { inhale: floor('inhale', slowing.inhale), exhale: floor('exhale', slowing.exhale) } });
+  };
+  const toggleHalfSteps = (on: boolean) => {
+    setHalfSteps(on);
+    // Back to whole seconds rounds each half up, within bounds.
+    if (!on) setDraft({ ...draft, steps: draft.steps.map((s) => ({ ...s, seconds: Math.min(MAX_STEP_SECONDS, Math.ceil(s.seconds)) })) });
+  };
+  const toggleSlowing = (on: boolean) =>
     setDraft({
       ...draft,
-      steps: draft.steps.map((step, i) => (i === index ? { ...step, seconds: nudgeSeconds(step.kind, step.seconds, direction, increment) } : step)),
+      slowing: on && inhale && exhale ? { inhale: Math.min(MAX_STEP_SECONDS, inhale.seconds + 1), exhale: Math.min(MAX_STEP_SECONDS, exhale.seconds + 1) } : null,
     });
+  const setEnd = (kind: keyof Slowing, direction: 1 | -1) =>
+    slowing && setDraft({ ...draft, slowing: { ...slowing, [kind]: Math.min(MAX_STEP_SECONDS, slowing[kind] + direction * 0.5) } });
 
   const applyRhythm = () => {
-    update({ lastPractice: draft });
+    update({ lastPractice: withValidSlowing(draft) });
     router.dismissTo('/');
   };
 
@@ -73,7 +102,7 @@ export default function AdjustRhythm() {
       footer={
         <>
           <AppText variant="label" style={styles.summary} accessibilityLiveRegion="polite">
-            {describePlan(draft.steps, draft.target)} · guided {formatPace(plan.breathsPerMinute)} breaths/min
+            {describePlan(draft.steps, draft.target, slowing)} · guided {describePace(plan)} breaths/min
           </AppText>
           <Button title="Use this rhythm" onPress={applyRhythm} />
         </>
@@ -147,8 +176,41 @@ export default function AdjustRhythm() {
         })}
       </View>
       <AppText variant="label">
-        Inhale and exhale: 1–20 s. Holds: Off or 1–20 s.{increment === 0.5 ? ' This practice moves in half seconds.' : ''}
+        Inhale and exhale: 1–20 s. Holds: Off or 1–20 s.{increment === 0.5 && !custom ? ' This practice moves in half seconds.' : ''}
       </AppText>
+      {custom ? <SwitchRow label="Half-second steps" description="Set each step in half seconds" value={halfSteps} onChange={toggleHalfSteps} /> : null}
+
+      {canSlow(draft) && inhale && exhale ? (
+        <View style={styles.group}>
+          <SwitchRow label="Slow down gradually" description="Across the whole session" value={!!slowing} onChange={toggleSlowing} />
+          {slowing ? (
+            <>
+              <Stepper
+                label="End · inhale"
+                display={`${slowing.inhale}s`}
+                spoken={`${slowing.inhale} seconds`}
+                canDecrement={slowing.inhale - 0.5 >= inhale.seconds}
+                canIncrement={slowing.inhale < MAX_STEP_SECONDS}
+                onDecrement={() => setEnd('inhale', -1)}
+                onIncrement={() => setEnd('inhale', 1)}
+              />
+              <Stepper
+                label="End · exhale"
+                display={`${slowing.exhale}s`}
+                spoken={`${slowing.exhale} seconds`}
+                canDecrement={slowing.exhale - 0.5 >= exhale.seconds}
+                canIncrement={slowing.exhale < MAX_STEP_SECONDS}
+                onDecrement={() => setEnd('exhale', -1)}
+                onIncrement={() => setEnd('exhale', 1)}
+              />
+              <AppText variant="label">
+                {formatPace(plan.breathsPerMinute)} breaths/min at the start, {formatPace(plan.endBreathsPerMinute)} at the end. Each round is a
+                little longer than the last; holds stay the same.
+              </AppText>
+            </>
+          ) : null}
+        </View>
+      ) : null}
       {draft.steps.some((s) => s.kind === 'rest') ? <AppText variant="label">Rest is the pause after exhaling.</AppText> : null}
 
       <ButtonRow>
@@ -156,13 +218,13 @@ export default function AdjustRhythm() {
           title="Save as my rhythm"
           variant="secondary"
           style={styles.flex}
-          onPress={() => router.push({ pathname: '/save-rhythm', params: { practice: JSON.stringify(draft) } })}
+          onPress={() => router.push({ pathname: '/save-rhythm', params: { practice: JSON.stringify(withValidSlowing(draft)) } })}
         />
         <Button
           title="Share"
           variant="secondary"
           style={styles.flex}
-          onPress={() => router.push({ pathname: '/share', params: { practice: JSON.stringify(draft) } })}
+          onPress={() => router.push({ pathname: '/share', params: { practice: JSON.stringify(withValidSlowing(draft)) } })}
         />
       </ButtonRow>
     </Screen>

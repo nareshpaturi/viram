@@ -3,7 +3,7 @@
  * an adjusted library technique, or a received link. Every rhythm passes the
  * share-link rules on the way in and on the way out.
  */
-import type { RhythmStep, Target } from '../breathing/rhythm';
+import { checkSlowing, type RhythmStep, type Slowing, type Target } from '../breathing/rhythm';
 import { newId, type Db } from '../storage/db';
 import { targetColumns, targetFrom } from '../history/repository';
 import { validateRhythm } from '../sharing/link';
@@ -18,6 +18,8 @@ export interface SavedRhythm {
   steps: RhythmStep[];
   target: Target;
   techniqueId: string | null;
+  /** Gradual slowing (FR-24), for coherent breathing and custom rhythms. */
+  slowing: Slowing | null;
   origin: RhythmOrigin;
   createdAt: number;
   updatedAt: number;
@@ -37,9 +39,10 @@ interface Row {
   source: string;
   created_at: number;
   updated_at: number;
+  slowing: string | null;
 }
 
-const COLUMNS = 'id, name, steps, target_kind, target_value, technique_id, source, created_at, updated_at';
+const COLUMNS = 'id, name, steps, target_kind, target_value, technique_id, source, created_at, updated_at, slowing';
 
 function fromRow(row: Row): SavedRhythm | null {
   let steps: unknown;
@@ -56,7 +59,13 @@ function fromRow(row: Row): SavedRhythm | null {
     techniqueId: row.technique_id,
   });
   if (!checked || !origin) return null;
-  return { id: row.id, ...checked, origin, createdAt: row.created_at, updatedAt: row.updated_at };
+  let slowing: unknown = null;
+  try {
+    slowing = row.slowing === null ? null : JSON.parse(row.slowing);
+  } catch {
+    // Unreadable slowing is dropped; the rhythm stays.
+  }
+  return { id: row.id, ...checked, slowing: checkSlowing(checked.techniqueId, checked.steps, slowing) || null, origin, createdAt: row.created_at, updatedAt: row.updated_at };
 }
 
 /** Same name, steps, and target: saving again would add nothing. */
@@ -65,6 +74,7 @@ export function sameRhythm(a: Omit<SavedRhythm, 'id' | 'origin' | 'createdAt' | 
     a.name === b.name &&
     a.techniqueId === b.techniqueId &&
     JSON.stringify(a.target) === JSON.stringify(b.target) &&
+    JSON.stringify(a.slowing ?? null) === JSON.stringify(b.slowing ?? null) &&
     a.steps.length === b.steps.length &&
     a.steps.every((s, i) => s.kind === b.steps[i].kind && s.seconds === b.steps[i].seconds && s.side === b.steps[i].side)
   );
@@ -84,7 +94,7 @@ export function rhythmsRepository(db: Db, now: () => number = Date.now) {
 
   const insert = (rhythm: SavedRhythm): void => {
     const [targetKind, targetValue] = targetColumns(rhythm.target);
-    db.runSync(`INSERT INTO rhythms (${COLUMNS}) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, [
+    db.runSync(`INSERT INTO rhythms (${COLUMNS}) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [
       rhythm.id,
       rhythm.name,
       JSON.stringify(rhythm.steps),
@@ -94,6 +104,7 @@ export function rhythmsRepository(db: Db, now: () => number = Date.now) {
       rhythm.origin,
       rhythm.createdAt,
       rhythm.updatedAt,
+      rhythm.slowing ? JSON.stringify(rhythm.slowing) : null,
     ]);
   };
 
@@ -105,9 +116,11 @@ export function rhythmsRepository(db: Db, now: () => number = Date.now) {
     count,
 
     /** Never overwrites: at 20 it reports the limit, and an identical rhythm reports the duplicate. */
-    save(input: { name: string; steps: RhythmStep[]; target: Target; techniqueId: string | null; origin: RhythmOrigin }): SaveResult {
-      const checked = validateRhythm(input);
-      if (!checked) return { ok: false, reason: 'invalid' };
+    save(input: { name: string; steps: RhythmStep[]; target: Target; techniqueId: string | null; slowing?: Slowing | null; origin: RhythmOrigin }): SaveResult {
+      const valid = validateRhythm(input);
+      const slowing = valid && checkSlowing(valid.techniqueId, valid.steps, input.slowing);
+      if (!valid || slowing === false) return { ok: false, reason: 'invalid' };
+      const checked = { ...valid, slowing };
       const existing = list().find((r) => sameRhythm(r, checked));
       if (existing) return { ok: false, reason: 'duplicate', existing };
       if (count() >= MAX_RHYTHMS) return { ok: false, reason: 'limit' };

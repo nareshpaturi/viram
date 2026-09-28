@@ -42,6 +42,11 @@ describe('share links', () => {
     expect(decodeShareLink(encodeShareLink(hindi))).toEqual({ ok: true, rhythm: hindi });
   });
 
+  it('round-trips half seconds from the v1.1 custom builder', () => {
+    const half: SharedRhythm = { ...custom, steps: custom.steps.map((s, i) => ({ ...s, seconds: i === 0 ? 4.5 : s.seconds })) };
+    expect(decodeShareLink(encodeShareLink(half))).toEqual({ ok: true, rhythm: half });
+  });
+
   it('accepts the app scheme and a bare payload', () => {
     const payload = encodeShareLink(custom).split('/r/')[1];
     expect(decodeShareLink(`viram://r/${payload}`).ok).toBe(true);
@@ -64,7 +69,7 @@ describe('share links', () => {
     ['rounds zero', '1__r0_i4-h4-e4-r4_QQ'],
     ['inhale over 20', '1__m5_i21-h4-e4-r4_QQ'],
     ['inhale 0', '1__m5_i0-h4-e4-r4_QQ'],
-    ['half seconds on custom', '1__m5_i4.5-h4-e4-r4_QQ'],
+    ['quarter seconds on custom', '1__m5_i4.25-h4-e4-r4_QQ'],
     ['five custom steps', '1__m5_i4-h4-e4-r4-r4_QQ'],
     ['custom out of order', '1__m5_h4-i4-e4-r4_QQ'],
     ['sides on custom', '1__m5_i4L-h4-e4-r4_QQ'],

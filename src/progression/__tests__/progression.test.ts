@@ -29,6 +29,7 @@ const record = (practice: Practice, startedAt: number, change: Partial<SessionRe
   parts: null,
   program: null,
   health: 'none',
+  slowing: null,
   ...change,
 });
 

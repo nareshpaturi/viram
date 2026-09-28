@@ -10,5 +10,12 @@ export function rhythmSubtitle(rhythm: SavedRhythm): string {
 }
 
 export function practiceFromRhythm(rhythm: SavedRhythm): Practice {
-  return { source: { kind: 'rhythm', id: rhythm.id }, name: rhythm.name, techniqueId: rhythm.techniqueId, steps: rhythm.steps, target: rhythm.target };
+  return {
+    source: { kind: 'rhythm', id: rhythm.id },
+    name: rhythm.name,
+    techniqueId: rhythm.techniqueId,
+    steps: rhythm.steps,
+    target: rhythm.target,
+    slowing: rhythm.slowing,
+  };
 }

@@ -6,7 +6,7 @@
  * session carries its program and session number (FR-20).
  */
 import type { CueMode } from '../breathing/timeline';
-import type { RhythmStep, Target } from '../breathing/rhythm';
+import { isValidSlowing, type RhythmStep, type Slowing, type Target } from '../breathing/rhythm';
 import type { Db } from '../storage/db';
 import type { PracticeSource } from '../practice/practice';
 
@@ -47,7 +47,10 @@ export interface SessionRecord {
   steps: RhythmStep[];
   target: Target;
   completedRounds: number;
+  /** At the start, with gradual slowing. */
   breathsPerMinute: number;
+  /** Gradual slowing (FR-24) of a single practice. */
+  slowing: Slowing | null;
   outcome: 'completed' | 'ended';
   cueMode: CueMode;
   haptics: boolean;
@@ -76,6 +79,7 @@ interface Row {
   parts: string | null;
   program: string | null;
   health_state: string;
+  slowing: string | null;
 }
 
 const COLUMN_NAMES: (keyof Row)[] = [
@@ -97,6 +101,7 @@ const COLUMN_NAMES: (keyof Row)[] = [
   'parts',
   'program',
   'health_state',
+  'slowing',
 ];
 const COLUMNS = COLUMN_NAMES.join(', ');
 
@@ -180,6 +185,7 @@ export function recordFromRow(row: Row): SessionRecord | null {
   const health = HEALTH_STATES.find((h) => h === row.health_state);
   const partsOk = parts === null || (Array.isArray(parts) && parts.length >= 1 && parts.every(isPart));
   const programOk = program === null || isProgramTag(program);
+  const slowing = parseJson(row.slowing);
   if (!source || !isOutcome(row.outcome) || !cueMode || !isSnapshot(steps) || !Number.isFinite(row.active_ms) || !partsOk || !programOk || !health) {
     return null;
   }
@@ -194,6 +200,8 @@ export function recordFromRow(row: Row): SessionRecord | null {
     target: targetFrom(row.target_kind, row.target_value),
     completedRounds: row.completed_rounds,
     breathsPerMinute: row.breaths_per_minute,
+    // A slowing that no longer checks out is dropped; the record stays.
+    slowing: isValidSlowing(steps, slowing) ? slowing : null,
     outcome: row.outcome,
     cueMode,
     haptics: row.haptics === 1,
@@ -224,6 +232,7 @@ function rowFrom(record: SessionRecord): Row {
     parts: record.parts ? JSON.stringify(record.parts) : null,
     program: record.program ? JSON.stringify(record.program) : null,
     health_state: record.health,
+    slowing: record.slowing ? JSON.stringify(record.slowing) : null,
   };
 }
 
@@ -236,8 +245,8 @@ export function parseRecord(value: unknown): SessionRecord | null {
   if (typeof s.source !== 'object' || s.source === null || !isTarget(s.target)) return null;
   if (s.techniqueId !== null && typeof s.techniqueId !== 'string') return null;
   try {
-    // Records exported before v1.1 have no parts, program, or Health state.
-    return recordFromRow(rowFrom({ ...s, parts: s.parts ?? null, program: s.program ?? null, health: s.health ?? 'none' }));
+    // Records exported before v1.1 have no parts, program, Health state, or slowing.
+    return recordFromRow(rowFrom({ ...s, parts: s.parts ?? null, program: s.program ?? null, health: s.health ?? 'none', slowing: s.slowing ?? null }));
   } catch {
     return null;
   }

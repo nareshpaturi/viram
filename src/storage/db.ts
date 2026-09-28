@@ -110,6 +110,11 @@ export const MIGRATIONS: readonly string[] = [
     last_session_at INTEGER
   );
   `,
+  // 3 · v1.1: gradual slowing on records and saved rhythms (FR-24).
+  `
+  ALTER TABLE sessions ADD COLUMN slowing TEXT;
+  ALTER TABLE rhythms ADD COLUMN slowing TEXT;
+  `,
 ];
 
 export class MigrationError extends Error {

@@ -14,7 +14,7 @@ import * as guide from '../audio/guide';
 import { CLIP_MS } from '../audio/manifest.generated';
 import { beginTimingLog, markSegment, markTiming } from '../audio/timingLog';
 import { formatClock, stepLabel } from '../breathing/describe';
-import { stepAt } from '../breathing/rhythm';
+import { planStepAt } from '../breathing/rhythm';
 import {
   LEAD_MS,
   complete,
@@ -116,6 +116,7 @@ function buildRecord(
     steps: first.steps,
     target: first.target,
     breathsPerMinute: plans[0].breathsPerMinute,
+    slowing: single ? (first.slowing ?? null) : null,
     outcome: result.outcome,
     cueMode: meta.cueMode,
     haptics: meta.haptics,
@@ -137,7 +138,7 @@ export function usePracticeSession({ run, preferences, quickStart, night, onIntr
     volume: preferences.cueVolume,
     mixWithOthers: preferences.otherAudio === 'alongside',
   }));
-  const [plans] = useState(() => run.parts.map((p) => sessionPlan(p.steps, p.target)));
+  const [plans] = useState(() => run.parts.map((p) => sessionPlan(p.steps, p.target, p.slowing ?? null)));
   const names = run.parts.map((p) => p.name);
   // Decided once per run, like the settings. Only the first practice is introduced.
   const [intro] = useState(() => {
@@ -162,7 +163,7 @@ export function usePracticeSession({ run, preferences, quickStart, night, onIntr
   );
 
   const stepLabelAt = useCallback(
-    (part: number, planMs: number) => stepLabel(plans[part].steps[stepAt(plans[part].steps, planMs).index]),
+    (part: number, planMs: number) => stepLabel(plans[part].steps[planStepAt(plans[part], planMs).index]),
     [plans],
   );
 
@@ -197,7 +198,7 @@ export function usePracticeSession({ run, preferences, quickStart, night, onIntr
         part: state.part,
         reason: state.reason,
         confirmingEnd: state.confirmingEnd,
-        roundNumber: Math.floor(state.resumePlanMs / plan.roundMs) + 1,
+        roundNumber: planStepAt(plan, state.resumePlanMs).round + 1,
         rounds: plan.rounds,
         remainingMs: plan.durationMs - state.resumePlanMs,
         resumeStep: stepLabelAt(state.part, state.resumePlanMs),
@@ -310,7 +311,7 @@ export function usePracticeSession({ run, preferences, quickStart, night, onIntr
       transition(next);
       if (next.status === 'paused') {
         const plan = plans[next.part];
-        const round = Math.floor(next.resumePlanMs / plan.roundMs) + 1;
+        const round = planStepAt(plan, next.resumePlanMs).round + 1;
         guide.setNowPlaying(run.name, `Paused · round ${round} of ${plan.rounds}, ${formatClock(plan.durationMs - next.resumePlanMs)} left`);
       }
     },

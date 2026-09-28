@@ -62,7 +62,7 @@ export default function RoutineDetail() {
                 <AppText variant="label">{practice ? describeRhythm(practice.steps) : 'Choose another practice in Edit.'}</AppText>
               </View>
               <AppText variant="label" style={styles.time}>
-                {practice ? formatClock(sessionPlan(practice.steps, practice.target).durationMs) : `${segment.minutes} min`}
+                {practice ? formatClock(sessionPlan(practice.steps, practice.target, practice.slowing ?? null).durationMs) : `${segment.minutes} min`}
               </AppText>
             </View>
           );

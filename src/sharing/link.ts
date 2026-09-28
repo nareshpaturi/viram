@@ -125,7 +125,7 @@ export function findTechnique(id: string): Technique | undefined {
 
 /**
  * Without a technique the steps must fit the custom builder: exactly
- * inhale, hold, exhale, rest in whole seconds. With one they must match that
+ * inhale, hold, exhale, rest in whole or half seconds. With one they must match that
  * installed, shareable technique's structure and sides, and its route and
  * cue come from the library.
  */
@@ -139,7 +139,8 @@ export function validateRhythm(input: SharedRhythm, options: { anyMinutes?: bool
     const fits =
       input.steps.length === 4 &&
       input.steps.every(
-        (s, i) => s.kind === CUSTOM_KINDS[i] && !s.side && !s.route && !s.cue && isValidSeconds(s.kind, s.seconds, 1),
+        // v1.1: the custom builder offers half seconds (FR-01).
+        (s, i) => s.kind === CUSTOM_KINDS[i] && !s.side && !s.route && !s.cue && isValidSeconds(s.kind, s.seconds, 0.5),
       );
     return fits ? { name, steps: input.steps.map(({ kind, seconds }) => ({ kind, seconds })), target: input.target, techniqueId: null } : null;
   }

@@ -72,7 +72,7 @@ export function decodePayload(payload) {
     if (!name) return null;
 
     if (techniqueId === '') {
-      const fits = steps.length === 4 && steps.every((s, i) => s.kind === CUSTOM[i] && !s.side && validSeconds(s.kind, s.seconds, 1));
+      const fits = steps.length === 4 && steps.every((s, i) => s.kind === CUSTOM[i] && !s.side && validSeconds(s.kind, s.seconds, 0.5));
       return fits ? { name, steps, target, technique: null } : null;
     }
     const technique = TECHNIQUES[techniqueId];

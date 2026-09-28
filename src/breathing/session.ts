@@ -13,7 +13,7 @@
  * counts as practice time. Everything the screen shows is derived from
  * (state, clock) by `readPosition`; nothing here owns a timer.
  */
-import { planFor, stepAt, type Plan, type RhythmStep, type StepPosition, type Target } from './rhythm';
+import { planFor, planStepAt, type RhythmStep, type Slowing, type StepPlan, type StepPosition, type Target } from './rhythm';
 
 export const LEAD_MS = 3000;
 /** The routine transition screen: five quiet seconds, not practice time. */
@@ -55,12 +55,10 @@ export type SessionState =
   | { status: 'finished'; outcome: 'completed' | 'ended'; parts: PartResult[] }
   | { status: 'cancelled' };
 
-export interface SessionPlan extends Plan {
-  steps: readonly RhythmStep[];
-}
+export type SessionPlan = StepPlan;
 
-export function sessionPlan(steps: readonly RhythmStep[], target: Target): SessionPlan {
-  return { ...planFor(steps, target), steps };
+export function sessionPlan(steps: readonly RhythmStep[], target: Target, slowing: Slowing | null = null): SessionPlan {
+  return { ...planFor(steps, target, slowing), steps, slowing };
 }
 
 export const initialState = (withIntro: boolean): SessionState => (withIntro ? { status: 'intro' } : settle());
@@ -132,7 +130,7 @@ export function readPosition(plans: readonly SessionPlan[], segment: Segment, cl
   const local = clockMs - span.offsetMs;
   const guidedMs = Math.max(0, local - span.leadMs);
   const planMs = Math.min(plan.durationMs, span.startPlanMs + guidedMs);
-  const step = stepAt(plan.steps, Math.min(planMs, plan.durationMs - 1));
+  const step = planStepAt(plan, Math.min(planMs, plan.durationMs - 1));
   const inLead = local < span.leadMs;
   return {
     part: span.part,
@@ -197,7 +195,7 @@ export function endEarly(plans: readonly SessionPlan[], state: SessionState): Se
   if (state.status !== 'paused') return state;
   const current: PartResult = {
     activeMs: state.activeMs,
-    completedRounds: Math.floor(state.resumePlanMs / plans[state.part].roundMs),
+    completedRounds: planStepAt(plans[state.part], state.resumePlanMs).round,
     outcome: 'ended',
   };
   return { status: 'finished', outcome: 'ended', parts: [...state.done, current] };

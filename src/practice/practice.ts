@@ -6,7 +6,7 @@
  */
 import { LIBRARY } from '../content/library';
 import type { Technique } from '../content/types';
-import type { Increment, RhythmStep, Target } from '../breathing/rhythm';
+import { checkSlowing, SLOWING_TECHNIQUES, type Increment, type RhythmStep, type Slowing, type Target } from '../breathing/rhythm';
 import { findTechnique, validateRhythm } from '../sharing/link';
 
 export type PracticeSource = { kind: 'technique'; id: string } | { kind: 'rhythm'; id: string } | { kind: 'custom' };
@@ -17,6 +17,8 @@ export interface Practice {
   techniqueId: string | null;
   steps: RhythmStep[];
   target: Target;
+  /** Gradual slowing (FR-24), for coherent breathing and custom rhythms only. */
+  slowing?: Slowing | null;
 }
 
 export const DEFAULT_TECHNIQUE_ID = 'sama-vritti';
@@ -109,5 +111,14 @@ export function parsePractice(value: unknown, options: { anyMinutes?: boolean } 
   const techniqueId = typeof v.techniqueId === 'string' ? v.techniqueId : null;
   if (source.kind === 'technique' && source.id !== techniqueId) return null;
   const rhythm = validateRhythm({ name: String(v.name ?? ''), steps: v.steps, target: v.target, techniqueId }, options);
-  return rhythm ? { source, name: rhythm.name, techniqueId: rhythm.techniqueId, steps: rhythm.steps, target: rhythm.target } : null;
+  if (!rhythm) return null;
+  const practice: Practice = { source, name: rhythm.name, techniqueId: rhythm.techniqueId, steps: rhythm.steps, target: rhythm.target };
+  const slowing = checkSlowing(practice.techniqueId, practice.steps, v.slowing);
+  if (slowing === false) return null;
+  return slowing ? { ...practice, slowing } : practice;
+}
+
+/** Gradual slowing is offered for coherent breathing and custom rhythms (FR-24). */
+export function canSlow(practice: Pick<Practice, 'techniqueId'>): boolean {
+  return SLOWING_TECHNIQUES.includes(practice.techniqueId);
 }

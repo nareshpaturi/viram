@@ -7,7 +7,7 @@
 import { cueFor, type CueId } from '../content/voice';
 import { LEAD_MS, segmentEndMs, segmentLayout, type Segment, type SessionPlan } from './session';
 import { formatClock } from './describe';
-import { boundaries, stepMs, type StepKind } from './rhythm';
+import { planBoundaries, stepMs, type StepKind } from './rhythm';
 
 export type CueMode = 'voice' | 'tones' | 'silent';
 export type ToneSet = 'soft-bells' | 'wood' | 'chimes';
@@ -76,9 +76,9 @@ export function buildSchedule(
   withCompletion = true,
 ): SegmentSchedule {
   const firstStep = plan.steps.findIndex((s) => s.seconds > 0);
-  const cues: Cue[] = boundaries(plan.steps, startPlanMs, plan.durationMs).map(({ atMs, round, index }, i) => ({
+  const cues: Cue[] = planBoundaries(plan, startPlanMs, plan.durationMs).map(({ atMs, round, index, step }, i) => ({
     atMs: leadMs + atMs - startPlanMs,
-    sound: soundForStep(settings, plan.steps[index], round + 1, clipMs),
+    sound: soundForStep(settings, step, round + 1, clipMs),
     haptic: settings.haptics,
     nowPlaying: i === 0 || index === firstStep ? roundLine(round + 1, plan.rounds, plan.durationMs - atMs) : null,
   }));

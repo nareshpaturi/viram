@@ -23,6 +23,7 @@ const record = (id: string, practiceId: string): SessionRecord => {
     parts: null,
     program: null,
     health: 'none',
+  slowing: null,
   };
 };
 

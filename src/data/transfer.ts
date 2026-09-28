@@ -4,6 +4,7 @@
  * rules and every record for shape; any problem rejects the whole file.
  * Merging is by record ID, so importing the same file twice adds nothing.
  */
+import { checkSlowing } from '../breathing/rhythm';
 import { parseRecord, type SessionRecord } from '../history/repository';
 import { MAX_RHYTHMS, type SavedRhythm } from '../rhythms/repository';
 import { MAX_ROUTINES, validateRoutine, type Routine } from '../routines/repository';
@@ -68,7 +69,9 @@ function checkRhythm(value: unknown): SavedRhythm | null {
   if (typeof r.id !== 'string' || !r.id || !['custom', 'adjusted', 'link'].includes(r.origin)) return null;
   if (!Number.isFinite(r.createdAt) || !Number.isFinite(r.updatedAt)) return null;
   const checked = validateRhythm({ name: r.name, steps: r.steps, target: r.target, techniqueId: r.techniqueId ?? null });
-  return checked && { id: r.id, ...checked, origin: r.origin, createdAt: r.createdAt, updatedAt: r.updatedAt };
+  const slowing = checked && checkSlowing(checked.techniqueId, checked.steps, r.slowing);
+  if (!checked || slowing === false) return null;
+  return { id: r.id, ...checked, slowing, origin: r.origin, createdAt: r.createdAt, updatedAt: r.updatedAt };
 }
 
 function checkRoutine(value: unknown): Routine | null {

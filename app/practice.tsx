@@ -213,7 +213,9 @@ function Body({ view, run, rounds, guideSize, reducedMotion, showLockTip, quickS
       const step = practice.steps[position.step.index];
       const activeSteps = practice.steps.filter((s) => s.seconds > 0);
       const stepNumber = practice.steps.slice(0, position.step.index + 1).filter((s) => s.seconds > 0).length;
-      const halfSeconds = practice.steps.some((s) => !Number.isInteger(s.seconds));
+      // Half-second rhythms and gradual slowing show a ring instead of whole-second counts.
+      const seconds = position.step.durationMs / 1000;
+      const halfSeconds = !!practice.slowing || practice.steps.some((s) => !Number.isInteger(s.seconds));
       const secondsLeft = halfSeconds ? null : Math.ceil((position.step.durationMs - position.step.elapsedMs) / 1000);
       const route = routeLabel(step);
       const caption = captionFor(practice, position.step.index) ?? [practice.name, subtitleOf(practice)].filter(Boolean).join(' · ');
@@ -243,7 +245,7 @@ function Body({ view, run, rounds, guideSize, reducedMotion, showLockTip, quickS
               {stepLabel(step)}
             </AppText>
             {route ? <AppText variant="bodyStrong" style={[styles.centerText, styles.route]}>{route}</AppText> : null}
-            <AppText style={[styles.centerText, styles.muted]}>{halfSeconds ? `${caption} ${step.seconds} seconds.` : caption}</AppText>
+            <AppText style={[styles.centerText, styles.muted]}>{halfSeconds ? `${caption} ${seconds} seconds.` : caption}</AppText>
           </View>
           <Button title="Pause" variant="onPine" onPress={actions.pause} />
         </View>

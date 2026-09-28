@@ -4,7 +4,7 @@ import type { Practice } from '../practice/practice';
 
 /** Planned practice time, each practice rounded up to its own whole rounds (FR-14). */
 export function routineDurationMs(parts: readonly Practice[]): number {
-  return plannedDurationMs(parts.map((p) => sessionPlan(p.steps, p.target)));
+  return plannedDurationMs(parts.map((p) => sessionPlan(p.steps, p.target, p.slowing ?? null)));
 }
 
 /** “3 practices · 12:00” */

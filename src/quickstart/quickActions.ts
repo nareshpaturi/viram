@@ -17,7 +17,14 @@ export interface QuickAction {
 /** The single practice a record ran; routine records have none. */
 export function practiceFromRecord(record: SessionRecord): Practice | null {
   if (record.parts || record.source.kind === 'routine') return null;
-  return parsePractice({ source: record.source, name: record.name, techniqueId: record.techniqueId, steps: record.steps, target: record.target });
+  return parsePractice({
+    source: record.source,
+    name: record.name,
+    techniqueId: record.techniqueId,
+    steps: record.steps,
+    target: record.target,
+    slowing: record.slowing,
+  });
 }
 
 export function quickActionItems(last: Practice | null, history: readonly SessionRecord[]): QuickAction[] {

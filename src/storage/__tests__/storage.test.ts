@@ -43,6 +43,7 @@ const record = (id: string, overrides: Partial<SessionRecord> = {}): SessionReco
   parts: null,
   program: null,
   health: 'none',
+  slowing: null,
   ...overrides,
 });
 
@@ -275,5 +276,59 @@ describe('migration 1 → 2', () => {
     migrate(db);
     expect(schemaVersion(db)).toBe(MIGRATIONS.length);
     expect(createStores(db).history.get('old')).toMatchObject({ name: 'Sama Vritti', parts: null, program: null, health: 'none' });
+  });
+});
+
+describe('gradual slowing (migration 3)', () => {
+  const coherent = [
+    { kind: 'inhale' as const, seconds: 5.5 },
+    { kind: 'exhale' as const, seconds: 5.5 },
+  ];
+  const slowing = { inhale: 6.5, exhale: 6.5 };
+
+  it('keeps v1.0 rhythms and records, with no slowing', () => {
+    const db = memoryDb();
+    migrate(db, MIGRATIONS.slice(0, 2));
+    db.runSync(
+      "INSERT INTO sessions (id, started_at, active_ms, practice_kind, practice_ref, technique_id, name, steps, target_kind, target_value, completed_rounds, breaths_per_minute, outcome, cue_mode, haptics) VALUES ('old', 1, 60000, 'custom', NULL, NULL, 'Custom rhythm', ?, 'minutes', 5, 16, 3.3, 'completed', 'voice', 1)",
+      [JSON.stringify(custom)],
+    );
+    db.runSync(
+      "INSERT INTO rhythms (id, name, steps, target_kind, target_value, technique_id, source, created_at, updated_at) VALUES ('r1', 'Evening', ?, 'minutes', 5, NULL, 'custom', 1, 1)",
+      [JSON.stringify(custom)],
+    );
+    migrate(db);
+    const after = createStores(db);
+    expect(after.history.get('old')?.slowing).toBeNull();
+    expect(after.rhythms.list()[0]).toMatchObject({ name: 'Evening', slowing: null });
+  });
+
+  it('saves slowing with records and My rhythms, and never on other techniques', () => {
+    const { history, rhythms } = freshStores();
+    history.save(record('s', { techniqueId: 'coherent', source: { kind: 'technique', id: 'coherent' }, steps: coherent, slowing }));
+    expect(history.get('s')?.slowing).toEqual(slowing);
+    const saved = rhythms.save({ name: 'Wind down', steps: coherent, target: { minutes: 10 }, techniqueId: 'coherent', slowing, origin: 'adjusted' });
+    expect(saved.ok && saved.rhythm.slowing).toEqual(slowing);
+    expect(rhythms.list()[0].slowing).toEqual(slowing);
+    // The same rhythm without slowing is a different rhythm.
+    expect(rhythms.save({ name: 'Wind down', steps: coherent, target: { minutes: 10 }, techniqueId: 'coherent', origin: 'adjusted' }).ok).toBe(true);
+    const box = practiceFromTechnique(LIBRARY.find((t) => t.id === 'sama-vritti')!);
+    expect(rhythms.save({ name: 'Box', steps: box.steps, target: box.target, techniqueId: 'sama-vritti', slowing: { inhale: 5, exhale: 5 }, origin: 'adjusted' })).toMatchObject({
+      ok: false,
+      reason: 'invalid',
+    });
+  });
+
+  it('carries slowing through export and import, and rejects one that does not fit', () => {
+    const source = freshStores();
+    source.rhythms.save({ name: 'Wind down', steps: coherent, target: { minutes: 10 }, techniqueId: 'coherent', slowing, origin: 'adjusted' });
+    const file = buildExport(source);
+    const target = freshStores();
+    const check = checkImport(JSON.stringify(file), target);
+    if (!check.ok) throw new Error(check.reason);
+    applyImport(check.plan, target);
+    expect(target.rhythms.list()[0].slowing).toEqual(slowing);
+    const bad = { ...file, rhythms: file.rhythms.map((r) => ({ ...r, slowing: { inhale: 4, exhale: 4 } })) };
+    expect(checkImport(JSON.stringify(bad), freshStores())).toEqual({ ok: false, reason: 'invalid' });
   });
 });
