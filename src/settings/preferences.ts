@@ -2,6 +2,7 @@
  * User preferences (FR-03, FR-13, and the PRD data model). Stored as one
  * JSON value per key; anything unreadable falls back to its default.
  */
+import { Platform } from 'react-native';
 import type { CueMode, HapticStrength, ToneSet } from '../breathing/timeline';
 import type { Db } from '../storage/db';
 import { parsePractice, type Practice } from '../practice/practice';
@@ -35,7 +36,10 @@ export const DEFAULT_PREFERENCES: Preferences = {
   haptics: true,
   hapticStrength: 'medium',
   cueVolume: 0.8,
-  otherAudio: 'alongside',
+  // iOS shows lock-screen controls only for a session that pauses other audio
+  // (docs/decisions/locked-audio.md), so that is its default. Android keeps
+  // “Play along”: its media notification works either way and cues duck music.
+  otherAudio: Platform.OS === 'ios' ? 'pause' : 'alongside',
   toneSet: 'soft-bells',
   keepScreenOn: false,
   introductions: 'first',

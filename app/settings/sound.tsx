@@ -30,7 +30,7 @@ export default function CuesAndSound() {
         />
       </Section>
 
-      <Section title="OTHER AUDIO" help="Music and podcasts. Play along keeps them going and lowers them briefly for each cue.">
+      <Section title="OTHER AUDIO" help="Music and podcasts. Play along keeps them playing under the cues. Pause it stops them while you practice and shows the practice on your lock screen.">
         <Segmented
           label="Other audio"
           value={preferences.otherAudio}

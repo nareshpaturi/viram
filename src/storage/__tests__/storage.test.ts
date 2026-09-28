@@ -140,6 +140,10 @@ describe('my rhythms', () => {
 });
 
 describe('preferences', () => {
+  it('pauses other audio by default on iOS, for lock-screen controls', () => {
+    expect(freshStores().preferences.read().otherAudio).toBe('pause');
+  });
+
   it('defaults, persists, and ignores bad values', () => {
     const { preferences } = freshStores();
     expect(preferences.read()).toEqual(DEFAULT_PREFERENCES);
