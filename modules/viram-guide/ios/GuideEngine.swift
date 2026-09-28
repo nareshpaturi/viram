@@ -68,6 +68,8 @@ final class GuideEngine {
   private var finishing = false
   /// Identifies the current one-shot sound, so a replaced one can't stop the new one.
   private var onceToken = 0
+  /// Developer timing log: report when each cue actually played out.
+  var timingLog = false
   private var timer: DispatchSourceTimer?
   private var observers: [NSObjectProtocol] = []
   private var remoteTargets: [(MPRemoteCommand, Any)] = []
@@ -328,12 +330,34 @@ final class GuideEngine {
       let host = startHost + Self.ticks(ms: cue.atMs)
       if cue.atMs >= now - 50 {
         if let sound = cue.sound, let buffer = buffers[sound] {
-          voices[nextCue % voices.count].scheduleBuffer(buffer, at: AVAudioTime(hostTime: host), options: [], completionHandler: nil)
+          let node = voices[nextCue % voices.count]
+          let at = AVAudioTime(hostTime: host)
+          if timingLog {
+            node.scheduleBuffer(
+              buffer, at: at, options: [], completionCallbackType: .dataPlayedBack,
+              completionHandler: timingHandler(cue: cue, sound: sound, buffer: buffer))
+          } else {
+            node.scheduleBuffer(buffer, at: at, options: [], completionHandler: nil)
+          }
         }
         scheduleHaptic(cue.haptic, host: host)
         if let text = cue.nowPlaying { scheduleNowPlaying(text, host: host) }
       }
       nextCue += 1
+    }
+  }
+
+  /// When the buffer has played out, its start is now minus its length; drift
+  /// is that start against the cue's planned time on the segment clock.
+  private func timingHandler(cue: GuideCue, sound: String, buffer: AVAudioPCMBuffer) -> AVAudioPlayerNodeCompletionHandler {
+    let expected = generation
+    let segmentStart = startHost
+    let lengthMs = Double(buffer.frameLength) / Self.sampleRate * 1000
+    return { [weak self] _ in
+      let now = mach_absolute_time()
+      guard let self, self.locked({ self.generation }) == expected, now > segmentStart else { return }
+      let startedMs = Self.ms(ticks: now - segmentStart) - lengthMs
+      self.emit?("onCueTiming", ["atMs": cue.atMs, "driftMs": startedMs - cue.atMs, "sound": sound])
     }
   }
 

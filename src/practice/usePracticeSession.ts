@@ -11,6 +11,7 @@ import { AccessibilityInfo, AppState, Platform } from 'react-native';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import * as guide from '../audio/guide';
 import { CLIP_MS } from '../audio/manifest.generated';
+import { beginTimingLog, markSegment, markTiming } from '../audio/timingLog';
 import { formatClock, stepLabel } from '../breathing/describe';
 import {
   LEAD_MS,
@@ -172,6 +173,8 @@ export function usePracticeSession({ practice, preferences, quickStart, onIntroH
 
   const transition = useCallback(
     (state: SessionState) => {
+      if (state.status === 'paused' && stateRef.current?.status !== 'paused') markTiming(`Paused: ${state.reason}`);
+      if (state.status === 'finished') markTiming(state.outcome === 'completed' ? 'Completed' : 'Ended early');
       stateRef.current = state;
       render();
     },
@@ -183,6 +186,7 @@ export function usePracticeSession({ practice, preferences, quickStart, onIntroH
   const startGuidance = useCallback(
     (startPlanMs: number) => {
       const schedule = buildSchedule(plan, startPlanMs, settings.cues, guide.clipLength);
+      markSegment(startPlanMs === 0 ? 'Guidance started' : `Resumed from plan ${formatClock(startPlanMs)}`);
       guide.startSegment(schedule, {
         volume: settings.volume,
         mixWithOthers: settings.mixWithOthers,
@@ -196,9 +200,13 @@ export function usePracticeSession({ practice, preferences, quickStart, onIntroH
   const beginSettle = useCallback(() => {
     if (intro) onIntroHeard(intro.id);
     recordRef.current.startedAt = Date.now();
+    beginTimingLog(
+      practice.name,
+      `${Platform.OS} · ${settings.cues.mode} · ${settings.mixWithOthers ? 'play along' : 'pause other audio'} · ${formatClock(plan.durationMs)} planned`,
+    );
     transition(settle());
     startGuidance(0);
-  }, [intro, onIntroHeard, startGuidance, transition]);
+  }, [intro, onIntroHeard, plan.durationMs, practice.name, settings, startGuidance, transition]);
 
   // Load sounds, then introduce or settle.
   useEffect(() => {
@@ -324,7 +332,8 @@ export function usePracticeSession({ practice, preferences, quickStart, onIntroH
         if (clock < 0 || clock >= (intro ? CLIP_MS[intro.clip] ?? 0 : 0) + 400) beginSettle();
       } else if (state?.status === 'active') {
         const clock = guide.positionMs();
-        if (clock >= 0 && readPosition(plan, state.segment, clock).done) {
+        // A released segment (-1) means the guide already played it to the end.
+        if (clock < 0 || readPosition(plan, state.segment, clock).done) {
           transition(complete(plan, state));
           return;
         }
@@ -346,6 +355,12 @@ export function usePracticeSession({ practice, preferences, quickStart, onIntroH
           if (state?.status !== 'active') return;
           transition(pause(plan, state, Math.max(0, guide.positionMs()), reason));
         },
+        // Events still arrive while Android pauses JS timers on a locked screen,
+        // so a practice that ends locked is completed and saved right away.
+        onSegmentEnded: () => {
+          const state = stateRef.current;
+          if (state?.status === 'active') transition(complete(plan, state));
+        },
         onRemoteCommand: (command) => {
           if (command === 'pause') pauseFor('lockScreen');
           else if (command === 'play') resumePractice();
@@ -359,6 +374,8 @@ export function usePracticeSession({ practice, preferences, quickStart, onIntroH
     // Silent keeps going locked only where a haptic can still guide: Android with haptics on.
     const pausesOnLock = settings.cues.mode === 'silent' && (Platform.OS === 'ios' || settings.cues.haptics === null);
     const subscription = AppState.addEventListener('change', (status) => {
+      if (status === 'background') markTiming('App in background (locked or switched away)');
+      if (status === 'active') markTiming('App in foreground');
       if (status === 'background' && pausesOnLock) pauseFor('locked');
       if (status === 'active') render();
     });

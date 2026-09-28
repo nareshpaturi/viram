@@ -6,6 +6,7 @@ import { MODE_LABEL } from '../../src/components/CueControls';
 import { Screen } from '../../src/components/Screen';
 import { Segmented } from '../../src/components/Segmented';
 import { TONE_SET_LABEL } from '../../src/audio/toneSets';
+import { TIMING_LOG_ENABLED } from '../../src/audio/timingLog';
 import { usePreferences } from '../../src/settings/PreferencesProvider';
 import { stores } from '../../src/storage';
 
@@ -55,6 +56,11 @@ export default function Settings() {
       <RowGroup title="About">
         <ListRow title="About Viram" subtitle="Free promise, sources, voice" onPress={() => router.push('/settings/about')} />
       </RowGroup>
+      {TIMING_LOG_ENABLED ? (
+        <RowGroup title="Developer">
+          <ListRow title="Cue timing" subtitle="How close each cue landed to its planned time" onPress={() => router.push('/settings/timing')} />
+        </RowGroup>
+      ) : null}
     </Screen>
   );
 }
