@@ -1,10 +1,16 @@
 import { useEffect, useRef } from 'react';
 import * as Notifications from 'expo-notifications';
 import { router, usePathname } from 'expo-router';
-import { readyPractice } from '../practice/ready';
+import { readyLine } from '../practice/ready';
+import type { Preferences } from '../settings/preferences';
 import { usePreferences } from '../settings/PreferencesProvider';
 import { stores } from '../storage';
-import { isReminderResponse, reminderBody, syncReminder } from './reminder';
+import { isReminderResponse, syncReminder } from './reminder';
+
+/** Reschedules with the current ready line; call after a session changes what's next. */
+export function refreshReminder(preferences: Preferences): void {
+  syncReminder(preferences.reminder, readyLine(preferences, stores())).catch(() => undefined);
+}
 
 /**
  * Keeps the daily reminder scheduled with the current ready practice, and
@@ -15,11 +21,10 @@ export function ReminderBridge() {
   const pathname = usePathname();
   const path = useRef(pathname);
   path.current = pathname;
-  const practice = readyPractice(preferences, stores());
-  const key = JSON.stringify([preferences.reminder, reminderBody(practice)]);
+  const key = JSON.stringify([preferences.reminder, readyLine(preferences, stores())]);
 
   useEffect(() => {
-    syncReminder(preferences.reminder, practice).catch(() => undefined);
+    refreshReminder(preferences);
     // Reschedule only when the time, the switch, or the reminder text changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);

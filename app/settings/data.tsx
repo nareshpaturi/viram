@@ -99,7 +99,7 @@ export default function YourData() {
     const rhythms = plan.rhythms.newItems.length;
     const routines = plan.routines.newItems.length;
     const sessions = plan.sessions.newItems.length;
-    const nothing = rhythms === 0 && routines === 0 && sessions === 0 && !plan.preferences;
+    const nothing = rhythms === 0 && routines === 0 && sessions === 0 && !plan.preferences && plan.programs.length === 0;
     return (
       <Screen
         edges={['left', 'right']}
@@ -129,6 +129,7 @@ export default function YourData() {
         <Card>
           <Line title="My rhythms" detail={`${plan.rhythms.found} found · ${plan.rhythms.found - rhythms} already saved`} />
           <Line title="Routines" detail={`${plan.routines.found} found · ${plan.routines.found - routines} already saved`} />
+          {plan.programs.length ? <Line title="Programs" detail={`Progress in ${plan.programs.length} ${plan.programs.length === 1 ? 'program' : 'programs'}`} /> : null}
           <Line title="Practice history" detail={`${plan.sessions.found} found · ${plan.sessions.found - sessions} already here`} />
           <Line title="Settings" detail={plan.preferences ? 'Restored from the file' : 'Kept as they are now'} />
         </Card>

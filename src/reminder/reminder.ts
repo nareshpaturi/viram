@@ -6,17 +6,12 @@
  */
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
-import { describeTarget } from '../breathing/describe';
-import type { Practice } from '../practice/practice';
 import type { Reminder } from '../settings/preferences';
 
 export const REMINDER_TITLE = 'Time for a little space.';
 const CHANNEL_ID = 'daily-reminder';
 
 export type ReminderPermission = 'granted' | 'undetermined' | 'denied';
-
-/** “Nadi Shodhana · 5 min”: what Breathe will offer. */
-export const reminderBody = (practice: Practice) => `${practice.name} · ${describeTarget(practice.target)}`;
 
 /** “7:30 AM” */
 export function reminderTime({ hour, minute }: Pick<Reminder, 'hour' | 'minute'>): string {
@@ -38,7 +33,7 @@ export async function askForReminderPermission(): Promise<boolean> {
 }
 
 /** Viram schedules nothing else, so replacing everything keeps exactly one. */
-async function schedule(reminder: Reminder, practice: Practice): Promise<void> {
+async function schedule(reminder: Reminder, body: string): Promise<void> {
   await Notifications.cancelAllScheduledNotificationsAsync();
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync(CHANNEL_ID, {
@@ -47,19 +42,20 @@ async function schedule(reminder: Reminder, practice: Practice): Promise<void> {
     });
   }
   await Notifications.scheduleNotificationAsync({
-    content: { title: REMINDER_TITLE, body: reminderBody(practice), data: { kind: 'reminder' }, sound: true },
+    content: { title: REMINDER_TITLE, body, data: { kind: 'reminder' }, sound: true },
     trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour: reminder.hour, minute: reminder.minute, channelId: CHANNEL_ID },
   });
 }
 
 /**
- * Brings the scheduled reminder in line with the setting and the ready
- * practice. Never prompts; returns the permission it found so the setting
- * can say when notifications were turned off in system settings.
+ * Brings the scheduled reminder in line with the setting and what Breathe
+ * will offer (`body`, e.g. “Nadi Shodhana · 5 min”). Never prompts; returns
+ * the permission it found so the setting can say when notifications were
+ * turned off in system settings.
  */
-export async function syncReminder(reminder: Reminder, practice: Practice): Promise<ReminderPermission> {
+export async function syncReminder(reminder: Reminder, body: string): Promise<ReminderPermission> {
   const permission = await reminderPermission();
-  if (reminder.enabled && permission === 'granted') await schedule(reminder, practice);
+  if (reminder.enabled && permission === 'granted') await schedule(reminder, body);
   else await Notifications.cancelAllScheduledNotificationsAsync();
   return permission;
 }

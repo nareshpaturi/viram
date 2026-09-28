@@ -9,6 +9,8 @@ import { practiceFromTechnique } from '../../practice/practice';
 import { MAX_RHYTHMS } from '../../rhythms/repository';
 import { DEFAULT_PREFERENCES } from '../../settings/preferences';
 import { routineRun } from '../../routines/repository';
+import { findProgram } from '../../programs/definitions';
+import { start } from '../../programs/engine';
 import { MIGRATIONS, MigrationError, migrate, schemaVersion } from '../db';
 import { createStores } from '../stores';
 import { memoryDb } from './testDb';
@@ -330,5 +332,40 @@ describe('gradual slowing (migration 3)', () => {
     expect(target.rhythms.list()[0].slowing).toEqual(slowing);
     const bad = { ...file, rhythms: file.rhythms.map((r) => ({ ...r, slowing: { inhale: 4, exhale: 4 } })) };
     expect(checkImport(JSON.stringify(bad), freshStores())).toEqual({ ok: false, reason: 'invalid' });
+  });
+});
+
+describe('program enrollments', () => {
+  const foundations = findProgram('foundations')!;
+  const path = findProgram('nadi-shodhana-path')!;
+
+  it('round-trips an enrollment with its snapshot and plan', () => {
+    const { programs } = freshStores();
+    const e = start(foundations, 'e1', { time: 'morning', hour: 7, minute: 30 }, 100);
+    programs.activate({ ...e, completedSessions: 2, lastSessionAt: 200 }, 200);
+    expect(programs.active()).toMatchObject({ id: 'e1', completedSessions: 2, plan: { time: 'morning' }, definition: { sessions: foundations.sessions } });
+  });
+
+  it('keeps one active program; starting another leaves the first with its progress', () => {
+    const { programs } = freshStores();
+    programs.activate({ ...start(foundations, 'a', null, 1), completedSessions: 3 }, 1);
+    programs.activate(start(path, 'b', null, 2), 2);
+    expect(programs.active()?.programId).toBe('nadi-shodhana-path');
+    expect(programs.forProgram('foundations')).toMatchObject({ state: 'left', completedSessions: 3 });
+  });
+
+  it('exports progress and restores it only on a device with none', () => {
+    const source = freshStores();
+    source.programs.activate({ ...start(foundations, 'a', null, 1), completedSessions: 4 }, 1);
+    const file = JSON.stringify(buildExport(source));
+    const target = freshStores();
+    const check = checkImport(file, target);
+    if (!check.ok) throw new Error(check.reason);
+    applyImport(check.plan, target);
+    expect(target.programs.active()).toMatchObject({ programId: 'foundations', completedSessions: 4 });
+    const other = freshStores();
+    other.programs.activate(start(path, 'b', null, 1), 1);
+    const again = checkImport(file, other);
+    expect(again.ok && again.plan.programs).toEqual([]);
   });
 });

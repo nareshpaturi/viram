@@ -1,9 +1,7 @@
 jest.mock('expo-notifications', () => ({}));
 
-import { LIBRARY } from '../../content/library';
-import { practiceFromTechnique } from '../../practice/practice';
 import { DEFAULT_PREFERENCES, parsePreferences } from '../../settings/preferences';
-import { reminderBody, reminderTime } from '../reminder';
+import { reminderTime } from '../reminder';
 
 describe('daily reminder', () => {
   it('is off by default', () => {
@@ -15,11 +13,6 @@ describe('daily reminder', () => {
     expect(reminderTime({ hour: 0, minute: 5 })).toBe('12:05 AM');
     expect(reminderTime({ hour: 12, minute: 30 })).toBe('12:30 PM');
     expect(reminderTime({ hour: 21, minute: 0 })).toBe('9:00 PM');
-  });
-
-  it('names the ready practice and its length', () => {
-    const nadi = practiceFromTechnique(LIBRARY.find((t) => t.id === 'nadi-shodhana')!);
-    expect(reminderBody(nadi)).toBe('Nadi Shodhana · 5 min');
   });
 
   it('keeps only a well-formed reminder from storage', () => {

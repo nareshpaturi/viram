@@ -10,10 +10,12 @@ import { MAX_RHYTHMS, type SavedRhythm } from '../rhythms/repository';
 import { MAX_ROUTINES, validateRoutine, type Routine } from '../routines/repository';
 import { parsePreferences, type Preferences } from '../settings/preferences';
 import { findTechnique, validateRhythm } from '../sharing/link';
+import type { Enrollment } from '../programs/engine';
+import { enrollmentFrom } from '../programs/repository';
 import type { Stores } from '../storage/stores';
 
 export const EXPORT_FORMAT = 'viram-export';
-/** 2 adds routines (v1.1); version 1 files still import. */
+/** 2 adds routines and programs (v1.1); version 1 files still import. */
 export const EXPORT_VERSION = 2;
 const MAX_SESSIONS = 100_000;
 
@@ -23,6 +25,8 @@ export interface ExportFile {
   exportedAt: string;
   rhythms: SavedRhythm[];
   routines: Routine[];
+  /** Program progress (FR-20). */
+  programs: Enrollment[];
   sessions: SessionRecord[];
   preferences: Partial<Preferences>;
 }
@@ -42,6 +46,7 @@ export function buildExport(stores: Stores, now = new Date()): ExportFile {
     exportedAt: now.toISOString(),
     rhythms: stores.rhythms.list(),
     routines: stores.routines.list(),
+    programs: stores.programs.all(),
     sessions: stores.history.list(MAX_SESSIONS),
     preferences,
   };
@@ -57,6 +62,8 @@ export interface ImportPlan {
   sessions: { found: number; newItems: SessionRecord[] };
   /** Applied only when this device has no rhythms or history yet. */
   preferences: Partial<Preferences> | null;
+  /** Program progress, restored only when this device has none of its own. */
+  programs: Enrollment[];
 }
 
 export type ImportCheck =
@@ -102,6 +109,9 @@ export function checkImport(text: string, stores: Stores): ImportCheck {
     return { ok: false, reason: 'invalid' };
   }
   if (file.routines !== undefined && !Array.isArray(file.routines)) return { ok: false, reason: 'invalid' };
+  if (file.programs !== undefined && !Array.isArray(file.programs)) return { ok: false, reason: 'invalid' };
+  const programs = (file.programs ?? []).map(enrollmentFrom);
+  if (programs.some((e) => e === null) || programs.filter((e) => e?.state === 'active').length > 1) return { ok: false, reason: 'invalid' };
   const rhythms = file.rhythms.map(checkRhythm);
   const routines = (file.routines ?? []).map(checkRoutine);
   const sessions = file.sessions.map(checkSession);
@@ -127,6 +137,7 @@ export function checkImport(text: string, stores: Stores): ImportCheck {
       routines: { found: routines.length, newItems: newRoutines },
       sessions: { found: sessions.length, newItems: newSessions },
       preferences: fresh ? preferences : null,
+      programs: stores.programs.all().length === 0 ? (programs as Enrollment[]) : [],
     },
   };
 }
@@ -138,5 +149,6 @@ export function applyImport(plan: ImportPlan, stores: Stores): void {
     for (const routine of plan.routines.newItems) stores.routines.save(routine);
     for (const session of plan.sessions.newItems) stores.history.save(session);
     if (plan.preferences) stores.preferences.write(plan.preferences);
+    for (const enrollment of plan.programs ?? []) stores.programs.save(enrollment);
   });
 }

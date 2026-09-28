@@ -15,6 +15,19 @@ import { parseRecord, type SessionRecord } from '../src/history/repository';
 import { practiceHref } from '../src/practice/launch';
 import { subtitleOf, type Practice } from '../src/practice/practice';
 import { easierPractice, OFFER_WINDOW_MS, progressionOffer, type Offer } from '../src/progression/progression';
+import { findProgram } from '../src/programs/definitions';
+import {
+  phaseEndingAt,
+  programTotals,
+  recordSession,
+  repeatPhase,
+  sessionLine,
+  sessionRun,
+  totalSessions,
+  type Enrollment,
+} from '../src/programs/engine';
+import { SessionDots } from '../src/components/SessionDots';
+import { refreshReminder } from '../src/reminder/ReminderBridge';
 import { practiceFromRecord } from '../src/quickstart/quickActions';
 import { refreshQuickActions } from '../src/quickstart/QuickActionsBridge';
 import { NIGHT, SurfaceProvider, useSurface } from '../src/night/surface';
@@ -25,6 +38,25 @@ import { colors, spacing } from '../src/theme';
 type SaveState = 'saving' | 'saved' | 'failed' | 'leaving';
 /** What the practitioner chose for next time, if anything (FR-15). */
 type NextTime = { kind: 'next' | 'easier'; practice: Practice } | { kind: 'notNow' | 'stopped' } | null;
+/** A program session's effect on its program (FR-20). */
+type ProgramResult =
+  | { kind: 'session'; enrollment: Enrollment; repeating?: number }
+  | { kind: 'phase'; enrollment: Enrollment; phase: NonNullable<ReturnType<typeof phaseEndingAt>> }
+  | { kind: 'complete'; enrollment: Enrollment };
+
+/** Counts a saved program session once, and says what it means for the program. */
+function applyToProgram(record: SessionRecord): ProgramResult | null {
+  if (!record.program) return null;
+  const programs = stores().programs;
+  const before = programs.forProgram(record.program.id);
+  if (!before) return null;
+  const enrollment = recordSession(before, record, Date.now());
+  const counted = enrollment !== before;
+  if (counted) programs.save(enrollment);
+  if (counted && enrollment.state === 'completed') return { kind: 'complete', enrollment };
+  const phase = counted ? phaseEndingAt(enrollment.definition, record.program.session) : null;
+  return phase ? { kind: 'phase', enrollment, phase } : { kind: 'session', enrollment };
+}
 
 function save(record: SessionRecord): SaveState {
   try {
@@ -66,6 +98,7 @@ function CompleteScreen() {
   const [state, setState] = useState<SaveState>('saving');
   const [offer, setOffer] = useState<Offer | null>(null);
   const [nextTime, setNextTime] = useState<NextTime>(null);
+  const [programResult, setProgramResult] = useState<ProgramResult | null>(null);
   const easier = useMemo(() => (record ? easierPractice(record) : null), [record]);
 
   useEffect(() => {
@@ -74,6 +107,12 @@ function CompleteScreen() {
     setState(result);
     if (result === 'saved') {
       refreshQuickActions(preferences);
+      try {
+        setProgramResult(applyToProgram(record));
+        refreshReminder(preferences);
+      } catch {
+        // The practice is saved; the program catches up next time it's opened.
+      }
       // Worked out once, so answering it doesn't make it disappear mid-sentence.
       const now = Date.now();
       try {
@@ -128,6 +167,15 @@ function CompleteScreen() {
   const failed = state === 'failed';
   const saved = state === 'saved';
   const message = nextTimeMessage(nextTime, offer);
+  const viewProgram = record.program
+    ? () => router.replace({ pathname: '/program/[id]', params: { id: record.program!.id } })
+    : undefined;
+  const hero =
+    saved && programResult?.kind === 'complete'
+      ? `${programResult.enrollment.definition.shortName},\ncomplete.`
+      : saved && programResult?.kind === 'phase'
+        ? `Phase ${programResult.phase.number},\ncomplete.`
+        : null;
   return (
     <Screen
       edges={['top', 'left', 'right']}
@@ -140,7 +188,11 @@ function CompleteScreen() {
         ) : (
           <>
             <Button title="Done" onPress={done} />
-            {again ? <Button title={routine ? 'Back to routine' : 'Breathe again'} variant="secondary" onPress={again} /> : null}
+            {viewProgram ? (
+              programResult?.kind === 'complete' ? null : <Button title="View program" variant="secondary" onPress={viewProgram} />
+            ) : again ? (
+              <Button title={routine ? 'Back to routine' : 'Breathe again'} variant="secondary" onPress={again} />
+            ) : null}
           </>
         )
       }
@@ -151,7 +203,7 @@ function CompleteScreen() {
         </AppText>
       </View>
       <AppText variant="hero" accessibilityRole="header">
-        {failed ? 'Your practice finished.' : completed ? 'A little space,\nmade.' : 'A pause still counts.'}
+        {failed ? 'Your practice finished.' : (hero ?? (completed ? 'A little space,\nmade.' : 'A pause still counts.'))}
       </AppText>
       <AppText style={styles.muted}>
         {failed
@@ -160,6 +212,8 @@ function CompleteScreen() {
             ? 'Take a moment before moving on.'
             : 'Your practice is saved as ended early.'}
       </AppText>
+      {/* A phase boundary asks its question first (FR-20). */}
+      {saved && programResult?.kind === 'phase' ? <ProgramCard result={programResult} record={record} onChange={setProgramResult} /> : null}
       <StatRow>
         <Stat value={formatClock(record.activeMs)} label="Practice time" />
         {record.parts ? (
@@ -181,6 +235,7 @@ function CompleteScreen() {
       <AppText variant="label" style={failed ? styles.warning : undefined}>
         {failed ? 'Try saving again before leaving this screen.' : saved ? '✓ Saved on this device' : 'Saving…'}
       </AppText>
+      {saved && programResult && programResult.kind !== 'phase' ? <ProgramCard result={programResult} record={record} onChange={setProgramResult} /> : null}
       {saved && offer && !nextTime ? (
         <Card>
           <AppText variant="overline" accessibilityRole="header">
@@ -210,6 +265,110 @@ function CompleteScreen() {
         <Button title="Make it easier next time" variant="quiet" onPress={() => chooseNext({ kind: 'easier', practice: easier })} />
       ) : null}
     </Screen>
+  );
+}
+
+/** Session progress, a phase decision, or the program's completion (FR-20). */
+function ProgramCard({ result, record, onChange }: { result: ProgramResult; record: SessionRecord; onChange: (r: ProgramResult) => void }) {
+  const { enrollment } = result;
+  const program = enrollment.definition;
+  const total = totalSessions(enrollment);
+  const session = record.program!.session;
+
+  if (result.kind === 'complete') {
+    const minutes = Math.round(
+      stores()
+        .history.list()
+        .filter((r) => r.program?.id === program.id && r.startedAt >= enrollment.startedAt)
+        .reduce((sum, r) => sum + r.activeMs, 0) / 60_000,
+    );
+    const next = program.next ? findProgram(program.next) : undefined;
+    return (
+      <>
+        <StatRow>
+          <Stat value={String(total)} label="Sessions" />
+          <Stat value={String(minutes)} label="Minutes" />
+        </StatRow>
+        <AppText>{total} sessions, made at your own pace.</AppText>
+        <AppText variant="label">Practiced: {programTotals(program).techniques.join(', ')}</AppText>
+        {next ? (
+          <Card>
+            <AppText variant="overline" accessibilityRole="header">
+              A NEXT STEP, IF YOU LIKE
+            </AppText>
+            <AppText variant="bodyStrong">{next.name}</AppText>
+            <AppText variant="label">
+              {next.eyebrow}. {next.summary}
+            </AppText>
+            <Button title="Preview program" variant="secondary" onPress={() => router.replace({ pathname: '/program/[id]', params: { id: next.id } })} />
+          </Card>
+        ) : null}
+      </>
+    );
+  }
+
+  if (result.kind === 'phase') {
+    const nextRun = sessionRun(program, result.phase.next.first);
+    const part = nextRun?.parts[0];
+    return (
+      <Card>
+        <AppText>{result.phase.done.summary}</AppText>
+        <AppText variant="overline" accessibilityRole="header">
+          {program.name.toUpperCase()} · PHASE {result.phase.number + 1}
+        </AppText>
+        <AppText>{result.phase.next.intro}</AppText>
+        {part ? (
+          <Card muted>
+            <AppText variant="bodyStrong">
+              {describeRhythm(part.steps)} · {describePlan(part.steps, part.target)}
+            </AppText>
+          </Card>
+        ) : null}
+        <AppText variant="label">If the longer exhale feels like a strain, repeat this phase. There’s no rush.</AppText>
+        <ButtonRow>
+          <Button
+            title={`Move on to phase ${result.phase.number + 1}`}
+            style={styles.flex}
+            onPress={() => {
+              onChange({ kind: 'session', enrollment });
+              AccessibilityInfo.announceForAccessibility(`Phase ${result.phase.number + 1} is next.`);
+            }}
+          />
+          <Button
+            title="Repeat this phase"
+            variant="secondary"
+            style={styles.flex}
+            onPress={() => {
+              const repeated = repeatPhase(enrollment, result.phase.done, Date.now());
+              stores().programs.save(repeated);
+              onChange({ kind: 'session', enrollment: repeated, repeating: result.phase.number });
+              AccessibilityInfo.announceForAccessibility(`Phase ${result.phase.number} again, from session ${result.phase.done.first}.`);
+            }}
+          />
+        </ButtonRow>
+      </Card>
+    );
+  }
+
+  const nextNumber = enrollment.completedSessions + 1;
+  const next = program.sessions[nextNumber - 1];
+  return (
+    <Card>
+      <AppText variant="bodyStrong">{program.name}</AppText>
+      <AppText>
+        {result.repeating
+          ? `Phase ${result.repeating} again, from session ${nextNumber}. There’s no rush.`
+          : record.outcome === 'completed'
+            ? `Session ${session} of ${total} complete.`
+            : `Ended early, so session ${nextNumber} stays next. Nothing is lost.`}
+      </AppText>
+      <SessionDots total={total} done={enrollment.completedSessions} label={`${enrollment.completedSessions} of ${total} sessions complete.`} />
+      {next ? (
+        <AppText variant="label">
+          Next: {sessionLine(next)}.{next.introduces ? ` ${next.introduces}` : ''}
+        </AppText>
+      ) : null}
+    </Card>
   );
 }
 

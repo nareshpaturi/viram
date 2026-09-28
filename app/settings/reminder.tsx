@@ -7,11 +7,10 @@ import { Screen } from '../../src/components/Screen';
 import { Segmented } from '../../src/components/Segmented';
 import { Stepper } from '../../src/components/Stepper';
 import { SwitchRow } from '../../src/components/SwitchRow';
-import { readyPractice } from '../../src/practice/ready';
+import { readyLine } from '../../src/practice/ready';
 import {
   askForReminderPermission,
   REMINDER_TITLE,
-  reminderBody,
   reminderPermission,
   reminderTime,
   type ReminderPermission,
@@ -118,11 +117,11 @@ export default function ReminderSettings() {
       <View
         style={styles.preview}
         accessible
-        accessibilityLabel={`Preview: ${REMINDER_TITLE} ${reminderBody(readyPractice(preferences, stores()))}`}
+        accessibilityLabel={`Preview: ${REMINDER_TITLE} ${readyLine(preferences, stores())}`}
       >
         <AppText variant="label">Viram</AppText>
         <AppText variant="bodyStrong">{REMINDER_TITLE}</AppText>
-        <AppText>{reminderBody(readyPractice(preferences, stores()))}</AppText>
+        <AppText>{readyLine(preferences, stores())}</AppText>
       </View>
       <AppText variant="label">
         Viram asks for notification permission only after you turn this on. One reminder a day, and nothing else. Tapping it opens Breathe; it never starts a

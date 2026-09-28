@@ -9,6 +9,8 @@ import { AppText } from '../../src/components/AppText';
 import { ListRow, RowGroup } from '../../src/components/ListRow';
 import { Screen } from '../../src/components/Screen';
 import { LIBRARY } from '../../src/content/library';
+import { PROGRAMS } from '../../src/programs/definitions';
+import { nextSessionNumber, programTotals, totalSessions, type Enrollment } from '../../src/programs/engine';
 import type { Technique } from '../../src/content/types';
 import type { SavedRhythm } from '../../src/rhythms/repository';
 import { MAX_RHYTHMS } from '../../src/rhythms/repository';
@@ -21,17 +23,25 @@ const FAMILIES: { family: Technique['family']; title: string }[] = [
   { family: 'modern', title: 'Modern patterns' },
 ];
 
-/** Practices (FR-08): the library in two groups, then My rhythms. */
+/** Practices (FR-08, FR-14, FR-20): programs and routines first, the library in two groups, then My rhythms. */
 export default function Practices() {
   const { update } = usePreferences();
   const [rhythms, setRhythms] = useState<SavedRhythm[]>([]);
   const [routines, setRoutines] = useState<Routine[]>([]);
+  const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   useFocusEffect(
     useCallback(() => {
       setRhythms(stores().rhythms.list());
       setRoutines(stores().routines.list());
+      setEnrollments(stores().programs.all());
     }, []),
   );
+  const progress = (programId: string) => {
+    const e = enrollments.find((x) => x.programId === programId);
+    if (!e) return null;
+    if (e.state === 'completed') return 'Completed';
+    return `${e.state === 'active' ? 'Next' : 'Paused at'}: session ${nextSessionNumber(e)} of ${totalSessions(e)}`;
+  };
 
   const makeReady = (rhythm: SavedRhythm) => {
     update({ lastPractice: practiceFromRhythm(rhythm) });
@@ -44,6 +54,17 @@ export default function Practices() {
         Practices
       </AppText>
       <AppText style={styles.muted}>Traditional techniques, explained simply. Each shows how to practice, when to take care, and its sources.</AppText>
+      <RowGroup title="Programs">
+        {PROGRAMS.map((program) => (
+          <ListRow
+            key={program.id}
+            title={program.name}
+            subtitle={`${program.summary} About ${programTotals(program).minutes} min in total.`}
+            detail={progress(program.id) ?? program.eyebrow}
+            onPress={() => router.push({ pathname: '/program/[id]', params: { id: program.id } })}
+          />
+        ))}
+      </RowGroup>
       <RowGroup title="Routines">
         {routines.map((routine) => {
           const resolved = routineRun(routine, stores().rhythms);

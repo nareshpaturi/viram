@@ -76,6 +76,8 @@ export default function RootLayout() {
         <Stack.Screen name="rhythms" options={{ title: 'My rhythms' }} />
         <Stack.Screen name="routine/[id]" options={{ title: '' }} />
         <Stack.Screen name="routine/edit" options={{ title: 'Routine' }} />
+        <Stack.Screen name="program/[id]" options={{ title: '' }} />
+        <Stack.Screen name="program/start" options={{ title: 'Make a plan' }} />
         <Stack.Screen name="share" options={{ title: 'Share' }} />
         <Stack.Screen name="r/[payload]" options={{ title: 'Shared with you' }} />
         <Stack.Screen name="session/[id]" options={{ title: 'Practice details' }} />
