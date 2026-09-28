@@ -41,12 +41,15 @@ jobs:
       - run: npx expo prebuild --platform android --no-install
       - run: ./gradlew assembleDebug --no-daemon
         working-directory: android
-      - name: Merged manifest has mediaPlayback and no Health or microphone permission
+      - name: Merged manifest has mediaPlayback, write-only Health, and no microphone permission
         run: |
           manifest=$(find android/app/build/intermediates -path '*merged_manifest*' -name AndroidManifest.xml | head -1)
           test -n "$manifest"
           grep -q 'FOREGROUND_SERVICE_MEDIA_PLAYBACK' "$manifest"
-          ! grep -E 'RECORD_AUDIO|permission\.health' "$manifest"
+          ! grep -E 'RECORD_AUDIO' "$manifest"
+          # FR-18: Health Connect may write mindful sessions and nothing else; never read.
+          grep -q 'permission.health.WRITE_MINDFULNESS' "$manifest"
+          ! grep -E 'permission\.health\.' "$manifest" | grep -v 'WRITE_MINDFULNESS'
       - uses: actions/upload-artifact@v4
         with:
           name: viram-android-debug
@@ -64,10 +67,13 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx expo prebuild --platform ios
-      - name: Info.plist has background audio and no Health or microphone purpose string
+      - name: Info.plist has background audio, write-only Health, and no microphone purpose string
         run: |
           grep -q "<string>audio</string>" ios/Viram/Info.plist
-          ! grep -E "NSMicrophoneUsageDescription|NSHealth" ios/Viram/Info.plist
+          ! grep -E "NSMicrophoneUsageDescription" ios/Viram/Info.plist
+          # FR-18: Apple Health may be written (mindful sessions) and never read.
+          grep -q "NSHealthUpdateUsageDescription" ios/Viram/Info.plist
+          ! grep -E "NSHealthShareUsageDescription|NSHealthClinicalHealthRecordsShareUsageDescription" ios/Viram/Info.plist
       - run: |
           xcodebuild -workspace ios/Viram.xcworkspace -scheme Viram -configuration Debug \
             -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
