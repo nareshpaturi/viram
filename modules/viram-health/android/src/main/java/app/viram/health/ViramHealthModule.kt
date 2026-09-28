@@ -1,6 +1,7 @@
 package app.viram.health
 
 import android.content.Context
+import android.os.Build
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.HealthConnectFeatures
 import androidx.health.connect.client.PermissionController
@@ -9,6 +10,8 @@ import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.records.MindfulnessSessionRecord
 import androidx.health.connect.client.records.metadata.Device
 import androidx.health.connect.client.records.metadata.Metadata
+import expo.modules.interfaces.permissions.PermissionsResponseListener
+import expo.modules.interfaces.permissions.PermissionsStatus
 import expo.modules.kotlin.Promise
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
@@ -55,7 +58,7 @@ class ViramHealthModule : Module() {
   override fun definition() = ModuleDefinition {
     Name("ViramHealth")
 
-    Function("availability") { availability() }
+    Function("availability") { runCatching { availability() }.getOrDefault("unavailable") }
 
     AsyncFunction("authorization") { promise: Promise ->
       scope.launch { promise.resolve(runCatching { status() }.getOrDefault("unavailable")) }
@@ -66,10 +69,27 @@ class ViramHealthModule : Module() {
         val current = runCatching { status() }.getOrDefault("unavailable")
         val activity = appContext.currentActivity
         if (current != "notDetermined" || activity == null) return@launch promise.resolve(current)
-        val intent = PermissionController.createRequestPermissionResultContract().createIntent(activity, setOf(permission))
-        pending?.resolve("notDetermined")
-        pending = promise
-        activity.startActivityForResult(intent, REQUEST_CODE)
+        runCatching {
+          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            // Android 14+: Health Connect permissions are runtime permissions.
+            val permissions = appContext.permissions ?: return@launch promise.resolve("unavailable")
+            permissions.askForPermissions(
+              PermissionsResponseListener { result ->
+                promise.resolve(if (result[permission]?.status == PermissionsStatus.GRANTED) "authorized" else "denied")
+              },
+              permission,
+            )
+          } else {
+            // Earlier versions: the Health Connect app shows the request.
+            val intent = PermissionController.createRequestPermissionResultContract().createIntent(activity, setOf(permission))
+            pending?.resolve("notDetermined")
+            pending = promise
+            activity.startActivityForResult(intent, REQUEST_CODE)
+          }
+        }.onFailure {
+          pending = null
+          promise.resolve("unavailable")
+        }
       }
     }
 
