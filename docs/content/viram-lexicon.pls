@@ -19,6 +19,9 @@
   <lexeme><grapheme>Bhramari</grapheme><alias>Brah-muh-ree</alias></lexeme>
   <lexeme><grapheme>Ujjayi</grapheme><alias>Ooj-jah-yee</alias></lexeme>
   <lexeme><grapheme>Sheetali</grapheme><alias>Shee-tuh-lee</alias></lexeme>
+  <lexeme><grapheme>Dirgha</grapheme><alias>Deer-guh</alias></lexeme>
+  <lexeme><grapheme>Udgeeth</grapheme><alias>Ood-geet</alias></lexeme>
+  <lexeme><grapheme>Chandra Bhedana</grapheme><alias>Chun-druh Bay-duh-nuh</alias></lexeme>
   <lexeme><grapheme>Sheetkari</grapheme><alias>Sheet-kah-ree</alias></lexeme>
   <lexeme><grapheme>pranayama</grapheme><alias>prah-nah-yah-muh</alias></lexeme>
   <lexeme><grapheme>Pranayama</grapheme><alias>Prah-nah-yah-muh</alias></lexeme>

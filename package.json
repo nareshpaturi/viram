@@ -43,6 +43,8 @@
     "android": "expo run:android",
     "audio:manifest": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/build-audio-manifest.mjs",
     "audio:tones": "node scripts/render-tones.mjs",
+    "audio:voice": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/render-voice-elevenlabs.mjs render",
+    "audio:voice-design": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/render-voice-elevenlabs.mjs design",
     "audio:voice-placeholders": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/render-voice-placeholders.mjs",
     "brand:assets": "node scripts/render-brand-assets.mjs",
     "check": "npm run typecheck && npm run check:content && npm run check:theme && npm run check:audio && npm run check:site && npm test -- --ci",

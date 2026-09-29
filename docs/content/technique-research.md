@@ -562,6 +562,9 @@ Plus one `name.<id>` clip per Sanskrit name (six) and one `intro.<id>` clip per 
 | Bhramari | भ्रामरी | BRAH-muh-ree | ˈbʱraːməriː | Brah-muh-ree | Breathy bh; the respelling simplifies it to B. |
 | Ujjayi | उज्जायी | ooj-JAH-yee | ʊd͡ʒˈd͡ʒaːjiː | Ooj-jah-yee | Many studios say “oo-JAI-ee.” Viram follows the Sanskrit. |
 | Sheetali | शीतली | SHEE-tuh-lee | ˈʃiːt̪əliː | Shee-tuh-lee | Dental t. |
+| Dirgha | दीर्घ | DEER-guh | ˈd̪iːrɡʱə | Deer-guh | Breathy gh; check the final vowel. |
+| Udgeeth | उद्गीथ | ood-GEET | ʊd̪ˈɡiːt̪ʰ | Ood-geet | Hindi ood-GEET or Sanskrit ood-GEE-tuh; aspirated t. |
+| Chandra Bhedana | चन्द्र भेदन | CHUN-druh BAY-duh-nuh | ˈt͡ʃənd̪rə ˈbʱeːd̪ənə | Chun-druh Bay-duh-nuh | CHUN or CHAHN; breathy bh. |
 | Sheetkari | शीत्कारी | sheet-KAH-ree | ʃiːt̪ˈkaːriː | Sheet-kah-ree | Appears in the Sheetali how-to text only; no clip. |
 | pranayama | प्राणायाम | prah-nah-YAH-muh | praːɳaːˈjaːmə | prah-nah-yah-muh | For future scripts. |
 
