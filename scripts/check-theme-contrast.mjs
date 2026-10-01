@@ -183,14 +183,33 @@ const washChecks = [
   ['inkSoftOnWash', 4.5],
   ['outlineOnWash', 3],
 ];
+// Frosted cards (white at 70%) sit between their content and the wash, so
+// the brand's own muted grey and outline are measured over each wash there.
+const GLASS = 0.7;
+const frost = (c) => c.map((v) => v * (1 - GLASS) + 255 * GLASS);
+const frostChecks = [
+  ['inkSoft', 4.5],
+  ['outline', 3],
+];
 for (const [name, wash] of Object.entries(lit)) {
-  for (const [token, minimum] of washChecks) {
-    let worst = Infinity;
-    for (let i = 0; i <= 40; i++) for (let j = 0; j <= 40; j++) worst = Math.min(worst, ratioOf(rgb(color(token)), washAt(wash, i / 40, j / 40)));
-    assert(worst >= minimum, `${token} on the ${name} wash falls to ${worst.toFixed(2)}:1; expected at least ${minimum}:1`);
+  for (const [checks, onFrost] of [
+    [washChecks, false],
+    [frostChecks, true],
+  ]) {
+    for (const [token, minimum] of checks) {
+      let worst = Infinity;
+      for (let i = 0; i <= 40; i++) {
+        for (let j = 0; j <= 40; j++) {
+          const behind = washAt(wash, i / 40, j / 40);
+          worst = Math.min(worst, ratioOf(rgb(color(token)), onFrost ? frost(behind) : behind));
+        }
+      }
+      const where = onFrost ? `a frosted card on the ${name} wash` : `the ${name} wash`;
+      assert(worst >= minimum, `${token} on ${where} falls to ${worst.toFixed(2)}:1; expected at least ${minimum}:1`);
+    }
   }
 }
 
 console.log(
-  `Theme contrast passed: ${normalTextPairs.length} normal-text, ${largePhaseNumberPairs.length} large phase-number, and ${nonTextPairs.length} non-text pairs; night ${nightTextPairs.length} text, ${nightLargePairs.length} large, and ${nightNonTextPairs.length} non-text pairs; ${Object.keys(lit).length} Soft Light washes, ${washChecks.length} roles each.`,
+  `Theme contrast passed: ${normalTextPairs.length} normal-text, ${largePhaseNumberPairs.length} large phase-number, and ${nonTextPairs.length} non-text pairs; night ${nightTextPairs.length} text, ${nightLargePairs.length} large, and ${nightNonTextPairs.length} non-text pairs; ${Object.keys(lit).length} Soft Light washes, ${washChecks.length} roles on each and ${frostChecks.length} on frosted cards over each.`,
 );

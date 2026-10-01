@@ -1,5 +1,5 @@
 import { StyleSheet, View } from 'react-native';
-import { useGlass } from '../light/light';
+import { Frosted, useGlass } from '../light/light';
 import { NIGHT, useSurface } from '../night/surface';
 import { colors, radius, spacing } from '../theme';
 import { AppText } from './AppText';
@@ -10,10 +10,12 @@ export function Stat({ value, label }: { value: string; label: string }) {
   const glass = useGlass();
   return (
     <View style={[styles.stat, { backgroundColor: glass.fill, borderColor: glass.rim }, night && styles.night]} accessible accessibilityLabel={`${label}: ${value}`}>
-      <AppText variant="title" style={[styles.value, !night && styles.pine]}>
-        {value}
-      </AppText>
-      <AppText variant="label">{label}</AppText>
+      <Frosted>
+        <AppText variant="title" style={[styles.value, !night && styles.pine]}>
+          {value}
+        </AppText>
+        <AppText variant="label">{label}</AppText>
+      </Frosted>
     </View>
   );
 }

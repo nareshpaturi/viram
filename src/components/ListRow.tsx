@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { useGlass } from '../light/light';
+import { Frosted, useGlass } from '../light/light';
 import { colors, shadows, spacing, touchTarget } from '../theme';
 import { AppText } from './AppText';
 
@@ -58,7 +58,9 @@ export function RowGroup({ children, title }: { children: ReactNode; title?: str
       ) : null}
       <View style={[styles.group, { backgroundColor: glass.fill, borderColor: glass.rim }]}>
         {/* Pulls the last row's divider under the clipped edge. */}
-        <View style={styles.lastDivider}>{children}</View>
+        <View style={styles.lastDivider}>
+          <Frosted>{children}</Frosted>
+        </View>
       </View>
     </View>
   );

@@ -1,8 +1,8 @@
 import { useId } from 'react';
-import { StyleSheet, View, type ViewStyle } from 'react-native';
-import Svg, { Defs, LinearGradient, RadialGradient, Rect, Stop } from 'react-native-svg';
+import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import Svg, { Circle, Defs, LinearGradient, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { colors } from '../theme';
-import { angleLine, type Glow, type Wash as WashSpec } from './washes';
+import { angleLine, type Glow, type GlowStop, type Wash as WashSpec } from './washes';
 
 /** SVG ids must be plain; React's ids contain colons. */
 export const useSvgId = (prefix: string) => `${prefix}${useId().replace(/[^A-Za-z0-9]/g, '')}`;
@@ -58,6 +58,25 @@ export function Wash({ wash, extra = [], fadeToPaper, style }: Props) {
           <Rect key={i} x="0" y="0" width="100%" height="100%" fill={`url(#${id}g${i})`} />
         ))}
         {fadeToPaper ? <Rect x="0" y="0" width="100%" height="100%" fill={`url(#${id}fade)`} /> : null}
+      </Svg>
+    </View>
+  );
+}
+
+/** A soft round glow, e.g. behind a rhythm orb or the completion check. Decorative. */
+export function Halo({ stops, size, style }: { stops: readonly GlowStop[]; size: number; style?: StyleProp<ViewStyle> }) {
+  const id = useSvgId('halo');
+  return (
+    <View style={[{ width: size, height: size }, style]} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+      <Svg width={size} height={size}>
+        <Defs>
+          <RadialGradient id={id} cx="0.5" cy="0.5" r="0.5">
+            {stops.map((s, i) => (
+              <Stop key={i} offset={s.offset} stopColor={s.color} stopOpacity={s.opacity} />
+            ))}
+          </RadialGradient>
+        </Defs>
+        <Circle cx={size / 2} cy={size / 2} r={size / 2} fill={`url(#${id})`} />
       </Svg>
     </View>
   );

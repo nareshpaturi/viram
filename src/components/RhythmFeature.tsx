@@ -1,9 +1,8 @@
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
-import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
 import { describePace, describePlan, describeRhythm, describeSlowing, describeTarget, speakRhythm } from '../breathing/describe';
 import { planFor, type RhythmStep, type Slowing, type Target } from '../breathing/rhythm';
 import { useWash } from '../light/light';
-import { useSvgId } from '../light/Wash';
+import { Halo } from '../light/Wash';
 import { HALO } from '../light/washes';
 import { fonts, spacing } from '../theme';
 import { AppText } from './AppText';
@@ -28,7 +27,6 @@ interface Props {
 export function RhythmFeature({ name, subtitle, steps, target, slowing = null, nameHint }: Props) {
   const { fontScale } = useWindowDimensions();
   const wash = useWash() ?? 'day';
-  const haloId = useSvgId('halo');
   const orb = fontScale > 1.3 ? 120 : 184;
   const halo = Math.round((orb * 300) / 184);
   const plan = planFor(steps, target, slowing);
@@ -37,18 +35,7 @@ export function RhythmFeature({ name, subtitle, steps, target, slowing = null, n
   return (
     <View style={styles.wrap}>
       <View style={[styles.stage, { height: orb }]}>
-        <View style={[styles.halo, { width: halo, height: halo, marginLeft: -halo / 2, marginTop: -halo / 2 }]} pointerEvents="none">
-          <Svg width={halo} height={halo}>
-            <Defs>
-              <RadialGradient id={haloId} cx="0.5" cy="0.5" r="0.5">
-                {HALO[wash].map((s, i) => (
-                  <Stop key={i} offset={s.offset} stopColor={s.color} stopOpacity={s.opacity} />
-                ))}
-              </RadialGradient>
-            </Defs>
-            <Circle cx={halo / 2} cy={halo / 2} r={halo / 2} fill={`url(#${haloId})`} />
-          </Svg>
-        </View>
+        <Halo stops={HALO[wash]} size={halo} style={[styles.halo, { marginLeft: -halo / 2, marginTop: -halo / 2 }]} />
         <RhythmOrb steps={steps} size={orb} />
       </View>
       <AppText variant="heading" style={styles.name} accessibilityRole="header" accessibilityHint={nameHint}>

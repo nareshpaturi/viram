@@ -33,10 +33,10 @@ import { refreshReminder } from '../src/reminder/ReminderBridge';
 import { practiceFromRecord } from '../src/quickstart/quickActions';
 import { refreshQuickActions } from '../src/quickstart/QuickActionsBridge';
 import { LightProvider, useEverydayWash, useGlass, useWash } from '../src/light/light';
-import { useSvgId, Wash } from '../src/light/Wash';
+import { Halo, Wash } from '../src/light/Wash';
 import { BLOOM, WASHES } from '../src/light/washes';
 import { NIGHT, SurfaceProvider, useSurface } from '../src/night/surface';
-import Svg, { Circle, Defs, Path, RadialGradient, Stop } from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
 import { usePreferences } from '../src/settings/PreferencesProvider';
 import { stores } from '../src/storage';
 import { colors, spacing } from '../src/theme';
@@ -398,23 +398,17 @@ function ProgramCard({ result, record, onChange }: { result: ProgramResult; reco
   );
 }
 
+const CHECK_HALO = [
+  { offset: 0, color: '#FFFFFF', opacity: 0.9 },
+  { offset: 0.68, color: '#FFFFFF', opacity: 0 },
+];
+
 /** The check in a frosted circle with a soft halo; dim at night. */
 function CheckMark({ night }: { night: boolean }) {
   const glass = useGlass();
-  const id = useSvgId('check');
   return (
     <View style={styles.mark} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
-      {night ? null : (
-        <Svg width={120} height={120} style={styles.markHalo}>
-          <Defs>
-            <RadialGradient id={id} cx="0.5" cy="0.5" r="0.5">
-              <Stop offset="0" stopColor="#FFFFFF" stopOpacity={0.9} />
-              <Stop offset="0.68" stopColor="#FFFFFF" stopOpacity={0} />
-            </RadialGradient>
-          </Defs>
-          <Circle cx={60} cy={60} r={60} fill={`url(#${id})`} />
-        </Svg>
-      )}
+      {night ? null : <Halo stops={CHECK_HALO} size={120} style={styles.markHalo} />}
       <View style={[styles.markDisc, night ? styles.nightMark : { backgroundColor: glass.solid ? colors.surface : 'rgba(255, 255, 255, 0.8)', borderColor: colors.glassRim }]}>
         <Svg width={30} height={30} viewBox="0 0 24 24" fill="none" stroke={night ? NIGHT.accent : colors.pine} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
           <Path d="M5 12.5l4.5 4.5L19 7.5" />

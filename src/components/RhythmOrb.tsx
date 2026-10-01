@@ -1,4 +1,4 @@
-import { View, type ViewStyle } from 'react-native';
+import { View, type StyleProp, type ViewStyle } from 'react-native';
 import Svg, { Circle, ClipPath, Defs, G, Line, RadialGradient, Stop } from 'react-native-svg';
 import type { RhythmStep, StepKind } from '../breathing/rhythm';
 import { useSvgId } from '../light/Wash';
@@ -31,7 +31,7 @@ export const orbRadius = (share: number) => Math.round(96 * (0.5 + 0.75 * share)
  * add ripples. Decorative and hidden from screen readers: the numbers
  * always accompany it.
  */
-export function RhythmOrb({ steps, size, style }: { steps: readonly RhythmStep[]; size: number; style?: ViewStyle }) {
+export function RhythmOrb({ steps, size, style }: { steps: readonly RhythmStep[]; size: number; style?: StyleProp<ViewStyle> }) {
   const id = useSvgId('orb');
   const shares = orbShares(steps);
   const sided = steps.some((s) => s.side);

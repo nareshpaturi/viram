@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { StyleSheet, View, type ViewStyle } from 'react-native';
-import { useGlass } from '../light/light';
+import { Frosted, useGlass } from '../light/light';
 import { NIGHT, useSurface } from '../night/surface';
 import { colors, radius, shadows, spacing } from '../theme';
 
@@ -14,7 +14,9 @@ export function Card({ children, muted, style }: { children: ReactNode; muted?: 
   const glass = useGlass();
   const frosted = { backgroundColor: glass.fill, borderColor: glass.rim };
   return (
-    <View style={[styles.card, muted ? styles.muted : [frosted, styles.lifted], night && (muted ? styles.nightMuted : styles.night), style]}>{children}</View>
+    <View style={[styles.card, muted ? styles.muted : [frosted, styles.lifted], night && (muted ? styles.nightMuted : styles.night), style]}>
+      <Frosted>{children}</Frosted>
+    </View>
   );
 }
 
