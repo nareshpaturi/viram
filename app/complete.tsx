@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { AccessibilityInfo, StyleSheet, View } from 'react-native';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { describePace, describePlan, describeRhythm, describeTarget, formatClock } from '../src/breathing/describe';
+import { describePace, describePlan, describeRhythm, describeTarget, formatClock, guidedPace } from '../src/breathing/describe';
 import { formatPace, planFor } from '../src/breathing/rhythm';
 import { AppText } from '../src/components/AppText';
 import { Button, ButtonRow } from '../src/components/Button';
@@ -241,8 +241,8 @@ function CompleteScreen() {
         <Card>
           <AppText variant="bodyStrong">{[record.name, practice && subtitleOf(practice)].filter(Boolean).join(' · ')}</AppText>
           <AppText variant="label">
-            {describeRhythm(record.steps)} · guided{' '}
-            {record.slowing ? describePace(planFor(record.steps, record.target, record.slowing)) : formatPace(record.breathsPerMinute)} breaths/min
+            {describeRhythm(record.steps)} ·{' '}
+            {guidedPace(record.slowing ? describePace(planFor(record.steps, record.target, record.slowing)) : formatPace(record.breathsPerMinute))}
           </AppText>
         </Card>
       )}

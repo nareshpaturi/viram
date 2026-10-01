@@ -1,5 +1,5 @@
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
-import { describePace, describePlan, describeRhythm, describeSlowing, describeTarget, speakRhythm } from '../breathing/describe';
+import { describePace, describePlan, describeRhythm, describeSlowing, describeTarget, guidedPace, speakRhythm } from '../breathing/describe';
 import { planFor, type RhythmStep, type Slowing, type Target } from '../breathing/rhythm';
 import { useWash } from '../light/light';
 import { Halo } from '../light/Wash';
@@ -57,7 +57,7 @@ export function RhythmFeature({ name, subtitle, steps, target, slowing = null, n
         style={styles.center}
         accessibilityLabel={`${speakRhythm(steps)}. ${describePlan(steps, target, slowing)} practice, guided ${describePace(plan)} breaths a minute.`}
       >
-        {seconds} · {describePlan(steps, target, slowing)} · guided {describePace(plan)} breaths/min
+        {seconds} · {describePlan(steps, target, slowing)} · {guidedPace(describePace(plan))}
       </AppText>
     </View>
   );

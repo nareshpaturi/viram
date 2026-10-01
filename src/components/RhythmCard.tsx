@@ -1,5 +1,5 @@
 import { StyleSheet, View } from 'react-native';
-import { describePace, describePlan, describeRhythm, describeSlowing, describeTarget, speakRhythm } from '../breathing/describe';
+import { describePace, describePlan, describeRhythm, describeSlowing, describeTarget, guidedPace, speakRhythm } from '../breathing/describe';
 import { planFor, type RhythmStep, type Slowing, type Target } from '../breathing/rhythm';
 import { colors, spacing } from '../theme';
 import { AppText } from './AppText';
@@ -52,7 +52,7 @@ export function RhythmCard({ name, subtitle, steps, target, slowing = null, name
       <AppText accessibilityLabel={speakRhythm(steps)}>{seconds.charAt(0).toUpperCase() + seconds.slice(1)}</AppText>
       {slowing ? <AppText variant="label">{describeSlowing(steps, slowing)}, a little each round.</AppText> : null}
       <AppText variant="label">
-        {describePlan(steps, target, slowing)} practice · guided {describePace(plan)} breaths/min
+        {describePlan(steps, target, slowing)} practice · {guidedPace(describePace(plan))}
       </AppText>
     </Card>
   );

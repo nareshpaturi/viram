@@ -93,6 +93,15 @@ export function describePlan(steps: readonly RhythmStep[], target: Target, slowi
   return `${plan.rounds} ${plan.rounds === 1 ? 'round' : 'rounds'} · ${formatClock(plan.durationMs)}`;
 }
 
+/**
+ * “6 breaths/min”, kept on one line: a no-break space before the unit and a
+ * word joiner after the slash, where Android would otherwise wrap.
+ */
+export const perMinute = (pace: string) => `${pace}\u00A0breaths/\u2060min`;
+
+/** “guided 6 breaths/min”, one unit that wraps as a whole. */
+export const guidedPace = (pace: string) => `guided\u00A0${perMinute(pace)}`;
+
 /** Guided breaths per minute: “6”, or “5.5 → 4.6” with gradual slowing (FR-24). */
 export function describePace(plan: Pick<Plan, 'breathsPerMinute' | 'endBreathsPerMinute'>): string {
   const start = formatPace(plan.breathsPerMinute);
