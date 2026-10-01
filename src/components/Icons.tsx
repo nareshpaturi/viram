@@ -2,7 +2,7 @@ import type { ColorValue } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 /** 24 px grid, 1.7 px rounded strokes, no fills (brand guide, “Icons”). */
-type IconName = 'breathe' | 'practices' | 'history' | 'settings';
+type IconName = 'breathe' | 'practices' | 'history' | 'settings' | 'search' | 'plus' | 'back';
 
 const PATHS: Record<IconName, React.ReactNode> = {
   // A wave in a circle, echoing the mark.
@@ -24,6 +24,14 @@ const PATHS: Record<IconName, React.ReactNode> = {
       <Path d="M12 7.5V12l3 2" />
     </>
   ),
+  search: (
+    <>
+      <Circle cx={11} cy={11} r={7} />
+      <Path d="M20 20l-4-4" />
+    </>
+  ),
+  plus: <Path d="M12 5v14M5 12h14" />,
+  back: <Path d="M15 6l-6 6 6 6" />,
   settings: (
     <>
       <Path d="M4 7h9M17 7h3M4 17h3M11 17h9" />
@@ -33,9 +41,9 @@ const PATHS: Record<IconName, React.ReactNode> = {
   ),
 };
 
-export function Icon({ name, color, size = 24 }: { name: IconName; color: ColorValue; size?: number }) {
+export function Icon({ name, color, size = 24, strokeWidth = 1.7 }: { name: IconName; color: ColorValue; size?: number; strokeWidth?: number }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
       {PATHS[name]}
     </Svg>
   );

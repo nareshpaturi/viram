@@ -168,7 +168,7 @@ const styles = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   chip: { borderRadius: radius.pill, backgroundColor: colors.surfaceMuted, paddingHorizontal: spacing.ms, paddingVertical: spacing.xs },
   phase: { marginTop: spacing.sm, marginBottom: spacing.xs },
-  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.ms, paddingVertical: spacing.xs, paddingHorizontal: spacing.xs, borderRadius: radius.control },
+  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.ms, paddingVertical: spacing.xs, paddingHorizontal: spacing.xs, borderRadius: radius.card },
   next: { backgroundColor: colors.surfaceMuted },
   dot: { width: 28, height: 28, borderRadius: 14, borderWidth: 1, borderColor: colors.outline, alignItems: 'center', justifyContent: 'center' },
   dotDone: { backgroundColor: colors.pine, borderColor: colors.pine },

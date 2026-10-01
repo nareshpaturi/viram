@@ -1,6 +1,10 @@
 import { StyleSheet, Text, useWindowDimensions, type TextProps } from 'react-native';
+import { useWash } from '../light/light';
 import { surfaceText, useSurface } from '../night/surface';
-import { textStyles } from '../theme';
+import { colors, textStyles } from '../theme';
+
+/** Muted text directly on a wash darkens to keep 4.5:1 where the glows peak. */
+const ON_WASH: Record<string, string> = { [colors.inkSoft]: colors.inkSoftOnWash, [colors.inkFaint]: colors.inkSoftOnWash };
 
 export type TextVariant = keyof typeof textStyles;
 
@@ -30,13 +34,15 @@ const MAX_SCALE: Record<TextVariant, number> = {
 export function AppText({ variant = 'body', style, ...props }: TextProps & { variant?: TextVariant }) {
   const { fontScale } = useWindowDimensions();
   const surface = useSurface();
+  const wash = useWash();
   const flat = StyleSheet.flatten([textStyles[variant], style]);
+  const color = flat.color as string | undefined;
   const scale = Math.min(fontScale, MAX_SCALE[variant]);
   const sized = {
     fontSize: (flat.fontSize ?? 16) * scale,
     lineHeight: flat.lineHeight ? flat.lineHeight * scale : undefined,
     // Night practice maps day colors to its own (FR-23).
-    color: surfaceText(surface, flat.color as string | undefined),
+    color: surface.night ? surfaceText(surface, color) : wash && color ? (ON_WASH[color] ?? color) : color,
   };
   return <Text {...props} allowFontScaling={false} style={[flat, sized]} />;
 }

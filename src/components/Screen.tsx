@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
+import { useWash } from '../light/light';
 import { NIGHT, useSurface } from '../night/surface';
 import { colors, spacing } from '../theme';
 
@@ -10,17 +11,24 @@ interface Props {
   footer?: ReactNode;
   /** Stack screens with a native header don't need the top inset. */
   edges?: Edge[];
+  /** Drawn full-bleed behind everything, e.g. a Soft Light wash. */
+  background?: ReactNode;
 }
 
-/** Paper surface, 24 px inset, scrollable so nothing clips at 200% text. */
-export function Screen({ children, footer, edges = ['top', 'left', 'right'] }: Props) {
+/**
+ * Paper, or a Soft Light wash, with a 24 px inset; scrollable so nothing
+ * clips at 200% text. On a wash the pinned actions float in the light.
+ */
+export function Screen({ children, footer, edges = ['top', 'left', 'right'], background }: Props) {
   const { night } = useSurface();
+  const lit = (useWash() !== null || background !== undefined) && !night;
   return (
-    <SafeAreaView style={[styles.safe, night && styles.night]} edges={footer ? [...edges, 'bottom'] : edges}>
+    <SafeAreaView style={[styles.safe, night && styles.night, lit && styles.lit]} edges={footer ? [...edges, 'bottom'] : edges}>
+      {background}
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         {children}
       </ScrollView>
-      {footer ? <View style={[styles.footer, night && styles.nightFooter]}>{footer}</View> : null}
+      {footer ? <View style={[styles.footer, night && styles.nightFooter, lit && styles.litFooter]}>{footer}</View> : null}
     </SafeAreaView>
   );
 }
@@ -28,6 +36,8 @@ export function Screen({ children, footer, edges = ['top', 'left', 'right'] }: P
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   night: { backgroundColor: NIGHT.background },
+  lit: { backgroundColor: 'transparent' },
+  litFooter: { backgroundColor: 'transparent', borderTopWidth: 0 },
   nightFooter: { backgroundColor: NIGHT.background, borderTopColor: NIGHT.cardBorder },
   content: { padding: spacing.lg, paddingBottom: spacing.xl, gap: spacing.md },
   footer: {

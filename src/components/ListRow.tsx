@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { colors, spacing, touchTarget } from '../theme';
+import { useGlass } from '../light/light';
+import { colors, shadows, spacing, touchTarget } from '../theme';
 import { AppText } from './AppText';
 
 interface Props {
@@ -14,10 +15,12 @@ interface Props {
   accessibilityLabel?: string;
   children?: ReactNode;
   danger?: boolean;
+  /** A 44 px rhythm orb or icon before the text; decorative. */
+  leading?: ReactNode;
 }
 
 /** A tappable row: title, supporting lines, trailing value, and a chevron. */
-export function ListRow({ title, subtitle, detail, trailing, onPress, accessibilityHint, accessibilityLabel, children, danger }: Props) {
+export function ListRow({ title, subtitle, detail, trailing, onPress, accessibilityHint, accessibilityLabel, children, danger, leading }: Props) {
   const label = accessibilityLabel ?? [title, subtitle, detail, trailing].filter(Boolean).join(', ');
   return (
     <Pressable
@@ -28,6 +31,7 @@ export function ListRow({ title, subtitle, detail, trailing, onPress, accessibil
       accessibilityHint={accessibilityHint}
       style={({ pressed }) => [styles.row, pressed && styles.pressed]}
     >
+      {leading}
       <View style={styles.text}>
         <AppText variant="bodyStrong" style={danger && { color: colors.danger }}>
           {title}
@@ -42,8 +46,9 @@ export function ListRow({ title, subtitle, detail, trailing, onPress, accessibil
   );
 }
 
-/** Rows grouped on one surface with hairline separators. */
+/** Rows grouped on one frosted card with hairline separators (Soft Light). */
 export function RowGroup({ children, title }: { children: ReactNode; title?: string }) {
+  const glass = useGlass();
   return (
     <View style={styles.groupWrap}>
       {title ? (
@@ -51,7 +56,10 @@ export function RowGroup({ children, title }: { children: ReactNode; title?: str
           {title.toUpperCase()}
         </AppText>
       ) : null}
-      <View style={styles.group}>{children}</View>
+      <View style={[styles.group, { backgroundColor: glass.fill, borderColor: glass.rim }]}>
+        {/* Pulls the last row's divider under the clipped edge. */}
+        <View style={styles.lastDivider}>{children}</View>
+      </View>
     </View>
   );
 }
@@ -64,14 +72,14 @@ const styles = StyleSheet.create({
     gap: spacing.ms,
     paddingVertical: spacing.ms,
     paddingHorizontal: spacing.md,
-    backgroundColor: colors.surface,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.divider,
   },
-  pressed: { backgroundColor: colors.surfaceMuted },
+  pressed: { backgroundColor: 'rgba(238, 244, 239, 0.8)' },
   text: { flex: 1, gap: 2 },
   trailing: { color: colors.inkSoft },
   chevron: { color: colors.inkFaint, fontSize: 22 },
   groupWrap: { gap: spacing.sm },
-  group: { borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: colors.divider },
+  lastDivider: { marginBottom: -StyleSheet.hairlineWidth },
+  group: { borderRadius: 18, overflow: 'hidden', borderWidth: 1, boxShadow: shadows.card },
 });

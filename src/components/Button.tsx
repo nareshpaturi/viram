@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, View, type PressableProps, type ViewStyle } from 'react-native';
+import { useGlass } from '../light/light';
 import { NIGHT, useSurface } from '../night/surface';
-import { colors, primaryHeight, radius, spacing, touchTarget } from '../theme';
+import { colors, primaryHeight, radius, shadows, spacing, touchTarget } from '../theme';
 import { AppText } from './AppText';
 
 type Variant = 'primary' | 'secondary' | 'quiet' | 'destructive' | 'onPine' | 'onPineQuiet';
@@ -12,11 +13,11 @@ interface Props extends Omit<PressableProps, 'style' | 'children'> {
 }
 
 const SURFACE: Record<Variant, ViewStyle> = {
-  primary: { backgroundColor: colors.primary, minHeight: primaryHeight },
-  secondary: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.outline },
+  primary: { backgroundColor: colors.primary, minHeight: primaryHeight, boxShadow: shadows.primary },
+  secondary: { borderWidth: 1 },
   quiet: { backgroundColor: 'transparent' },
-  destructive: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.danger },
-  onPine: { backgroundColor: colors.practiceText, minHeight: primaryHeight },
+  destructive: { borderWidth: 1, borderColor: colors.danger },
+  onPine: { backgroundColor: 'rgba(255, 255, 255, 0.94)', minHeight: primaryHeight },
   onPineQuiet: { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.practiceLine },
 };
 
@@ -39,17 +40,32 @@ const NIGHT_SURFACE: Record<Variant, ViewStyle> = {
   onPineQuiet: { backgroundColor: 'transparent', borderWidth: 1, borderColor: NIGHT.buttonBorder },
 };
 
-/** One filled action per light screen: Begin, Resume, Done. Labels wrap at large text. */
+/** Pills (Soft Light). One filled action per light screen: Begin, Resume, Done. Labels wrap at large text. */
 export function Button({ title, variant = 'primary', style, disabled, ...props }: Props) {
   const { night } = useSurface();
+  const glass = useGlass();
   const label = night && (variant === 'primary' || variant === 'onPine') ? NIGHT.textStrong : LABEL[variant];
+  // Secondary and destructive pills are frosted, keeping their 3:1 outline.
+  const frosted =
+    !night && variant === 'secondary'
+      ? { backgroundColor: glass.fill, borderColor: glass.outline }
+      : !night && variant === 'destructive'
+        ? { backgroundColor: glass.fill }
+        : null;
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityState={{ disabled: !!disabled }}
       disabled={disabled}
       {...props}
-      style={({ pressed }) => [styles.base, (night ? NIGHT_SURFACE : SURFACE)[variant], pressed && styles.pressed, disabled && styles.disabled, style]}
+      style={({ pressed }) => [
+        styles.base,
+        (night ? NIGHT_SURFACE : SURFACE)[variant],
+        frosted,
+        pressed && styles.pressed,
+        disabled && styles.disabled,
+        style,
+      ]}
     >
       <AppText variant="control" style={[styles.label, { color: label }]}>
         {title}
@@ -68,12 +84,12 @@ const styles = StyleSheet.create({
     minHeight: touchTarget,
     borderRadius: radius.control,
     paddingVertical: spacing.ms,
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.md,
     alignItems: 'center',
     justifyContent: 'center',
   },
   label: { textAlign: 'center' },
   pressed: { opacity: 0.8 },
-  disabled: { opacity: 0.45 },
+  disabled: { opacity: 0.45, boxShadow: 'none' },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.ms },
 });

@@ -53,6 +53,23 @@ export const colors = {
   phaseHold: '#E4B84A',
   phaseExhale: '#E46F51',
   phaseRest: '#EEF4EF',
+
+  // Soft Light (docs/branding-design.html, “Soft Light”). Glows peak darker
+  // than a wash's stops, so text and outlines directly on a wash use these;
+  // scripts/check-theme-contrast.mjs measures them at every glow's peak.
+  inkSoftOnWash: '#47544D',
+  outlineOnWash: '#5F6B65',
+  /** Frosted white: cards, secondary pills, and the tab bar sit in the light. */
+  glass: 'rgba(255, 255, 255, 0.7)',
+  glassRim: 'rgba(255, 255, 255, 0.9)',
+  tabBar: 'rgba(251, 252, 248, 0.84)',
+  tabRim: 'rgba(18, 55, 47, 0.08)',
+} as const;
+
+/** Soft pine shadows; never grey. */
+export const shadows = {
+  card: '0px 8px 24px rgba(18, 55, 47, 0.07)',
+  primary: '0px 10px 28px rgba(18, 55, 47, 0.28)',
 } as const;
 
 export const phaseColors = {
@@ -73,10 +90,10 @@ export const spacing = {
   xxl: 48,
 } as const;
 
-/** 12 controls, 16 cards, 24 sheets. Circles are for the guide and status marks. */
+/** Pill controls, 20 cards, 24 sheets. Circles are for the guide, rhythm orbs, and status marks. */
 export const radius = {
-  control: 12,
-  card: 16,
+  control: 999,
+  card: 20,
   sheet: 24,
   pill: 999,
 } as const;

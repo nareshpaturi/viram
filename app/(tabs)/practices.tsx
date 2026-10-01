@@ -1,12 +1,15 @@
 import { useCallback, useState } from 'react';
-import { StyleSheet, TextInput } from 'react-native';
+import { ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { describeRhythm, describeTarget } from '../../src/breathing/describe';
 import { practiceFromRhythm, rhythmSubtitle } from '../../src/rhythms/describe';
 import { routineChain, routineSummary } from '../../src/routines/describe';
 import { resolveSegment, routineRun, type Routine } from '../../src/routines/repository';
 import { AppText } from '../../src/components/AppText';
+import { Icon } from '../../src/components/Icons';
 import { ListRow, RowGroup } from '../../src/components/ListRow';
+import { ProgramCard } from '../../src/components/ProgramCard';
+import { RhythmOrb } from '../../src/components/RhythmOrb';
 import { Screen } from '../../src/components/Screen';
 import { LIBRARY } from '../../src/content/library';
 import { matches, searchLibrary } from '../../src/content/search';
@@ -15,6 +18,9 @@ import { nextSessionNumber, programTotals, totalSessions, type Enrollment } from
 import type { Technique } from '../../src/content/types';
 import type { SavedRhythm } from '../../src/rhythms/repository';
 import { MAX_RHYTHMS } from '../../src/rhythms/repository';
+import { useGlass, useWash } from '../../src/light/light';
+import { Wash } from '../../src/light/Wash';
+import { WASHES } from '../../src/light/washes';
 import { usePreferences } from '../../src/settings/PreferencesProvider';
 import { stores } from '../../src/storage';
 import { colors, radius, spacing, textStyles, touchTarget } from '../../src/theme';
@@ -32,6 +38,8 @@ export default function Practices() {
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [query, setQuery] = useState('');
   const searching = query.trim().length > 0;
+  const wash = useWash() ?? 'day';
+  const glass = useGlass();
   useFocusEffect(
     useCallback(() => {
       setRhythms(stores().rhythms.list());
@@ -52,42 +60,51 @@ export default function Practices() {
   };
 
   return (
-    <Screen>
+    // The light fades into paper by 470 px, so the long list stays plain.
+    <Screen background={<Wash wash={WASHES[wash]} fadeToPaper={{ from: 200, to: 470 }} />}>
       <AppText variant="title" accessibilityRole="header">
         Practices
       </AppText>
       <AppText style={styles.muted}>Traditional techniques, explained simply. Each shows how to practice, when to take care, and its sources.</AppText>
-      <TextInput
-        value={query}
-        onChangeText={setQuery}
-        placeholder="Search, e.g. Anulom Vilom"
-        placeholderTextColor={colors.inkFaint}
-        accessibilityLabel="Search practices"
-        autoCorrect={false}
-        clearButtonMode="while-editing"
-        returnKeyType="search"
-        style={styles.search}
-      />
+      <View style={[styles.search, { backgroundColor: glass.fill, borderColor: glass.outline }]}>
+        <Icon name="search" color={colors.inkSoftOnWash} size={18} strokeWidth={1.8} />
+        <TextInput
+          value={query}
+          onChangeText={setQuery}
+          placeholder="Search, e.g. Anulom Vilom"
+          placeholderTextColor={colors.inkSoftOnWash}
+          accessibilityLabel="Search practices"
+          autoCorrect={false}
+          clearButtonMode="while-editing"
+          returnKeyType="search"
+          style={styles.searchInput}
+        />
+      </View>
       {searching ? (
         <SearchResults query={query} rhythms={rhythms} routines={routines} onRhythm={makeReady} />
       ) : (
         <>
-          <RowGroup title="Programs">
-            {PROGRAMS.map((program) => (
-              <ListRow
-                key={program.id}
-                title={program.name}
-                subtitle={`${program.summary} About ${programTotals(program).minutes} min in total.`}
-                detail={progress(program.id) ?? program.eyebrow}
-                onPress={() =>
-                  router.push({
-                    pathname: '/program/[id]',
-                    params: { id: program.id },
-                  })
-                }
-              />
-            ))}
-          </RowGroup>
+          <AppText variant="overline" accessibilityRole="header">
+            PROGRAMS
+          </AppText>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.programs} contentContainerStyle={styles.programRow}>
+            {PROGRAMS.map((program) => {
+              const enrolled = enrollments.find((e) => e.programId === program.id);
+              const total = program.sessions.length;
+              return (
+                <ProgramCard
+                  key={program.id}
+                  programId={program.id}
+                  eyebrow={progress(program.id) ?? program.eyebrow}
+                  name={program.name}
+                  summary={program.summary}
+                  minutes={programTotals(program).minutes}
+                  sessions={total <= 10 ? { total, done: enrolled?.completedSessions ?? 0 } : null}
+                  onPress={() => router.push({ pathname: '/program/[id]', params: { id: program.id } })}
+                />
+              );
+            })}
+          </ScrollView>
           <RowGroup title="Routines">
             {routines.map((routine) => {
               const resolved = routineRun(routine, stores().rhythms);
@@ -100,6 +117,7 @@ export default function Practices() {
               return (
                 <ListRow
                   key={routine.id}
+                  leading={<RhythmOrb steps={names.flatMap((p) => ('steps' in p ? p.steps : []))} size={44} />}
                   title={routine.name}
                   subtitle={routineChain(names)}
                   trailing={'run' in resolved ? routineSummary(resolved.run.parts).split(' · ')[1] : 'Needs a change'}
@@ -112,13 +130,14 @@ export default function Practices() {
                 />
               );
             })}
-            <ListRow title="Build a routine" subtitle="Chain 2–6 practices" onPress={() => router.push('/routine/edit')} />
+            <ListRow leading={<PlusMark />} title="Build a routine" subtitle="Chain 2–6 practices" onPress={() => router.push('/routine/edit')} />
           </RowGroup>
           {FAMILIES.map(({ family, title }) => (
             <RowGroup key={family} title={title}>
               {LIBRARY.filter((t) => t.family === family).map((technique) => (
                 <ListRow
                   key={technique.id}
+                  leading={<RhythmOrb steps={technique.practice.steps} size={44} />}
                   title={technique.name}
                   subtitle={technique.aliases?.length ? `${technique.subtitle} · also ${technique.aliases.join(', ')}` : technique.subtitle}
                   detail={describeRhythm(technique.practice.steps)}
@@ -143,6 +162,7 @@ export default function Practices() {
                 .map((rhythm) => (
                   <ListRow
                     key={rhythm.id}
+                    leading={<RhythmOrb steps={rhythm.steps} size={44} />}
                     title={rhythm.name}
                     subtitle={rhythmSubtitle(rhythm)}
                     accessibilityHint="Makes this the ready practice on Breathe"
@@ -151,6 +171,7 @@ export default function Practices() {
                 ))
             )}
             <ListRow
+              leading={<PlusMark />}
               title="Build a custom rhythm"
               subtitle="Four steps, in whole seconds"
               onPress={() => router.push({ pathname: '/adjust', params: { custom: '1' } })}
@@ -190,6 +211,7 @@ function SearchResults({
       {techniques.map((technique) => (
         <ListRow
           key={technique.id}
+          leading={<RhythmOrb steps={technique.practice.steps} size={44} />}
           title={technique.name}
           subtitle={technique.aliases?.length ? `${technique.subtitle} · also ${technique.aliases.join(', ')}` : technique.subtitle}
           detail={describeRhythm(technique.practice.steps)}
@@ -222,16 +244,29 @@ function SearchResults({
   );
 }
 
+/** The leading mark for “Build …” rows: a plus in a mist circle. */
+function PlusMark() {
+  return (
+    <View style={styles.plus} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+      <Icon name="plus" color={colors.pine} size={18} strokeWidth={1.8} />
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   muted: { color: colors.inkSoft },
   search: {
-    ...textStyles.body,
     minHeight: touchTarget,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
     borderWidth: 1,
-    borderColor: colors.outline,
-    borderRadius: radius.control,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.ms,
-    backgroundColor: colors.surface,
+    borderRadius: radius.pill,
+    paddingHorizontal: 18,
   },
+  searchInput: { ...textStyles.body, flex: 1, minWidth: 0, paddingVertical: spacing.ms },
+  // Cards run edge to edge, past the screen's 24 px inset.
+  programs: { marginHorizontal: -spacing.lg, overflow: 'visible' },
+  programRow: { gap: spacing.ms, paddingHorizontal: spacing.lg, paddingBottom: spacing.sm },
+  plus: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
 });
