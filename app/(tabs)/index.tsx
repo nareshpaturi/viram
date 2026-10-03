@@ -6,7 +6,7 @@ import { BrandMark } from '../../src/components/BrandMark';
 import { Button, ButtonRow } from '../../src/components/Button';
 import { Card } from '../../src/components/Card';
 import { CueControls, MODE_LABEL } from '../../src/components/CueControls';
-import { RhythmCard } from '../../src/components/RhythmCard';
+import { RhythmFeature } from '../../src/components/RhythmFeature';
 import { Screen } from '../../src/components/Screen';
 import { SessionDots } from '../../src/components/SessionDots';
 import { Sheet } from '../../src/components/Sheet';
@@ -24,6 +24,7 @@ import {
   welcomeBack,
   type Enrollment,
 } from '../../src/programs/engine';
+import { useGlass } from '../../src/light/light';
 import { reminderTime } from '../../src/reminder/reminder';
 import { usePreferences } from '../../src/settings/PreferencesProvider';
 import { stores } from '../../src/storage';
@@ -39,6 +40,7 @@ const PLAN_LABEL = { morning: 'Your morning practice', midday: 'Your midday prac
 export default function Breathe() {
   const { preferences, update } = usePreferences();
   const [cuesOpen, setCuesOpen] = useState(false);
+  const glass = useGlass();
   const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
   useFocusEffect(useCallback(() => setEnrollment(stores().programs.active()), []));
 
@@ -128,7 +130,7 @@ export default function Breathe() {
           />
         </Card>
       ) : null}
-      <RhythmCard
+      <RhythmFeature
         name={practice.name}
         subtitle={subtitleOf(practice)}
         steps={practice.steps}
@@ -154,7 +156,7 @@ export default function Breathe() {
         accessibilityRole="button"
         accessibilityLabel={`Guidance: ${guidance}`}
         accessibilityHint="Change voice, tones, haptics, and motion"
-        style={({ pressed }) => [styles.chip, pressed && styles.chipPressed]}
+        style={({ pressed }) => [styles.chip, { backgroundColor: glass.fill, borderColor: glass.rim }, pressed && styles.chipPressed]}
       >
         <AppText variant="control" style={styles.chipText}>
           Guidance: {guidance}
@@ -171,12 +173,13 @@ export default function Breathe() {
 }
 
 function Choice({ title, detail, onPress }: { title: string; detail: string; onPress: () => void }) {
+  const glass = useGlass();
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`${title}, ${detail}`}
-      style={({ pressed }) => [styles.choice, pressed && styles.chipPressed]}
+      style={({ pressed }) => [styles.choice, { backgroundColor: glass.fill, borderColor: glass.outline }, pressed && styles.chipPressed]}
     >
       <AppText variant="bodyStrong">{title}</AppText>
       <AppText variant="label">{detail}</AppText>
@@ -197,7 +200,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     paddingHorizontal: spacing.md,
     borderRadius: radius.pill,
-    backgroundColor: colors.surfaceMuted,
+    borderWidth: 1,
   },
   chipPressed: { opacity: 0.8 },
   chipText: { color: colors.pine, flexShrink: 1 },

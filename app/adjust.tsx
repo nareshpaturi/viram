@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
-import { describePace, describePlan, stepLabel } from '../src/breathing/describe';
+import { describePace, describePlan, guidedPace, perMinute, stepLabel } from '../src/breathing/describe';
 import {
   MAX_ROUNDS,
   MAX_STEP_SECONDS,
@@ -102,7 +102,7 @@ export default function AdjustRhythm() {
       footer={
         <>
           <AppText variant="label" style={styles.summary} accessibilityLiveRegion="polite">
-            {describePlan(draft.steps, draft.target, slowing)} · guided {describePace(plan)} breaths/min
+            {describePlan(draft.steps, draft.target, slowing)} · {guidedPace(describePace(plan))}
           </AppText>
           <Button title="Use this rhythm" onPress={applyRhythm} />
         </>
@@ -204,7 +204,7 @@ export default function AdjustRhythm() {
                 onIncrement={() => setEnd('exhale', 1)}
               />
               <AppText variant="label">
-                {formatPace(plan.breathsPerMinute)} breaths/min at the start, {formatPace(plan.endBreathsPerMinute)} at the end. Each round is a
+                {perMinute(formatPace(plan.breathsPerMinute))} at the start, {perMinute(formatPace(plan.endBreathsPerMinute))} at the end. Each round is a
                 little longer than the last; holds stay the same.
               </AppText>
             </>

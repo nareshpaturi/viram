@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet, View } from 'react-native';
+import { useGlass } from '../light/light';
 import { colors, radius, spacing, touchTarget } from '../theme';
 import { AppText } from './AppText';
 
@@ -52,13 +53,14 @@ export function Stepper({ label, display, spoken, onDecrement, onIncrement, canD
 }
 
 function StepButton({ symbol, onPress, disabled }: { symbol: string; onPress: () => void; disabled: boolean }) {
+  const glass = useGlass();
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled}
       importantForAccessibility="no"
       accessibilityElementsHidden
-      style={({ pressed }) => [styles.button, pressed && styles.pressed, disabled && styles.disabled]}
+      style={({ pressed }) => [styles.button, { backgroundColor: glass.fill, borderColor: glass.outline }, pressed && styles.pressed, disabled && styles.disabled]}
     >
       <AppText variant="control" style={styles.symbol}>
         {symbol}
@@ -83,8 +85,6 @@ const styles = StyleSheet.create({
     height: touchTarget,
     borderRadius: radius.control,
     borderWidth: 1,
-    borderColor: colors.outline,
-    backgroundColor: colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },

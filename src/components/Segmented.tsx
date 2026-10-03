@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet, View } from 'react-native';
+import { useGlass } from '../light/light';
 import { colors, radius, spacing, touchTarget } from '../theme';
 import { AppText } from './AppText';
 
@@ -20,6 +21,7 @@ interface Props<T extends string | number> {
 
 /** A single choice among a few options, announced as a radio group. */
 export function Segmented<T extends string | number>({ label, options, value, onChange, wrap, onPine }: Props<T>) {
+  const glass = useGlass();
   return (
     <View accessibilityRole="radiogroup" accessibilityLabel={label} style={[styles.group, wrap && styles.wrap]}>
       {options.map((option) => {
@@ -33,6 +35,7 @@ export function Segmented<T extends string | number>({ label, options, value, on
             onPress={() => onChange(option.value)}
             style={({ pressed }) => [
               styles.option,
+              { backgroundColor: glass.fill, borderColor: glass.outline },
               wrap ? styles.chip : styles.segment,
               onPine && styles.onPine,
               selected && (onPine ? styles.selectedOnPine : styles.selected),
@@ -61,8 +64,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     borderRadius: radius.control,
     borderWidth: 1,
-    borderColor: colors.outline,
-    backgroundColor: colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },

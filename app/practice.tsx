@@ -15,6 +15,8 @@ import { captionFor, subtitleOf } from '../src/practice/practice';
 import { parseRun, type PracticeRun } from '../src/practice/run';
 import { findTechnique } from '../src/sharing/link';
 import { usePracticeSession, type SessionView } from '../src/practice/usePracticeSession';
+import { Wash } from '../src/light/Wash';
+import { PRACTICE_LIGHT } from '../src/light/washes';
 import { SurfaceProvider, useSurface } from '../src/night/surface';
 import { usePreferences } from '../src/settings/PreferencesProvider';
 import { colors, spacing, touchTarget } from '../src/theme';
@@ -94,11 +96,13 @@ function PracticeScreen({ run, quickStart }: { run: PracticeRun; quickStart: boo
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: surface.background }]} edges={['top', 'left', 'right', 'bottom']}>
+      {surface.night ? null : <Wash wash={PRACTICE_LIGHT} />}
       <StatusBar style="light" />
       <Body
         view={view}
         run={run}
         rounds={plans.map((p) => p.rounds)}
+        durations={plans.map((p) => p.durationMs)}
         guideSize={guideSize}
         reducedMotion={reducedMotion}
         showLockTip={showLockTip}
@@ -113,6 +117,8 @@ interface BodyProps {
   view: SessionView;
   run: PracticeRun;
   rounds: number[];
+  /** Each part's planned duration, for the session ring. */
+  durations: number[];
   guideSize: number;
   reducedMotion: boolean;
   showLockTip: boolean;
@@ -120,7 +126,7 @@ interface BodyProps {
   actions: ReturnType<typeof usePracticeSession>['actions'];
 }
 
-function Body({ view, run, rounds, guideSize, reducedMotion, showLockTip, quickStart, actions }: BodyProps) {
+function Body({ view, run, rounds, durations, guideSize, reducedMotion, showLockTip, quickStart, actions }: BodyProps) {
   const routine = run.parts.length > 1;
   const practiceOf = (part: number) => run.parts[part];
   const partLabel = (part: number) => (routine ? `Practice ${part + 1} of ${run.parts.length}` : null);
@@ -240,6 +246,7 @@ function Body({ view, run, rounds, guideSize, reducedMotion, showLockTip, quickS
               frozen={false}
               reducedMotion={reducedMotion}
               size={guideSize}
+              progress={1 - position.remainingMs / durations[view.part]}
             />
             <AppText variant="phase" accessibilityRole="header" style={styles.centerText}>
               {stepLabel(step)}

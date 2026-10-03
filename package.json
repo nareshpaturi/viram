@@ -49,7 +49,7 @@
     "check:audio": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/build-audio-manifest.mjs --check",
     "check:content": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-content.mjs",
     "check:site": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/build-site-data.mjs --check",
-    "check:theme": "node scripts/check-theme-contrast.mjs",
+    "check:theme": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-theme-contrast.mjs",
     "content:preview": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/render-content-preview.mjs",
     "ios": "expo run:ios",
     "site:data": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/build-site-data.mjs",

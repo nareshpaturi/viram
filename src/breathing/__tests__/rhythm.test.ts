@@ -10,7 +10,7 @@ import {
   stepAt,
   type RhythmStep,
 } from '../rhythm';
-import { describePlan, describeRhythm, formatClock } from '../describe';
+import { describePlan, describeRhythm, formatClock, guidedPace, perMinute } from '../describe';
 
 const four = (i: number, h: number, e: number, r: number): RhythmStep[] => [
   { kind: 'inhale', seconds: i },
@@ -156,5 +156,14 @@ describe('v1.1 step cues', () => {
       { minutes: 5 },
     );
     expect(plan).toMatchObject({ rounds: 30, durationMs: 300_000, breathsPerMinute: 6 });
+  });
+});
+
+describe('pace labels', () => {
+  it('keeps the pace and its unit on one line, and “guided” with them', () => {
+    expect(perMinute('6')).toBe('6 breaths/⁠min');
+    expect(guidedPace('5.5 → 4.6')).toBe('guided 5.5 → 4.6 breaths/⁠min');
+    // Read without the joiners, it's the plain label.
+    expect(guidedPace('6').replace(/ /g, ' ').replace(/⁠/g, '')).toBe('guided 6 breaths/min');
   });
 });

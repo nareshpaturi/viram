@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { AccessibilityInfo, StyleSheet, View } from 'react-native';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { describePace, describePlan, describeRhythm, describeTarget, formatClock } from '../src/breathing/describe';
+import { describePace, describePlan, describeRhythm, describeTarget, formatClock, guidedPace } from '../src/breathing/describe';
 import { formatPace, planFor } from '../src/breathing/rhythm';
 import { AppText } from '../src/components/AppText';
 import { Button, ButtonRow } from '../src/components/Button';
@@ -32,7 +32,11 @@ import type { HealthState } from '../src/history/repository';
 import { refreshReminder } from '../src/reminder/ReminderBridge';
 import { practiceFromRecord } from '../src/quickstart/quickActions';
 import { refreshQuickActions } from '../src/quickstart/QuickActionsBridge';
+import { LightProvider, useEverydayWash, useGlass, useWash } from '../src/light/light';
+import { Halo, Wash } from '../src/light/Wash';
+import { BLOOM, WASHES } from '../src/light/washes';
 import { NIGHT, SurfaceProvider, useSurface } from '../src/night/surface';
+import Svg, { Path } from 'react-native-svg';
 import { usePreferences } from '../src/settings/PreferencesProvider';
 import { stores } from '../src/storage';
 import { colors, spacing } from '../src/theme';
@@ -77,17 +81,22 @@ function save(record: SessionRecord): SaveState {
  */
 export default function Complete() {
   const { night } = useLocalSearchParams<{ night?: string }>();
-  // Night practice finishes on the same surface it ran on (FR-23).
+  const wash = useEverydayWash();
+  // Night practice finishes on the same surface it ran on (FR-23); otherwise
+  // the hour's Soft Light, with warmth rising from below.
   return (
     <SurfaceProvider setting="off" night={night === '1'}>
-      {night === '1' ? <StatusBar style="light" /> : null}
-      <CompleteScreen />
+      <LightProvider wash={night === '1' ? null : wash}>
+        {night === '1' ? <StatusBar style="light" /> : null}
+        <CompleteScreen />
+      </LightProvider>
     </SurfaceProvider>
   );
 }
 
 function CompleteScreen() {
   const params = useLocalSearchParams<{ record?: string }>();
+  const wash = useWash() ?? 'day';
   const surface = useSurface();
   const record = useMemo(() => {
     try {
@@ -187,6 +196,7 @@ function CompleteScreen() {
   return (
     <Screen
       edges={['top', 'left', 'right']}
+      background={surface.night ? undefined : <Wash wash={WASHES[wash]} extra={[BLOOM]} />}
       footer={
         failed ? (
           <>
@@ -205,11 +215,7 @@ function CompleteScreen() {
         )
       }
     >
-      <View style={[styles.mark, surface.night && styles.nightMark]} importantForAccessibility="no">
-        <AppText variant="heading" style={styles.check}>
-          ✓
-        </AppText>
-      </View>
+      <CheckMark night={surface.night} />
       <AppText variant="hero" accessibilityRole="header">
         {failed ? 'Your practice finished.' : (hero ?? (completed ? 'A little space,\nmade.' : 'A pause still counts.'))}
       </AppText>
@@ -235,8 +241,8 @@ function CompleteScreen() {
         <Card>
           <AppText variant="bodyStrong">{[record.name, practice && subtitleOf(practice)].filter(Boolean).join(' · ')}</AppText>
           <AppText variant="label">
-            {describeRhythm(record.steps)} · guided{' '}
-            {record.slowing ? describePace(planFor(record.steps, record.target, record.slowing)) : formatPace(record.breathsPerMinute)} breaths/min
+            {describeRhythm(record.steps)} ·{' '}
+            {guidedPace(record.slowing ? describePace(planFor(record.steps, record.target, record.slowing)) : formatPace(record.breathsPerMinute))}
           </AppText>
         </Card>
       )}
@@ -392,6 +398,26 @@ function ProgramCard({ result, record, onChange }: { result: ProgramResult; reco
   );
 }
 
+const CHECK_HALO = [
+  { offset: 0, color: '#FFFFFF', opacity: 0.9 },
+  { offset: 0.68, color: '#FFFFFF', opacity: 0 },
+];
+
+/** The check in a frosted circle with a soft halo; dim at night. */
+function CheckMark({ night }: { night: boolean }) {
+  const glass = useGlass();
+  return (
+    <View style={styles.mark} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
+      {night ? null : <Halo stops={CHECK_HALO} size={120} style={styles.markHalo} />}
+      <View style={[styles.markDisc, night ? styles.nightMark : { backgroundColor: glass.solid ? colors.surface : 'rgba(255, 255, 255, 0.8)', borderColor: colors.glassRim }]}>
+        <Svg width={30} height={30} viewBox="0 0 24 24" fill="none" stroke={night ? NIGHT.accent : colors.pine} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+          <Path d="M5 12.5l4.5 4.5L19 7.5" />
+        </Svg>
+      </View>
+    </View>
+  );
+}
+
 const TIMES = ['', 'once', 'twice', 'three times', 'four times', 'five times', 'six times', 'seven times', 'eight times', 'nine times', 'ten times'];
 const timesWord = (count: number) => TIMES[count] ?? `${count} times`;
 
@@ -406,17 +432,10 @@ function nextTimeMessage(choice: NextTime, offer: Offer | null): string | null {
 }
 
 const styles = StyleSheet.create({
-  mark: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: colors.mist,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: spacing.lg,
-  },
-  nightMark: { backgroundColor: NIGHT.cardMuted },
-  check: { color: colors.pine },
+  mark: { width: 72, height: 72, marginTop: spacing.md },
+  markHalo: { position: 'absolute', left: -24, top: -24 },
+  markDisc: { width: 72, height: 72, borderRadius: 36, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  nightMark: { backgroundColor: NIGHT.cardMuted, borderColor: NIGHT.cardMuted },
   muted: { color: colors.inkSoft },
   warning: { color: colors.danger },
   nextTime: { color: colors.pine },
