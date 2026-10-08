@@ -52,6 +52,8 @@ interface Props {
   size: number;
   /** 0–1 through the practice, shown on the outer ring; omitted hides it. */
   progress?: number;
+  /** The count's size, smaller in a Visual guide preview; practice uses the 64/72 countdown. */
+  numeral?: number;
 }
 
 /**
@@ -65,7 +67,7 @@ interface Props {
  * clock-driven renders; nothing here keeps its own time. Night practice
  * dims the disc and halves the glow.
  */
-export function BreathingGuide({ kind, hum, stepKey, durationMs, elapsedMs, count, frozen, reducedMotion, size, progress }: Props) {
+export function BreathingGuide({ kind, hum, stepKey, durationMs, elapsedMs, count, frozen, reducedMotion, size, progress, numeral }: Props) {
   const surface = useSurface();
   const id = useSvgId('guide');
   const scale = useRef(new Animated.Value(scaleAt(kind, elapsedMs / durationMs))).current;
@@ -93,15 +95,18 @@ export function BreathingGuide({ kind, hum, stepKey, durationMs, elapsedMs, coun
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stepKey, frozen, reducedMotion]);
 
-  const disc = size * 0.78;
+  // Whole points: a fractional SVG size clips the disc's edge flat.
+  const disc = Math.round(size * 0.78);
   const lit = surface.night ? ([shade(surface.phase[kind], 0.2), surface.phase[kind], shade(surface.phase[kind], -0.1)] as const) : LIT[kind];
   const glowColor = surface.night ? surface.phase[kind] : LIT[kind][1];
   const glowScale = surface.night ? 0.5 : 1;
   // The session arc runs clockwise from the top; its head carries a coral point.
   const p = Math.min(0.9999, Math.max(0, progress ?? 0));
   const angle = p * 2 * Math.PI;
-  const head = { x: size / 2 + outer * Math.sin(angle), y: size / 2 - outer * Math.cos(angle) };
-  const arc = `M ${size / 2} ${size / 2 - outer} A ${outer} ${outer} 0 ${p > 0.5 ? 1 : 0} 1 ${head.x} ${head.y}`;
+  // The ring's canvas has room around it, so the coral point is never cut off at 12 o'clock.
+  const mid = size / 2 + RING_ROOM;
+  const head = { x: mid + outer * Math.sin(angle), y: mid - outer * Math.cos(angle) };
+  const arc = `M ${mid} ${mid - outer} A ${outer} ${outer} 0 ${p > 0.5 ? 1 : 0} 1 ${head.x} ${head.y}`;
 
   return (
     <View style={{ width: size, height: size + (hum ? 28 : 0), alignItems: 'center' }} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
@@ -116,8 +121,8 @@ export function BreathingGuide({ kind, hum, stepKey, durationMs, elapsedMs, coun
           </Defs>
           <Circle cx={GLOW / 2} cy={GLOW / 2} r={GLOW / 2} fill={`url(#${id}glow)`} />
         </Svg>
-        <Svg width={size} height={size} style={StyleSheet.absoluteFill}>
-          <Circle cx={size / 2} cy={size / 2} r={outer} stroke={surface.line} strokeWidth={1} fill="none" />
+        <Svg width={size + RING_ROOM * 2} height={size + RING_ROOM * 2} style={[styles.ring, { left: -RING_ROOM, top: -RING_ROOM }]}>
+          <Circle cx={mid} cy={mid} r={outer} stroke={surface.line} strokeWidth={1} fill="none" />
           {progress !== undefined && p > 0 ? (
             <>
               <Path d={arc} stroke="rgba(255,255,255,0.75)" strokeWidth={2.5} strokeLinecap="round" fill="none" />
@@ -154,7 +159,7 @@ export function BreathingGuide({ kind, hum, stepKey, durationMs, elapsedMs, coun
           </Svg>
         ) : null}
         {count !== null ? (
-          <AppText variant="countdown" maxFontSizeMultiplier={1.4} style={{ color: surface.count }}>
+          <AppText variant="countdown" maxFontSizeMultiplier={1.4} style={[{ color: surface.count }, numeral ? { fontSize: numeral, lineHeight: numeral * 1.125 } : null]}>
             {count}
           </AppText>
         ) : null}
@@ -173,7 +178,11 @@ function HumWave({ color }: { color: string }) {
   );
 }
 
+/** Room around the ring's canvas for the coral point (radius 5, plus its border). */
+const RING_ROOM = 8;
+
 const styles = StyleSheet.create({
+  ring: { position: 'absolute' },
   center: { alignItems: 'center', justifyContent: 'center' },
   glow: { position: 'absolute' },
 });

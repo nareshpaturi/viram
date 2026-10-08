@@ -1,7 +1,7 @@
-import { useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { BackHandler, Platform, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Redirect, router, useLocalSearchParams } from 'expo-router';
+import { Redirect, router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useReducedMotion } from '../src/accessibility/motion';
 import { describeRhythm, describeTarget, formatClock, routeLabel, stepLabel } from '../src/breathing/describe';
@@ -13,7 +13,8 @@ import { NoseDrawing } from '../src/components/NoseDrawing';
 import { SideIndicator } from '../src/components/SideIndicator';
 import { LOCK_TIP, PAUSE_TITLE, screenReaderNote } from '../src/practice/guidanceRules';
 import { practicePath } from '../src/practice/launch';
-import { breathesThroughNose, drawingLabel, drawsInB, practiceNote, practiceVariant, type PracticeScreen } from '../src/practice/prototype';
+import { drawingLabel, drawsAboveCircle, drawsIllustration, practiceNote, VISUAL_GUIDE_NAME, visualGuideOf, type VisualGuide } from '../src/practice/visualGuide';
+import { VisualGuideRow } from '../src/components/VisualGuideRow';
 import { captionFor, subtitleOf } from '../src/practice/practice';
 import { parseRun, type PracticeRun } from '../src/practice/run';
 import { findTechnique } from '../src/sharing/link';
@@ -64,15 +65,18 @@ function PracticeScreen({ run, quickStart }: { run: PracticeRun; quickStart: boo
       update({ introductionsHeard: [...new Set([...preferences.introductionsHeard, id])] }),
   });
 
-  // Leaving is always deliberate: the back gesture asks to end.
-  useEffect(() => {
-    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
-      if (view.kind === 'running' || view.kind === 'paused') actions.askToEnd();
-      else if (view.kind === 'intro' || (view.kind === 'countdown' && view.purpose === 'settle')) actions.cancel();
-      return true;
-    });
-    return () => subscription.remove();
-  }, [actions, view]);
+  // Leaving is always deliberate: the back gesture asks to end. Only while
+  // this screen is on top, so Back on the Visual guide chooser goes back to it.
+  useFocusEffect(
+    useCallback(() => {
+      const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+        if (view.kind === 'running' || view.kind === 'paused') actions.askToEnd();
+        else if (view.kind === 'intro' || (view.kind === 'countdown' && view.purpose === 'settle')) actions.cancel();
+        return true;
+      });
+      return () => subscription.remove();
+    }, [actions, view]),
+  );
 
   useEffect(() => {
     if (view.kind === 'finished') {
@@ -97,14 +101,13 @@ function PracticeScreen({ run, quickStart }: { run: PracticeRun; quickStart: boo
       <Body
         view={view}
         run={run}
-        rounds={plans.map((p) => p.rounds)}
         durations={plans.map((p) => p.durationMs)}
         guideSize={guideSize}
         reducedMotion={reducedMotion}
         countingAloud={countingAloud}
         lockTip={lockTip}
         voiceOwnsSpeech={speech === 'viram'}
-        variant={practiceVariant(preferences.practiceScreen)}
+        guide={visualGuideOf(preferences.visualGuide)}
         quickStart={quickStart}
         actions={actions}
       />
@@ -115,7 +118,6 @@ function PracticeScreen({ run, quickStart }: { run: PracticeRun; quickStart: boo
 interface BodyProps {
   view: SessionView;
   run: PracticeRun;
-  rounds: number[];
   /** Each part's planned duration, for the session ring. */
   durations: number[];
   guideSize: number;
@@ -126,13 +128,13 @@ interface BodyProps {
   lockTip: string | null;
   /** A screen reader is on and the Viram voice speaks the steps (UX06). */
   voiceOwnsSpeech: boolean;
-  /** The prototype for the moderated test (development builds only). */
-  variant: PracticeScreen;
+  /** Breath circle or illustrated guide; only what's drawn, never the session. */
+  guide: VisualGuide;
   quickStart: boolean;
   actions: ReturnType<typeof usePracticeSession>['actions'];
 }
 
-function Body({ view, run, rounds, durations, guideSize, reducedMotion, countingAloud, lockTip, voiceOwnsSpeech, variant, quickStart, actions }: BodyProps) {
+function Body({ view, run, durations, guideSize, reducedMotion, countingAloud, lockTip, voiceOwnsSpeech, guide, quickStart, actions }: BodyProps) {
   const routine = run.parts.length > 1;
   const practiceOf = (part: number) => run.parts[part];
   const partLabel = (part: number) => (routine ? `Practice ${part + 1} of ${run.parts.length}` : null);
@@ -222,26 +224,19 @@ function Body({ view, run, rounds, durations, guideSize, reducedMotion, counting
     case 'running': {
       const { position } = view;
       const practice = practiceOf(view.part);
-      const roundsTarget = 'rounds' in practice.target;
       const step = practice.steps[position.step.index];
-      const activeSteps = practice.steps.filter((s) => s.seconds > 0);
-      const stepNumber = practice.steps.slice(0, position.step.index + 1).filter((s) => s.seconds > 0).length;
       // Half-second rhythms and gradual slowing show a ring instead of whole-second counts.
       const seconds = position.step.durationMs / 1000;
       const halfSeconds = !!practice.slowing || practice.steps.some((s) => !Number.isInteger(s.seconds));
       const count = halfSeconds ? null : guideCount(position.step.durationMs, position.step.elapsedMs, countingAloud);
       const route = routeLabel(step);
       const caption = captionFor(practice, position.step.index) ?? [practice.name, subtitleOf(practice)].filter(Boolean).join(' · ');
-      // The prototype shows time remaining only, with no round count (UX09).
-      const prototype = variant !== 'current';
-      const remaining =
-        roundsTarget && !prototype
-          ? `${position.roundsLeft} ${position.roundsLeft === 1 ? 'round' : 'rounds'} left · ${formatClock(position.remainingMs)}`
-          : `${formatClock(position.remainingMs)} remaining`;
-      // A draws the nose instead of the guide, unless the practice breathes through the mouth or chants.
-      const drawA = variant === 'a' && breathesThroughNose(practice.steps);
-      // B draws above the guide, only where the guide can't show it: the open side, or a hum.
-      const drawB = variant === 'b' && drawsInB(step);
+      // Time remaining only, with no round count (V4/V5).
+      const remaining = `${formatClock(position.remainingMs)} remaining`;
+      // The illustrated guide draws the nose instead of the circle, unless the practice breathes through the mouth or chants.
+      const drawA = drawsIllustration(guide, practice.steps);
+      // The circle carries a drawing above it only where it can't show the step itself: the open side, or a hum.
+      const drawB = !drawA && drawsAboveCircle(step);
       const stepProgress = position.step.durationMs > 0 ? position.step.elapsedMs / position.step.durationMs : 1;
       const secondsLeft = Math.max(1, Math.ceil((position.step.durationMs - position.step.elapsedMs) / 1000));
       const note = practiceNote(practice.steps, subtitleOf(practice));
@@ -251,18 +246,12 @@ function Body({ view, run, rounds, durations, guideSize, reducedMotion, counting
       return (
         <View style={styles.fill}>
           <TopBar left={{ label: 'End', onPress: actions.askToEnd }} right={remaining} />
-          {prototype ? (
-            <View style={styles.practiceName}>
-              <AppText variant="bodyStrong" style={[styles.centerText, styles.nameText]}>
-                {practice.name}
-              </AppText>
-              {note ? <AppText variant="label" style={styles.muted}>{note}</AppText> : null}
-            </View>
-          ) : (
-            <AppText variant="label" style={styles.progress}>
-              {routine ? `${practice.name} · ` : ''}Round {position.roundNumber} of {rounds[view.part]} · Step {stepNumber} of {activeSteps.length}
+          <View style={styles.practiceName}>
+            <AppText variant="bodyStrong" style={[styles.centerText, styles.nameText]}>
+              {practice.name}
             </AppText>
-          )}
+            {note ? <AppText variant="label" style={styles.muted}>{note}</AppText> : null}
+          </View>
           {drawA ? (
             <View style={styles.center}>
               <View style={styles.stepA} accessible accessibilityRole="header" accessibilityLabel={stepA11y}>
@@ -358,7 +347,18 @@ function Body({ view, run, rounds, durations, guideSize, reducedMotion, counting
             ) : null}
             <AppText style={styles.muted}>Resume starts {view.resumeStep} again after a three-second countdown.</AppText>
           </Centered>
-          <Button title="Resume" variant="onPine" onPress={actions.resume} />
+          <View style={styles.actions}>
+            {/* Changing the style leaves the practice paused, its clock frozen. */}
+            <VisualGuideRow
+              tone="pine"
+              value={VISUAL_GUIDE_NAME[guide]}
+              onPress={() => {
+                const part = practiceOf(view.part);
+                router.push({ pathname: '/visual-guide', params: { origin: 'pause', practice: JSON.stringify({ name: part.name, steps: part.steps }) } });
+              }}
+            />
+            <Button title="Resume" variant="onPine" onPress={actions.resume} />
+          </View>
         </View>
       );
 

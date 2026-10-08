@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { AppText } from '../../src/components/AppText';
@@ -53,7 +53,17 @@ export default function Breathe() {
   // Smaller at large text sizes, so the words keep their room.
   const orb = fontScale > 1.3 ? { size: 104, halo: 170 } : { size: 136, halo: 222 };
   const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
-  useFocusEffect(useCallback(() => setEnrollment(stores().programs.active()), []));
+  // Back from the Visual guide chooser, Guidance opens again where it was.
+  const reopenGuidance = useRef(false);
+  useFocusEffect(
+    useCallback(() => {
+      setEnrollment(stores().programs.active());
+      if (reopenGuidance.current) {
+        reopenGuidance.current = false;
+        setCuesOpen(true);
+      }
+    }, []),
+  );
 
   const saveEnrollment = (e: Enrollment) => {
     stores().programs.save(e);
@@ -204,13 +214,19 @@ export default function Breathe() {
           <GroupRow
             title="Guidance"
             detail={guidanceLine(preferences.cueMode, preferences.haptics)}
-            hint="Change voice, tones, haptics, and motion"
+            hint="Change voice, tones, haptics, visual guide, and motion"
             onPress={() => setCuesOpen(true)}
           />
         </Frosted>
       </View>
       <Sheet visible={cuesOpen} title="Guidance" onClose={() => setCuesOpen(false)}>
-        <CueControls />
+        <CueControls
+          onVisualGuide={() => {
+            reopenGuidance.current = true;
+            setCuesOpen(false);
+            router.push({ pathname: '/visual-guide', params: { origin: 'guidance', practice: JSON.stringify({ name: practice.name, steps: practice.steps }) } });
+          }}
+        />
       </Sheet>
       {run ? null : (
         <DurationSheet

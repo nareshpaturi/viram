@@ -94,25 +94,6 @@ export default function Settings() {
           <ListRow title="Cue timing" subtitle="How close each cue landed to its planned time" onPress={() => router.push('/settings/timing')} />
         </RowGroup>
       ) : null}
-      {/* The practice-screen prototype for the moderated test; never in a release build. */}
-      {__DEV__ ? (
-        <>
-          <AppText variant="overline" accessibilityRole="header">
-            PRACTICE SCREEN
-          </AppText>
-          <AppText variant="label">Development builds only. A draws the nose instead of the guide; B adds it above the guide for side and hum steps.</AppText>
-          <Segmented
-            label="Practice screen"
-            value={preferences.practiceScreen}
-            onChange={(practiceScreen) => update({ practiceScreen })}
-            options={[
-              { value: 'current', label: 'Current' },
-              { value: 'a', label: 'A' },
-              { value: 'b', label: 'B' },
-            ]}
-          />
-        </>
-      ) : null}
     </Screen>
   );
 }

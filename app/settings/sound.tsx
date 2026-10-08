@@ -1,4 +1,5 @@
 import { Platform, StyleSheet } from 'react-native';
+import { router } from 'expo-router';
 import { MUSIC_CHOICES, MUSIC_LABEL, MUSIC_PREVIEW_MS, musicSound } from '../../src/audio/music';
 import { TONE_SETS, TONE_SET_LABEL } from '../../src/audio/toneSets';
 import { usePreview } from '../../src/audio/usePreview';
@@ -26,7 +27,7 @@ export default function CuesAndSound() {
 
   return (
     <Screen edges={['left', 'right']}>
-      <CueControls />
+      <CueControls onVisualGuide={() => router.push({ pathname: '/visual-guide', params: { origin: 'settings' } })} />
 
       <Section title="VOICE" help="Speaks every cue, count, name, and introduction. Tap play to hear a voice before you choose it.">
         <RadioCard label="Voice">

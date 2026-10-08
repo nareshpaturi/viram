@@ -11,47 +11,58 @@ const BASE = 'M131 160C119 164 117 180 129 183C135 184.5 139 181 144 183.5C147.5
 const LIPS = 'M136 212C143 216 157 216 164 212';
 const WAVES = 'M124 202C119 208 119 216 124 222M116 196C109 205 109 219 116 228M176 202C181 208 181 216 176 222M184 196C191 205 191 219 184 228';
 
-/** Placement and line weights for each use; the 300 viewBox draws at 120 (B) or 300 (A). */
+/**
+ * Line weights and placement for each use of the 300 viewBox:
+ * - compact: 120 pt above the breath circle, with a still arrow.
+ * - full: the illustrated guide at 300 pt, with the air moving.
+ * - preview: the illustrated guide on a chooser card's 176 pt stage.
+ * - thumb: the Visual guide chooser's 84 pt thumbnail, with a still arrow.
+ */
 const LOOK = {
-  compact: { nose: 5, slash: 5.5, air: 6, faint: 0 },
-  full: { nose: 1.8, slash: 2.1, air: 2.6, faint: 2.4 },
+  compact: { nose: 5, slash: 5.5, air: 6, faint: 0, still: true },
+  full: { nose: 1.8, slash: 2.1, air: 2.6, faint: 2.4, still: false },
+  preview: { nose: 2.4, slash: 2.8, air: 3.2, faint: 3, still: false },
+  thumb: { nose: 6, slash: 6.5, air: 7, faint: 0, still: true },
 } as const;
+const LARGE = 'translate(150 135) scale(1.45) translate(-150 -142)';
 
 interface Props {
   step: RhythmStep;
-  /** B: 120 pt above the guide, a still arrow. A: 300 pt in place of the guide, the air moving. */
-  look: 'compact' | 'full';
+  look: keyof typeof LOOK;
   size: number;
-  /** 0–1 through the step, from the session clock (A). */
+  /** 0–1 through the step, from the session clock (or a preview's). */
   progress: number;
   reducedMotion: boolean;
 }
 
 /**
- * The nose in mirror view for the practice-screen prototype (batch 3,
- * development builds only): a slash over the closed nostril, air into the
- * open one on inhale and out on exhale, or closed lips and waves for a hum.
- * Decorative: the step label and voice always say the same.
+ * The nose in mirror view, the same paths as the Welcome aura: a slash over
+ * the closed nostril, air into the open one on inhale and out on exhale, or
+ * closed lips and waves for a hum. Drawn above the breath circle, as the
+ * illustrated guide, and in the Visual guide chooser. Decorative: the step
+ * label and voice always say the same.
  */
 export function NoseDrawing({ step, look, size, progress, reducedMotion }: Props) {
   const surface = useSurface();
   const id = useSvgId('nose');
   const weights = LOOK[look];
   const hum = step.cue === 'hum';
-  const transform =
-    look === 'full'
-      ? 'translate(150 135) scale(1.45) translate(-150 -142)'
+  const large = look === 'full' || look === 'preview';
+  const transform = large
+    ? LARGE
+    : look === 'thumb'
+      ? 'translate(150 140) scale(1.25) translate(-150 -177)'
       : `translate(150 150) scale(1.15) translate(-150 ${hum ? -163 : -177})`;
   // Air goes through the open side, or both sides when neither is closed (A
   // only). A hum's waves already show the breath leaving, so it draws no air.
-  const airSides: ('left' | 'right')[] = hum ? [] : step.side ? [step.side] : look === 'full' ? ['left', 'right'] : [];
-  const air = airAt(step.kind, progress, look === 'compact' || reducedMotion);
+  const airSides: ('left' | 'right')[] = hum ? [] : step.side ? [step.side] : large ? ['left', 'right'] : [];
+  const air = airAt(step.kind, progress, weights.still || reducedMotion);
   const airColor = surface.phase[step.kind];
   const ink = surface.text;
 
   return (
     <Svg width={size} height={size} viewBox="0 0 300 300" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-      {look === 'full' ? (
+      {large ? (
         <>
           <Defs>
             <RadialGradient id={`${id}core`} cx="150" cy="170" r="120" gradientUnits="userSpaceOnUse">

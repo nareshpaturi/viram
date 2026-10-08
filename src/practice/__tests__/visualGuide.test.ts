@@ -1,30 +1,48 @@
 import type { RhythmStep } from '../../breathing/rhythm';
 import { AIR, airAt, airFor, arrowHead, mirror, point, segment, slashFor, tangent, TRACE } from '../noseAir';
-import { breathesThroughNose, drawingLabel, drawsInB, practiceNote, practiceVariant } from '../prototype';
+import { parsePreferences, DEFAULT_PREFERENCES } from '../../settings/preferences';
+import { breathesThroughNose, drawingLabel, drawsAboveCircle, drawsIllustration, practiceNote, visualGuideOf } from '../visualGuide';
 
 const inhale = (extra: Partial<RhythmStep> = {}): RhythmStep => ({ kind: 'inhale', seconds: 4, ...extra });
 const exhale = (extra: Partial<RhythmStep> = {}): RhythmStep => ({ kind: 'exhale', seconds: 6, ...extra });
 
-describe('practiceVariant', () => {
-  it('honors the setting only in development builds', () => {
-    expect(practiceVariant('a', true)).toBe('a');
-    expect(practiceVariant('b', false)).toBe('current');
-    expect(practiceVariant(undefined, true)).toBe('current');
+describe('the visual guide preference', () => {
+  it('defaults to the breath circle, and reads anything unknown as the circle', () => {
+    expect(DEFAULT_PREFERENCES.visualGuide).toBe('circle');
+    expect(visualGuideOf('illustrated')).toBe('illustrated');
+    expect(visualGuideOf('b')).toBe('circle');
+    expect(visualGuideOf(undefined)).toBe('circle');
+  });
+
+  it('drops an invalid stored value, so the default applies', () => {
+    expect(parsePreferences({ visualGuide: 'illustrated' })).toEqual({ visualGuide: 'illustrated' });
+    expect(parsePreferences({ visualGuide: 'lavender' })).toEqual({});
+    // The development switch it replaces is no longer a preference.
+    expect(parsePreferences({ practiceScreen: 'a' })).toEqual({});
   });
 });
 
 describe('which steps draw', () => {
-  it('keeps the guide in A for mouth breathing and Om', () => {
+  it('keeps the circle for mouth breathing and Om', () => {
     expect(breathesThroughNose([inhale(), exhale()])).toBe(true);
     expect(breathesThroughNose([inhale({ route: 'mouth' }), exhale()])).toBe(false);
     expect(breathesThroughNose([inhale(), exhale({ cue: 'om' })])).toBe(false);
     expect(breathesThroughNose([inhale(), exhale({ cue: 'hum' })])).toBe(true);
   });
 
-  it('draws in B only for a side or a hum', () => {
-    expect(drawsInB(inhale({ side: 'left' }))).toBe(true);
-    expect(drawsInB(exhale({ cue: 'hum' }))).toBe(true);
-    expect(drawsInB(inhale())).toBe(false);
+  it('draws above the circle only for a side or a hum', () => {
+    expect(drawsAboveCircle(inhale({ side: 'left' }))).toBe(true);
+    expect(drawsAboveCircle(exhale({ cue: 'hum' }))).toBe(true);
+    expect(drawsAboveCircle(exhale({ cue: 'om' }))).toBe(false);
+    expect(drawsAboveCircle(inhale())).toBe(false);
+  });
+
+  it('illustrates only nose breathing, and only when chosen', () => {
+    const nose = [inhale({ side: 'left' }), exhale({ side: 'right' })];
+    const sheetali = [inhale({ route: 'mouth' }), exhale()];
+    expect(drawsIllustration('illustrated', nose)).toBe(true);
+    expect(drawsIllustration('illustrated', sheetali)).toBe(false);
+    expect(drawsIllustration('circle', nose)).toBe(false);
   });
 
   it('labels the drawing from the practitioner’s side', () => {
