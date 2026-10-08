@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Animated, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { playOnce } from '../../src/audio/guide';
@@ -13,7 +13,8 @@ import { Icon } from '../../src/components/Icons';
 import { RowGroup } from '../../src/components/ListRow';
 import { RhythmSummary } from '../../src/components/RhythmSummary';
 import { Screen } from '../../src/components/Screen';
-import { TechniquePlate } from '../../src/components/TechniquePlate';
+import { PLATE_TOP, TechniquePlate } from '../../src/components/TechniquePlate';
+import { useReducedMotion } from '../../src/accessibility/motion';
 import { isStudy, sourceLine } from '../../src/content/sourceText';
 import { practiceHref } from '../../src/practice/launch';
 import { practiceFromTechnique } from '../../src/practice/practice';
@@ -33,6 +34,25 @@ export default function TechniqueGuide() {
   const technique = id ? findTechnique(id) : undefined;
   const { preferences, update } = usePreferences();
   const insets = useSafeAreaInsets();
+  const reducedMotion = useReducedMotion(preferences.motion);
+  // The top bar fades in as the plate's name scrolls under it, so nothing
+  // ever runs beneath the status bar. Its edges come from the name's layout:
+  // the plate's text column starts at its top padding.
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const [nameBox, setNameBox] = useState({ y: 22, height: 34 });
+  const [barShown, setBarShown] = useState(false);
+  const barBottom = insets.top + BAR_HEIGHT;
+  const nameTop = insets.top + PLATE_TOP + nameBox.y;
+  const shownAt = Math.max(1, nameTop + nameBox.height - barBottom);
+  const fadeFrom = reducedMotion ? shownAt - 1 : Math.min(shownAt - 1, Math.max(0, nameTop - barBottom));
+  const bar = scrollY.interpolate({ inputRange: [fadeFrom, shownAt], outputRange: [0, 1], extrapolate: 'clamp' });
+  // Paper first, then the name, so the name never lands on half-clear paper over the overline.
+  const paper = bar.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0, 1, 1] });
+  const title = bar.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0, 0, 1] });
+  useEffect(() => {
+    const listener = scrollY.addListener(({ value }) => setBarShown(value >= shownAt));
+    return () => scrollY.removeListener(listener);
+  }, [scrollY, shownAt]);
 
   if (!technique) {
     return (
@@ -66,19 +86,29 @@ export default function TechniqueGuide() {
   const sources = guidance.basedOn.length;
   return (
     <View style={styles.fill}>
-      <Screen edges={['left', 'right']} footer={<Button title={`Begin · ${describeTarget(technique.practice.target)}`} onPress={begin} />}>
+      <Screen
+        edges={['left', 'right']}
+        footer={<Button title={`Begin · ${describeTarget(technique.practice.target)}`} onPress={begin} />}
+        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: false })}
+      >
         <TechniquePlate steps={practice.steps}>
           <AppText variant="overline">{technique.family === 'classical' ? 'CLASSICAL PRANAYAMA' : 'MODERN PATTERN'}</AppText>
-          <AppText variant="title" accessibilityRole="header" accessibilityHint={pronunciation?.respelling} style={styles.name}>
+          <AppText
+            variant="title"
+            accessibilityRole="header"
+            accessibilityHint={pronunciation?.respelling}
+            style={styles.name}
+            onLayout={(e) => setNameBox({ y: e.nativeEvent.layout.y, height: e.nativeEvent.layout.height })}
+          >
             {technique.name}
           </AppText>
           <AppText style={styles.plateLine}>{technique.subtitle}</AppText>
           {pronunciation ? (
-            <AppText style={[styles.plateLine, styles.respelling]} accessibilityLabel={`Said ${pronunciation.respelling}`}>
-              {/* The Devanagari wraps as one piece, never word by word. */}
+            // Two lines at every width: the respelling, then the Devanagari.
+            <View accessible accessibilityLabel={`Said ${pronunciation.respelling}`}>
               <AppText style={[styles.plateLine, styles.respelling, styles.strong]}>{pronunciation.respelling}</AppText>
-              {`\u00A0· ${pronunciation.devanagari.replace(/ /g, '\u00A0')}`}
-            </AppText>
+              <AppText variant="label">{pronunciation.devanagari}</AppText>
+            </View>
           ) : null}
           {canHear ? (
             <Button
@@ -159,18 +189,54 @@ export default function TechniqueGuide() {
           </AppText>
         ) : null}
       </Screen>
-      <Pressable
-        onPress={() => router.back()}
-        accessibilityRole="button"
-        accessibilityLabel="Back"
-        hitSlop={4}
-        style={({ pressed }) => [styles.back, { top: insets.top + 8 }, pressed && styles.backPressed]}
+      {/* Paper over the status bar once the name has scrolled away; the name moves up into it. */}
+      <Animated.View
+        pointerEvents={barShown ? 'auto' : 'none'}
+        style={[
+          styles.bar,
+          {
+            height: barBottom,
+            paddingTop: insets.top,
+            backgroundColor: paper.interpolate({ inputRange: [0, 1], outputRange: ['rgba(251, 252, 248, 0)', 'rgba(251, 252, 248, 0.96)'] }),
+            borderBottomColor: paper.interpolate({ inputRange: [0, 1], outputRange: ['rgba(18, 55, 47, 0)', 'rgba(18, 55, 47, 0.08)'] }),
+          },
+        ]}
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
       >
-        <Icon name="back" color={colors.pine} size={18} strokeWidth={2} />
-      </Pressable>
+        <Animated.View style={{ opacity: title }}>
+          <AppText variant="bodyStrong" numberOfLines={1} style={styles.barTitle}>
+            {technique.name}
+          </AppText>
+        </Animated.View>
+      </Animated.View>
+      {/* Frosted over the plate, mist on the bar's paper. */}
+      <Animated.View
+        style={[
+          styles.back,
+          {
+            top: insets.top + (BAR_HEIGHT - 44) / 2,
+            backgroundColor: paper.interpolate({ inputRange: [0, 1], outputRange: ['rgba(255, 255, 255, 0.6)', colors.mist] }),
+            borderColor: paper.interpolate({ inputRange: [0, 1], outputRange: [colors.glassRim, colors.mist] }),
+          },
+        ]}
+      >
+        <Pressable
+          onPress={() => router.back()}
+          accessibilityRole="button"
+          accessibilityLabel="Back"
+          hitSlop={4}
+          style={({ pressed }) => [styles.backPress, pressed && styles.backPressed]}
+        >
+          <Icon name="back" color={colors.pine} size={18} strokeWidth={2} />
+        </Pressable>
+      </Animated.View>
     </View>
   );
 }
+
+/** The top bar's height below the status bar. */
+const BAR_HEIGHT = 52;
 
 /** A row that opens to show more, collapsed at first (UX08). */
 function Disclosure({ title, count, last, children }: { title: string; count?: string; last?: boolean; children: React.ReactNode }) {
@@ -238,11 +304,20 @@ const styles = StyleSheet.create({
     height: 44,
     borderRadius: 22,
     borderWidth: 1,
-    borderColor: colors.glassRim,
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    overflow: 'hidden',
   },
+  backPress: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  bar: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    paddingHorizontal: 68,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+  },
+  barTitle: { fontSize: 17, lineHeight: 22, textAlign: 'center' },
   backPressed: { opacity: 0.7 },
   pills: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.ms },
   pill: { flexGrow: 1, flexBasis: 140, minHeight: 48 },
