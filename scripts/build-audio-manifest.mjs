@@ -1,4 +1,4 @@
-// Measures every bundled clip, tone, and music bed and writes src/audio/manifest.generated.ts,
+// Measures every bundled clip, tone, music bed, and first-use sample and writes src/audio/manifest.generated.ts,
 // the static require map the app loads sounds from and the clip lengths the
 // cue scheduler's voice-or-tone rule uses (FR-03). Fails when a cue clip is
 // over its limit or an expected file is missing.
@@ -11,7 +11,8 @@ import { durationMs } from './lib/wav.mjs';
 
 const OUTPUT = 'src/audio/manifest.generated.ts';
 const TONE_SETS = ['soft-bells', 'wood', 'chimes'];
-const TONE_KINDS = ['inhale', 'hold', 'exhale', 'rest', 'complete'];
+// `sample` is first use's short preview of each set (scripts/render-cue-samples.mjs).
+const TONE_KINDS = ['inhale', 'hold', 'exhale', 'rest', 'complete', 'sample'];
 const MUSIC = ['tanpura', 'pad'];
 // Placeholder clips are replaced in D23; flip this when the licensed voice lands.
 const PLACEHOLDER_VOICE = true;
@@ -56,6 +57,10 @@ for (const voice of VOICE_IDS) {
     sounds.push([`voice.${voice}.${id}`, file]);
     clipMs[voice][id] = ms;
   }
+  // First use's “Inhale … Exhale” preview (scripts/render-cue-samples.mjs).
+  const sample = `assets/voice/${voice}/sample.wav`;
+  if (!existsSync(sample)) errors.push(`missing ${sample}; run npm run audio:samples`);
+  else sounds.push([`voice.${voice}.sample`, sample]);
 }
 
 if (errors.length) {

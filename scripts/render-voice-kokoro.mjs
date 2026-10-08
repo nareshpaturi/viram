@@ -151,4 +151,4 @@ writeFileSync(
     2,
   )}\n`,
 );
-console.log(`Rendered ${clipsFor(voices[0]).length} clips each for ${voices.join(', ')} into assets/voice/ and recorded ${SETTINGS}. Next: npm run audio:manifest`);
+console.log(`Rendered ${clipsFor(voices[0]).length} clips each for ${voices.join(', ')} into assets/voice/ and recorded ${SETTINGS}. Next: npm run audio:samples, then npm run audio:manifest`);
