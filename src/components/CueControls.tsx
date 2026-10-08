@@ -1,4 +1,4 @@
-import { StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import { playOnce } from '../audio/guide';
 import type { CueMode } from '../breathing/timeline';
 import { usePreferences } from '../settings/PreferencesProvider';
@@ -12,7 +12,10 @@ import { SwitchRow } from './SwitchRow';
 const MODE_HELP: Record<CueMode, string> = {
   voice: 'Voice says each step, like “Inhale left.” With Voice or Tones, guidance continues when you lock your phone.',
   tones: 'A different sound marks each step. Guidance continues when you lock your phone.',
-  silent: 'No sound. The screen stays on during practice, and Silent pauses if you lock your phone.',
+  silent:
+    Platform.OS === 'ios'
+      ? 'No sound. The screen stays on during practice. iPhone can’t tap while it’s locked, so choose what happens if you lock it.'
+      : 'No sound. The screen stays on during practice. With haptics on, guidance continues when you lock your phone.',
 };
 
 export const MODE_LABEL: Record<CueMode, string> = { voice: 'Voice', tones: 'Tones', silent: 'Silent' };
@@ -39,6 +42,17 @@ export function CueControls() {
         options={(['voice', 'tones', 'silent'] as const).map((value) => ({ value, label: MODE_LABEL[value] }))}
       />
       <AppText variant="label">{MODE_HELP[preferences.cueMode]}</AppText>
+      {Platform.OS === 'ios' && preferences.cueMode === 'silent' ? (
+        <Segmented
+          label="When the screen locks"
+          value={preferences.silentLocked}
+          onChange={(silentLocked) => update({ silentLocked })}
+          options={[
+            { value: 'pause', label: 'Pause', accessibilityLabel: 'When the screen locks, pause' },
+            { value: 'tones', label: 'Soft tones', accessibilityLabel: 'When the screen locks, continue with soft tones' },
+          ]}
+        />
+      ) : null}
       {preferences.cueMode !== 'silent' ? (
         <Stepper
           label="Cue volume"

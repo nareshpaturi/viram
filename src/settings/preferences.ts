@@ -24,6 +24,8 @@ export type OtherAudio = 'auto' | 'alongside' | 'lower' | 'pause';
 export type Introductions = 'first' | 'always' | 'never';
 export type Motion = 'system' | 'reduced';
 export type IntroLength = 'short' | 'long';
+/** iPhone, Silent: what happens when the screen locks, since iOS can't play haptics then. */
+export type SilentLocked = 'pause' | 'tones';
 /** FR-17: one local reminder a day, off until the practitioner turns it on. */
 export interface Reminder {
   enabled: boolean;
@@ -57,6 +59,7 @@ export interface Preferences {
   /** “Not now”: per technique, only sessions after this time count toward the next offer. */
   progressionSnoozed: Record<string, number>;
   reminder: Reminder;
+  silentLocked: SilentLocked;
   /** Holds and rests up to 60 s in Adjust rhythm (src/content/longHolds.ts). */
   longHolds: boolean;
   /** The completion screen has offered the reminder once (src/reminder/offer.ts). */
@@ -98,6 +101,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   reminder: { enabled: false, hour: 7, minute: 30 },
   reminderOffered: false,
   longHolds: false,
+  silentLocked: 'pause',
   nightPractice: 'off',
   healthConnected: false,
   healthDismissed: false,
@@ -147,6 +151,7 @@ const VALIDATORS: { [K in keyof Preferences]: (v: unknown) => Preferences[K] | u
   healthDismissed: (v) => (isBoolean(v) ? v : undefined),
   reminderOffered: (v) => (isBoolean(v) ? v : undefined),
   longHolds: (v) => (isBoolean(v) ? v : undefined),
+  silentLocked: (v) => (oneOf('pause', 'tones')(v) ? v : undefined),
   reminder: (v) => {
     const r = v as Reminder;
     return typeof v === 'object' && v !== null && isBoolean(r.enabled) && isInt(r.hour, 0, 23) && isInt(r.minute, 0, 59)

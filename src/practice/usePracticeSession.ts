@@ -135,6 +135,9 @@ function otherAudioOptions(otherAudio: OtherAudio) {
   };
 }
 
+/** Silent's soft tones on a locked iPhone are never louder than this. */
+const SILENT_LOCKED_VOLUME = 0.4;
+
 const OTHER_AUDIO_LOG: Record<OtherAudio, string> = {
   auto: 'other audio automatic',
   alongside: 'play along',
@@ -156,6 +159,9 @@ export function usePracticeSession({ run, preferences, quickStart, night, onIntr
     } satisfies CueSettings,
     volume: preferences.cueVolume,
     audio: otherAudioOptions(preferences.otherAudio),
+    // iPhone can't play haptics locked, so Silent can carry soft tones, heard only while locked.
+    silentTones: Platform.OS === 'ios' && preferences.cueMode === 'silent' && preferences.silentLocked === 'tones',
+    lockedVolume: Math.min(preferences.cueVolume, SILENT_LOCKED_VOLUME),
   }));
   const [plans] = useState(() => run.parts.map((p) => sessionPlan(p.steps, p.target, p.slowing ?? null)));
   const names = run.parts.map((p) => p.name);
@@ -263,10 +269,11 @@ export function usePracticeSession({ run, preferences, quickStart, night, onIntr
     (state: SessionState) => {
       if (state.status !== 'active') return;
       const { segment } = state;
-      const schedule = buildRunSchedule(plans, segment, settings.cues, guide.clipLength, names);
+      const cues: CueSettings = settings.silentTones ? { ...settings.cues, mode: 'tones' } : settings.cues;
+      const schedule = buildRunSchedule(plans, segment, cues, guide.clipLength, names);
       markSegment(segment.purpose === 'settle' ? 'Guidance started' : `Resumed ${names[segment.part]} from plan ${formatClock(segment.startPlanMs)}`);
       guide.startSegment(schedule, {
-        volume: settings.volume,
+        volume: settings.silentTones ? (AppState.currentState === 'active' ? 0 : settings.lockedVolume) : settings.volume,
         ...settings.audio,
         title: run.name,
         subtitle: 'Getting ready',
@@ -462,15 +469,17 @@ export function usePracticeSession({ run, preferences, quickStart, night, onIntr
 
   useEffect(() => {
     // Silent keeps going locked only where a haptic can still guide: Android with haptics on.
-    const pausesOnLock = settings.cues.mode === 'silent' && (Platform.OS === 'ios' || settings.cues.haptics === null);
+    // On iPhone, Silent can instead carry quiet tones that are heard only while locked.
+    const pausesOnLock = settings.cues.mode === 'silent' && !settings.silentTones && (Platform.OS === 'ios' || settings.cues.haptics === null);
     const subscription = AppState.addEventListener('change', (status) => {
       if (status === 'background') markTiming('App in background (locked or switched away)');
       if (status === 'active') markTiming('App in foreground');
       if (status === 'background' && pausesOnLock) pauseFor('locked');
+      if (settings.silentTones && (status === 'background' || status === 'active')) guide.setVolume(status === 'active' ? 0 : settings.lockedVolume);
       if (status === 'active') render();
     });
     return () => subscription.remove();
-  }, [pauseFor, render, settings.cues]);
+  }, [pauseFor, render, settings]);
 
   // The screen stays on in Silent, or when the person asked for it.
   useEffect(() => {
