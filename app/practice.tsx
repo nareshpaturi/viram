@@ -5,12 +5,12 @@ import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useReducedMotion } from '../src/accessibility/motion';
 import { describeRhythm, describeTarget, formatClock, routeLabel, stepLabel } from '../src/breathing/describe';
-import type { PauseReason } from '../src/breathing/session';
 import { guideCount } from '../src/breathing/timeline';
 import { AppText } from '../src/components/AppText';
 import { BreathingGuide } from '../src/components/BreathingGuide';
 import { Button } from '../src/components/Button';
 import { SideIndicator } from '../src/components/SideIndicator';
+import { LOCK_TIP, PAUSE_TITLE, screenReaderNote } from '../src/practice/guidanceRules';
 import { practicePath } from '../src/practice/launch';
 import { captionFor, subtitleOf } from '../src/practice/practice';
 import { parseRun, type PracticeRun } from '../src/practice/run';
@@ -22,14 +22,6 @@ import { SurfaceProvider, useSurface } from '../src/night/surface';
 import { usePreferences } from '../src/settings/PreferencesProvider';
 import { colors, spacing, touchTarget } from '../src/theme';
 
-const PAUSE_TITLE: Record<PauseReason, string> = {
-  user: 'Take your time.',
-  call: 'Paused for a call.',
-  audio: 'Paused for other audio.',
-  headphones: 'Paused: headphones disconnected.',
-  lockScreen: 'Paused from the lock screen.',
-  locked: 'Paused when your phone locked.',
-};
 
 function readRun(raw: string | undefined): PracticeRun | null {
   try {
@@ -61,7 +53,7 @@ function PracticeScreen({ run, quickStart }: { run: PracticeRun; quickStart: boo
   const reducedMotion = useReducedMotion(preferences.motion);
   const { width, height } = useWindowDimensions();
   const surface = useSurface();
-  const { plans, view, countingAloud, actions } = usePracticeSession({
+  const { plans, view, countingAloud, lock, speech, actions } = usePracticeSession({
     run,
     preferences,
     quickStart,
@@ -87,8 +79,9 @@ function PracticeScreen({ run, quickStart }: { run: PracticeRun; quickStart: boo
     if (view.kind === 'cancelled') router.back();
   }, [view]);
 
-  // The lock tip shows once, on a settle screen with sound.
-  const showLockTip = !preferences.lockTipSeen && preferences.cueMode !== 'silent';
+  // The lock tip shows once, on a settle screen, only where practice keeps guiding locked.
+  const lockTip = preferences.lockTipSeen ? null : LOCK_TIP[lock];
+  const showLockTip = lockTip !== null;
   useEffect(() => {
     if (view.kind === 'running' && showLockTip) update({ lockTipSeen: true });
   }, [showLockTip, update, view.kind]);
@@ -107,7 +100,8 @@ function PracticeScreen({ run, quickStart }: { run: PracticeRun; quickStart: boo
         guideSize={guideSize}
         reducedMotion={reducedMotion}
         countingAloud={countingAloud}
-        showLockTip={showLockTip}
+        lockTip={lockTip}
+        voiceOwnsSpeech={speech === 'viram'}
         quickStart={quickStart}
         actions={actions}
       />
@@ -125,12 +119,15 @@ interface BodyProps {
   reducedMotion: boolean;
   /** The voice counts within steps, so the guide shows the count instead of seconds left. */
   countingAloud: boolean;
-  showLockTip: boolean;
+  /** Shown once on the settle screen; null when locking would pause. */
+  lockTip: string | null;
+  /** A screen reader is on and the Viram voice speaks the steps (UX06). */
+  voiceOwnsSpeech: boolean;
   quickStart: boolean;
   actions: ReturnType<typeof usePracticeSession>['actions'];
 }
 
-function Body({ view, run, rounds, durations, guideSize, reducedMotion, countingAloud, showLockTip, quickStart, actions }: BodyProps) {
+function Body({ view, run, rounds, durations, guideSize, reducedMotion, countingAloud, lockTip, voiceOwnsSpeech, quickStart, actions }: BodyProps) {
   const routine = run.parts.length > 1;
   const practiceOf = (part: number) => run.parts[part];
   const partLabel = (part: number) => (routine ? `Practice ${part + 1} of ${run.parts.length}` : null);
@@ -210,7 +207,8 @@ function Body({ view, run, rounds, durations, guideSize, reducedMotion, counting
                   : 'Your practice starts in a moment.'
                 : `Restarting ${view.resumeStep}.`}
             </AppText>
-            {settling && showLockTip ? <AppText style={styles.muted}>You can lock your phone. The voice keeps guiding.</AppText> : null}
+            {settling && lockTip ? <AppText style={styles.muted}>{lockTip}</AppText> : null}
+            {settling && voiceOwnsSpeech ? <AppText style={styles.muted}>{screenReaderNote(Platform.OS)}</AppText> : null}
           </Centered>
         </View>
       );
@@ -252,11 +250,15 @@ function Body({ view, run, rounds, durations, guideSize, reducedMotion, counting
               size={guideSize}
               progress={1 - position.remainingMs / durations[view.part]}
             />
-            <AppText variant="phase" accessibilityRole="header" style={styles.centerText}>
-              {stepLabel(step)}
-            </AppText>
-            {route ? <AppText variant="bodyStrong" style={[styles.centerText, styles.route]}>{route}</AppText> : null}
-            <AppText style={[styles.centerText, styles.muted]}>{halfSeconds ? `${caption} ${seconds} seconds.` : caption}</AppText>
+            {/* One element for the step, its route, and its caption, so Pause comes right after it in focus order;
+                its label always reads the current step (UX06). */}
+            <View style={styles.step} accessible accessibilityRole="header" accessibilityLabel={[stepLabel(step), route, halfSeconds ? `${caption} ${seconds} seconds.` : caption].filter(Boolean).join('. ')}>
+              <AppText variant="phase" style={styles.centerText}>
+                {stepLabel(step)}
+              </AppText>
+              {route ? <AppText variant="bodyStrong" style={[styles.centerText, styles.route]}>{route}</AppText> : null}
+              <AppText style={[styles.centerText, styles.muted]}>{halfSeconds ? `${caption} ${seconds} seconds.` : caption}</AppText>
+            </View>
           </View>
           <Button title="Pause" variant="onPine" onPress={actions.pause} />
         </View>
@@ -341,6 +343,7 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.ms },
   centerGap: { gap: spacing.md, paddingHorizontal: spacing.sm },
   centerText: { textAlign: 'center' },
+  step: { alignItems: 'center', gap: spacing.ms },
   topBar: { minHeight: touchTarget, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md },
   topButton: { minHeight: touchTarget, minWidth: touchTarget, justifyContent: 'center' },
   topButtonText: { color: colors.practiceText },
