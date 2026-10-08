@@ -96,6 +96,8 @@ function PracticeScreen({ run, quickStart }: { run: PracticeRun; quickStart: boo
 
   // Larger text takes room from the guide, so the step and its words fit above Pause (QA F09).
   const guideSize = Math.max(150, Math.min(300, width - spacing.xxl * 2, height * 0.36 - Math.max(0, fontScale - 1) * 120));
+  // The count stays inside the disc at its smallest (the end of an exhale): text scaling can't push it past the guide.
+  const numeral = Math.min(64, (guideSize * 0.25) / Math.min(fontScale, 1.4));
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: surface.background }]} edges={['top', 'left', 'right', 'bottom']}>
@@ -106,6 +108,7 @@ function PracticeScreen({ run, quickStart }: { run: PracticeRun; quickStart: boo
         run={run}
         durations={plans.map((p) => p.durationMs)}
         guideSize={guideSize}
+        numeral={numeral}
         reducedMotion={reducedMotion}
         countingAloud={countingAloud}
         lockTip={lockTip}
@@ -124,6 +127,8 @@ interface BodyProps {
   /** Each part's planned duration, for the session ring. */
   durations: number[];
   guideSize: number;
+  /** The guide's count size before text scaling. */
+  numeral: number;
   reducedMotion: boolean;
   /** The voice counts within steps, so the guide shows the count instead of seconds left. */
   countingAloud: boolean;
@@ -137,7 +142,7 @@ interface BodyProps {
   actions: ReturnType<typeof usePracticeSession>['actions'];
 }
 
-function Body({ view, run, durations, guideSize, reducedMotion, countingAloud, lockTip, voiceOwnsSpeech, guide, quickStart, actions }: BodyProps) {
+function Body({ view, run, durations, guideSize, numeral, reducedMotion, countingAloud, lockTip, voiceOwnsSpeech, guide, quickStart, actions }: BodyProps) {
   const routine = run.parts.length > 1;
   const practiceOf = (part: number) => run.parts[part];
   const partLabel = (part: number) => (routine ? `Practice ${part + 1} of ${run.parts.length}` : null);
@@ -308,6 +313,7 @@ function Body({ view, run, durations, guideSize, reducedMotion, countingAloud, l
                 <SideIndicator open={step.side} />
               ) : null}
               <BreathingGuide
+                numeral={numeral}
                 kind={step.kind}
                 hum={!drawB && (step.cue === 'hum' || step.cue === 'om')}
                 stepKey={view.stepKey}
