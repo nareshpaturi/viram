@@ -115,7 +115,11 @@ describe('bounds (FR-01)', () => {
 
   it('validates targets', () => {
     expect(isValidTarget({ minutes: 5 })).toBe(true);
-    expect(isValidTarget({ minutes: 7 as 5 })).toBe(false);
+    expect(isValidTarget({ minutes: 7 })).toBe(true);
+    expect(isValidTarget({ minutes: 60 })).toBe(true);
+    expect(isValidTarget({ minutes: 61 })).toBe(false);
+    expect(isValidTarget({ minutes: 0 })).toBe(false);
+    expect(isValidTarget({ minutes: 2.5 })).toBe(false);
     expect(isValidTarget({ rounds: 1 })).toBe(true);
     expect(isValidTarget({ rounds: 108 })).toBe(true);
     expect(isValidTarget({ rounds: 109 })).toBe(false);

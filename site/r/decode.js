@@ -6,7 +6,6 @@ import { TECHNIQUES } from './library.js';
 
 const KINDS = { i: 'inhale', h: 'hold', e: 'exhale', r: 'rest' };
 const CUSTOM = ['inhale', 'hold', 'exhale', 'rest'];
-const MINUTES = [1, 3, 5, 10];
 const B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
 
 function base64url(text) {
@@ -54,7 +53,7 @@ export function decodePayload(payload) {
     const t = /^([mr])([1-9]\d{0,2})$/.exec(targetText);
     if (!t) return null;
     const value = Number(t[2]);
-    const target = t[1] === 'm' ? (MINUTES.includes(value) ? { minutes: value } : null) : value <= 108 ? { rounds: value } : null;
+    const target = t[1] === 'm' ? (value <= 60 ? { minutes: value } : null) : value <= 108 ? { rounds: value } : null;
     if (!target) return null;
 
     const tokens = stepsText.split('-');

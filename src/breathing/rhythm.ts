@@ -26,19 +26,18 @@ export interface RhythmStep {
 export type StepCue = 'hum' | 'om' | 'top-up';
 export const STEP_CUES: readonly StepCue[] = ['hum', 'om', 'top-up'];
 
-/** The minute choices in Adjust rhythm and share links (FR-01). */
-export type MinuteTarget = 1 | 3 | 5 | 10;
-/** Routines and programs set any whole number of minutes per practice (FR-14, FR-20). */
+/** Any whole number of minutes from 1 to 60, or 1–108 rounds (FR-01). */
 export type Target = { minutes: number } | { rounds: number };
 export type Increment = 1 | 0.5;
 
 export const STEP_KINDS: readonly StepKind[] = ['inhale', 'hold', 'exhale', 'rest'];
-export const MINUTE_TARGETS: readonly MinuteTarget[] = [1, 3, 5, 10];
+/** Adjust rhythm's minute shortcuts; the stepper reaches any length in between. */
+export const MINUTE_SHORTCUTS = [3, 5, 10, 20, 30] as const;
+/** Longest practice: a single practice, or one part of a routine or program. */
+export const MAX_MINUTES = 60;
 export const ROUND_SHORTCUTS = [11, 21, 27] as const;
 export const MAX_ROUNDS = 108;
 export const MAX_STEP_SECONDS = 20;
-/** Longest single practice inside a routine or program. */
-export const MAX_SEGMENT_MINUTES = 30;
 
 export function minSeconds(kind: StepKind): number {
   return kind === 'inhale' || kind === 'exhale' ? 1 : 0;
@@ -53,16 +52,9 @@ export function isValidSeconds(kind: StepKind, seconds: number, increment: Incre
   );
 }
 
-/**
- * Adjust rhythm and share links offer 1, 3, 5, or 10 minutes; routine and
- * program parts may use any whole number of minutes up to 30.
- */
-export function isValidTarget(target: Target, anyMinutes = false): boolean {
-  if ('minutes' in target) {
-    return anyMinutes
-      ? Number.isInteger(target.minutes) && target.minutes >= 1 && target.minutes <= MAX_SEGMENT_MINUTES
-      : MINUTE_TARGETS.includes(target.minutes as MinuteTarget);
-  }
+/** Any whole number of minutes from 1 to 60, or 1–108 rounds, everywhere a target appears. */
+export function isValidTarget(target: Target): boolean {
+  if ('minutes' in target) return Number.isInteger(target.minutes) && target.minutes >= 1 && target.minutes <= MAX_MINUTES;
   return Number.isInteger(target.rounds) && target.rounds >= 1 && target.rounds <= MAX_ROUNDS;
 }
 

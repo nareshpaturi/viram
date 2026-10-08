@@ -94,11 +94,8 @@ export function practiceKey(subject: { source: PracticeSource | { kind: 'routine
   return subject.source.kind === 'custom' ? 'custom' : `${subject.source.kind}:${subject.source.id}`;
 }
 
-/**
- * Validates a practice read from storage or route params with the share-link
- * rules. Routine and program parts may use any whole number of minutes.
- */
-export function parsePractice(value: unknown, options: { anyMinutes?: boolean } = {}): Practice | null {
+/** Validates a practice read from storage or route params with the share-link rules. */
+export function parsePractice(value: unknown): Practice | null {
   if (typeof value !== 'object' || value === null) return null;
   const v = value as Partial<Practice>;
   const source = v.source;
@@ -110,7 +107,7 @@ export function parsePractice(value: unknown, options: { anyMinutes?: boolean } 
   if (!validSource || !Array.isArray(v.steps) || typeof v.target !== 'object' || v.target === null) return null;
   const techniqueId = typeof v.techniqueId === 'string' ? v.techniqueId : null;
   if (source.kind === 'technique' && source.id !== techniqueId) return null;
-  const rhythm = validateRhythm({ name: String(v.name ?? ''), steps: v.steps, target: v.target, techniqueId }, options);
+  const rhythm = validateRhythm({ name: String(v.name ?? ''), steps: v.steps, target: v.target, techniqueId });
   if (!rhythm) return null;
   const practice: Practice = { source, name: rhythm.name, techniqueId: rhythm.techniqueId, steps: rhythm.steps, target: rhythm.target };
   const slowing = checkSlowing(practice.techniqueId, practice.steps, v.slowing);

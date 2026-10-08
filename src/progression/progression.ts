@@ -4,7 +4,7 @@
  * technique's path. Nothing changes unless the practitioner accepts, and
  * “Make it easier next time” is offered after every single practice.
  */
-import { MINUTE_TARGETS, type RhythmStep, type Target } from '../breathing/rhythm';
+import { MINUTE_SHORTCUTS, type RhythmStep, type Target } from '../breathing/rhythm';
 import type { SessionRecord } from '../history/repository';
 import { parsePractice, practiceFromTechnique, techniqueOf, type Practice } from '../practice/practice';
 import { validateRhythm } from '../sharing/link';
@@ -110,10 +110,10 @@ export function easierPractice(record: SessionRecord): Practice | null {
   return target ? { ...current, target } : null;
 }
 
-/** The next shorter minutes option, or about a quarter fewer rounds. */
+/** The next shorter minute shortcut (or 1 minute), or about a quarter fewer rounds. */
 function shorterTarget(target: Target): Target | null {
   if ('minutes' in target) {
-    const shorter = MINUTE_TARGETS.filter((m) => m < target.minutes);
+    const shorter = [1, ...MINUTE_SHORTCUTS].filter((m) => m < target.minutes);
     return shorter.length ? { minutes: shorter[shorter.length - 1] } : null;
   }
   if (target.rounds <= 1) return null;

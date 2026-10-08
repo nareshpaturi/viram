@@ -3,9 +3,10 @@ import { StyleSheet, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { describePace, describePlan, guidedPace, perMinute, stepLabel } from '../src/breathing/describe';
 import {
+  MAX_MINUTES,
   MAX_ROUNDS,
   MAX_STEP_SECONDS,
-  MINUTE_TARGETS,
+  MINUTE_SHORTCUTS,
   ROUND_SHORTCUTS,
   formatPace,
   isValidSlowing,
@@ -70,6 +71,7 @@ export default function AdjustRhythm() {
   const exhale = draft.steps.find((s) => s.kind === 'exhale');
   const byRounds = 'rounds' in draft.target;
   const rounds = 'rounds' in draft.target ? draft.target.rounds : plan.rounds;
+  const minutes = 'minutes' in draft.target ? draft.target.minutes : 5;
 
   const setTarget = (target: Target) => setDraft({ ...draft, target });
   const setSeconds = (index: number, direction: 1 | -1) => {
@@ -146,13 +148,25 @@ export default function AdjustRhythm() {
           <AppText variant="label">Any count from 1 to {MAX_ROUNDS}.</AppText>
         </View>
       ) : (
-        <Segmented
-          label="Duration"
-          wrap
-          value={'minutes' in draft.target ? draft.target.minutes : null}
-          onChange={(minutes) => setTarget({ minutes })}
-          options={MINUTE_TARGETS.map((value) => ({ value, label: `${value} min`, accessibilityLabel: `${value} minutes` }))}
-        />
+        <View style={styles.group}>
+          <Stepper
+            label="Minutes"
+            display={`${minutes} min`}
+            spoken={`${minutes} minutes`}
+            canDecrement={minutes > 1}
+            canIncrement={minutes < MAX_MINUTES}
+            onDecrement={() => setTarget({ minutes: minutes - 1 })}
+            onIncrement={() => setTarget({ minutes: minutes + 1 })}
+          />
+          <Segmented
+            label="Minute shortcuts"
+            wrap
+            value={minutes}
+            onChange={(value) => setTarget({ minutes: value })}
+            options={MINUTE_SHORTCUTS.map((value) => ({ value, label: `${value} min`, accessibilityLabel: `${value} minutes` }))}
+          />
+          <AppText variant="label">Any length from 1 to {MAX_MINUTES} minutes.</AppText>
+        </View>
       )}
 
       <AppText variant="overline" accessibilityRole="header" style={styles.section}>

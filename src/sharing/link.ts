@@ -4,7 +4,7 @@
  *   https://viram.app/r/1_<technique id>_<target>_<steps>_<name>
  *
  *   technique id  a library id, or empty for a custom rhythm
- *   target        m1 | m3 | m5 | m10, or r1 … r108
+ *   target        m1 … m60, or r1 … r108
  *   steps         kind letter + seconds + optional side, joined by “-”:
  *                 i4L-e6R-i4R-e6L, i4-h4-e4-r4, i5.5-e5.5
  *   name          UTF-8 display name as unpadded base64url
@@ -16,12 +16,12 @@
 import { LIBRARY } from '../content/library';
 import type { Technique } from '../content/types';
 import {
-  MINUTE_TARGETS,
+  MAX_MINUTES,
+  MAX_ROUNDS,
   STEP_CUES,
   isValidSeconds,
   type StepCue,
   isValidTarget,
-  type MinuteTarget,
   type RhythmStep,
   type StepKind,
   type Target,
@@ -131,12 +131,12 @@ export function findTechnique(id: string): Technique | undefined {
  * installed, shareable technique's structure and sides, and its route and
  * cue come from the library.
  */
-export function validateRhythm(input: SharedRhythm, options: { anyMinutes?: boolean } = {}): SharedRhythm | null {
+export function validateRhythm(input: SharedRhythm): SharedRhythm | null {
   // Callers pass data from storage and files too, so check shapes first.
   if (typeof input.name !== 'string' || typeof input.target !== 'object' || input.target === null) return null;
   if (!Array.isArray(input.steps) || !input.steps.every(isStepShape)) return null;
   const name = cleanName(input.name);
-  if (!name || !isValidTarget(input.target, options.anyMinutes)) return null;
+  if (!name || !isValidTarget(input.target)) return null;
   if (input.techniqueId === null) {
     const fits =
       input.steps.length === 4 &&
@@ -202,8 +202,8 @@ function parseTarget(text: string): Target | null {
   const match = /^([mr])([1-9]\d{0,2})$/.exec(text);
   if (!match) return null;
   const value = Number(match[2]);
-  if (match[1] === 'm') return MINUTE_TARGETS.includes(value as MinuteTarget) ? { minutes: value as MinuteTarget } : null;
-  return { rounds: value };
+  if (match[1] === 'm') return value <= MAX_MINUTES ? { minutes: value } : null;
+  return value <= MAX_ROUNDS ? { rounds: value } : null;
 }
 
 function parseSteps(text: string): RhythmStep[] | null {

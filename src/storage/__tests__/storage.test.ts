@@ -222,7 +222,7 @@ describe('routines (FR-14)', () => {
     const { routines } = freshStores();
     expect(routines.save({ name: 'Evening', segments: [box] })).toEqual({ ok: false, reason: 'invalid' });
     expect(routines.save({ name: 'Evening', segments: Array(7).fill(box) })).toEqual({ ok: false, reason: 'invalid' });
-    expect(routines.save({ name: 'Evening', segments: [box, { ...box, minutes: 31 }] })).toEqual({ ok: false, reason: 'invalid' });
+    expect(routines.save({ name: 'Evening', segments: [box, { ...box, minutes: 61 }] })).toEqual({ ok: false, reason: 'invalid' });
     expect(routines.save({ name: 'Evening', segments: [box, { ref: { kind: 'technique', id: 'kapalabhati' }, minutes: 3 }] })).toEqual({ ok: false, reason: 'invalid' });
     const saved = routines.save({ name: 'Evening', segments: [box, coherent, box] });
     expect(saved.ok && routines.get(saved.routine.id)?.segments).toHaveLength(3);
