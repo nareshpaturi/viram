@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AccessibilityInfo, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
-import { Redirect, router, useLocalSearchParams } from 'expo-router';
+import { Redirect, router, useLocalSearchParams, useIsFocused } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { describeRhythm, describeTarget, rhythmLine } from '../src/breathing/describe';
 import { AppText } from '../src/components/AppText';
@@ -73,12 +73,15 @@ function save(record: SessionRecord): SaveState {
 export default function Complete() {
   const { night } = useLocalSearchParams<{ night?: string }>();
   const wash = useEverydayWash();
+  // Light status text only while this screen is on top, so a light screen
+  // pushed over it (View practice) gets dark text back (QA F10).
+  const focused = useIsFocused();
   // Night practice finishes on the same surface it ran on (FR-23); otherwise
   // the hour's Soft Light, with warmth rising from below.
   return (
     <SurfaceProvider setting="off" night={night === '1'}>
       <LightProvider wash={night === '1' ? null : wash}>
-        {night === '1' ? <StatusBar style="light" /> : null}
+        {night === '1' && focused ? <StatusBar style="light" /> : null}
         <CompleteScreen />
       </LightProvider>
     </SurfaceProvider>

@@ -39,6 +39,8 @@ final class GuideEngine {
   private static let sampleRate = 44_100.0
   private static let window = 8_000.0
   private static let releaseAfterEndMs = 3_000.0
+  /** After the last scheduled sound ends, so its played-back callback (the timing report) arrives first. */
+  private static let tailMarginMs = 250.0
   private static let timebase: mach_timebase_info_data_t = {
     var info = mach_timebase_info_data_t()
     mach_timebase_info(&info)
@@ -67,6 +69,9 @@ final class GuideEngine {
   private var endMs = 0.0
   private var cues: [GuideCue] = []
   private var nextCue = 0
+  /// Where the last scheduled sound ends on the segment clock. A completion
+  /// sound (Soft bells is 6 s) can outlast `endMs + releaseAfterEndMs`.
+  private var scheduledUntilMs = 0.0
   private var volume: Float = 1
   /// How far behind the scheduling clock the sound is heard: about 5–20 ms on
   /// the speaker, 150–250 ms over Bluetooth. Read under clockLock.
@@ -197,6 +202,7 @@ final class GuideEngine {
       measureOutputLatency()
       self.cues = cues.sorted { $0.atMs < $1.atMs }
       self.nextCue = 0
+      self.scheduledUntilMs = 0
       self.endMs = endMs
       self.volume = volume
       voices.forEach { $0.volume = volume }
@@ -230,6 +236,8 @@ final class GuideEngine {
     frozenMs = position
     generation += 1
     clockLock.unlock()
+    // A pattern already handed to Core Haptics stops with the guidance (QA R01).
+    DispatchQueue.main.async { [haptics] in haptics.stop() }
     resetVoices()
     bedLevel = 0
     fadeBed(to: 0, seconds: 1.2)
@@ -257,6 +265,7 @@ final class GuideEngine {
     active = false
     frozenMs = nil
     clockLock.unlock()
+    DispatchQueue.main.async { [haptics] in haptics.stop() }
     timer?.cancel()
     timer = nil
     cues = []
@@ -457,6 +466,7 @@ final class GuideEngine {
       let host = startHost + Self.ticks(ms: cue.atMs)
       if cue.atMs >= now - 50 {
         if let sound = cue.sound, let buffer = buffers[sound] {
+          scheduledUntilMs = max(scheduledUntilMs, cue.atMs + Double(buffer.frameLength) / Self.sampleRate * 1000)
           let node = voices[nextCue % voices.count]
           let at = AVAudioTime(hostTime: host)
           if timingLog {
@@ -526,7 +536,9 @@ final class GuideEngine {
       bedLevel = 0
       fadeBed(to: 0, seconds: 2.5)
     }
-    if isRunningSegment, clockMs() >= endMs + Self.releaseAfterEndMs {
+    // Release once the last sound has played out, so a long completion bell isn't cut off
+    // and its timing report arrives (QA F11).
+    if isRunningSegment, clockMs() >= max(endMs + Self.releaseAfterEndMs, scheduledUntilMs + Self.tailMarginMs) {
       stopOnQueue()
       emit?("onSegmentEnded", [:])
     }

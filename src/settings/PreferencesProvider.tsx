@@ -5,6 +5,8 @@ import type { Preferences } from './preferences';
 interface PreferencesContext {
   preferences: Preferences;
   update: (patch: Partial<Preferences>) => void;
+  /** Reads storage again, after something other than `update` wrote it (an import); returns what it read. */
+  reload: () => Preferences;
 }
 
 const Context = createContext<PreferencesContext | null>(null);
@@ -19,7 +21,12 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
     stores().preferences.write(patch);
     setPreferences((current) => ({ ...current, ...patch }));
   }, []);
-  const value = useMemo(() => ({ preferences, update }), [preferences, update]);
+  const reload = useCallback(() => {
+    const read = stores().preferences.read();
+    setPreferences(read);
+    return read;
+  }, []);
+  const value = useMemo(() => ({ preferences, update, reload }), [preferences, reload, update]);
   return <Context.Provider value={value}>{children}</Context.Provider>;
 }
 

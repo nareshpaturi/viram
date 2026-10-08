@@ -46,7 +46,9 @@ export const CUES = {
 export type CueId = keyof typeof CUES;
 
 /** The spoken count for second `n` of a step (2–20); the step cue speaks the first. */
-export const countCue = (n: number): CueId | null => (n >= 2 && n <= 20 ? (`count-${n}` as CueId) : null);
+/** Counts are recorded up to 20; a longer step (a longer hold) isn't counted aloud at all. */
+export const MAX_SPOKEN_COUNT = 20;
+export const countCue = (n: number): CueId | null => (n >= 2 && n <= MAX_SPOKEN_COUNT ? (`count-${n}` as CueId) : null);
 
 /**
  * A step speaks its kind word (or Hum) with its side. A mouth step names its

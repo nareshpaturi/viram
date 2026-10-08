@@ -37,7 +37,7 @@ import {
   type SessionPlan,
   type SessionState,
 } from '../breathing/session';
-import { buildRunSchedule, roundLine, type CueSettings } from '../breathing/timeline';
+import { buildRunSchedule, roundLine, soundForStep, type CueSettings } from '../breathing/timeline';
 import type { PartRecord, RecordSource, SessionRecord } from '../history/repository';
 import type { OtherAudio, Preferences } from '../settings/preferences';
 import { newId } from '../storage/db';
@@ -49,11 +49,15 @@ import { techniqueOf } from './practice';
 import type { PracticeRun } from './run';
 
 const TICK_MS = 50;
+/** The quiet after a spoken introduction before the settle lead begins. */
+const INTRO_GAP_MS = 400;
 const KEEP_AWAKE_TAG = 'viram-practice';
 
 export type SessionView =
   | { kind: 'loading' }
   | { kind: 'intro'; lines: string[]; line: number; remainingMs: number }
+  /** Silent's introduction: the how-to on screen until Begin. */
+  | { kind: 'prepare'; part: number }
   | { kind: 'countdown'; purpose: 'settle' | 'resume' | 'transition'; part: number; seconds: number; resumeStep: string }
   | { kind: 'running'; part: number; position: Position; stepKey: string }
   | {
@@ -146,11 +150,16 @@ export function usePracticeSession({ run, preferences, quickStart, night, onIntr
   // iPhone can't play haptics locked, so Silent can carry soft tones, heard only while locked.
   const silentTones = settings.lock === 'softTones';
   const screenReader = useScreenReader();
-  const speech = speechOwner({ screenReader, mode: settings.cues.mode });
+  // The Viram voice speaks the steps only when it can: a voice with no clips falls back to tones (QA F03).
+  const speech = speechOwner({ screenReader, mode: settings.cues.mode === 'voice' && guide.clipLength(settings.voice, 'inhale') === undefined ? 'tones' : settings.cues.mode });
   const [plans] = useState(() => run.parts.map((p) => sessionPlan(p.steps, p.target, p.slowing ?? null)));
   const names = run.parts.map((p) => p.name);
+  const heard = useRef(onIntroHeard);
+  heard.current = onIntroHeard;
   // Decided once per run, like the settings. The first practice is introduced
   // (never with counts it isn't doing); later ones in a routine are prepared.
+  // Silent never speaks: its introduction is the how-to on screen, read at the
+  // person's own pace before Begin (QA F01, AQ-01).
   const [intro] = useState(() => {
     const technique = techniqueOf(run.parts[0]);
     const variant = chooseIntroduction(technique, run.parts[0], preferences, quickStart);
@@ -160,17 +169,40 @@ export function usePracticeSession({ run, preferences, quickStart, night, onIntr
     const chosen = long ? introduction.long! : introduction;
     // Captions are in the language the voice speaks (src/content/hindi.ts for Hindi voices).
     const hindi = voiceLanguage(preferences.voice) === 'hi' ? HINDI_INTROS[technique.id] : undefined;
-    return { id: technique.id, clip: chosen.clip, lines: hindi ? (long ? hindi.long : hindi.lines) : chosen.lines };
+    return { id: technique.id, clip: chosen.clip, lines: hindi ? (long ? hindi.long : hindi.lines) : chosen.lines, read: settings.cues.mode === 'silent' };
   });
-  const introMs = intro ? (CLIP_MS[settings.voice]?.[intro.clip] ?? 0) : 0;
+  const introMs = intro && !intro.read ? (CLIP_MS[settings.voice]?.[intro.clip] ?? 0) : 0;
   // Routine parts that stop first to show how they're done (content review F9).
-  const toPrepare = useRef(new Set(partsToPrepare(run.parts, preferences)));
+  const [prepareParts] = useState(() => partsToPrepare(run.parts, preferences));
+  /** A segment from `part` plays up to the part before the next one to prepare (QA F04, AQ-03). */
+  const lastPartFrom = useCallback(
+    (part: number) => {
+      const next = prepareParts.find((p) => p > part);
+      return next === undefined ? undefined : next - 1;
+    },
+    [prepareParts],
+  );
 
   const stateRef = useRef<SessionState | null>(null);
   const recordRef = useRef({ id: newId(), startedAt: 0 });
   const [view, setView] = useState<SessionView>({ kind: 'loading' });
   const viewKey = useRef('');
   const announced = useRef('');
+  // A spoken introduction plays on the same native timeline as the practice
+  // after it, so guidance carries on while JavaScript is suspended on a
+  // locked phone (QA F05, AQ-02). The practice's clock starts `offset` into
+  // that timeline; the timeline began at `startedAt`.
+  const timeline = useRef({ offset: 0, startedAt: 0 });
+
+  /** The practice's clock: the guide's position less the introduction before it. */
+  const clockMs = useCallback(() => {
+    const raw = guide.positionMs();
+    return raw < 0 ? raw : Math.max(0, raw - timeline.current.offset);
+  }, []);
+  const pauseClock = useCallback(() => {
+    const raw = guide.pause();
+    return raw < 0 ? raw : Math.max(0, raw - timeline.current.offset);
+  }, []);
 
   const subtitleNow = useCallback(
     (position: Position) => roundLine(position.roundNumber, plans[position.part].rounds, position.remainingMs),
@@ -189,13 +221,16 @@ export function usePracticeSession({ run, preferences, quickStart, night, onIntr
     if (!state) return;
     let next: SessionView;
     let key: string;
-    if (state.status === 'intro' && intro) {
+    if (state.status === 'intro' && intro?.read) {
+      next = { kind: 'prepare', part: 0 };
+      key = 'prepare';
+    } else if (state.status === 'intro' && intro) {
       const clock = Math.max(0, guide.positionMs());
       const line = introLine(intro.lines, clock / Math.max(1, introMs));
       next = { kind: 'intro', lines: intro.lines, line, remainingMs: Math.max(0, introMs - clock) };
       key = `intro|${line}|${Math.ceil(next.remainingMs / 1000)}`;
     } else if (state.status === 'active') {
-      const clock = Math.max(0, guide.positionMs());
+      const clock = Math.max(0, clockMs());
       const position = readPosition(plans, state.segment, clock);
       if (position.lead) {
         next = { kind: 'countdown', purpose: position.lead, part: position.part, seconds: position.countdown, resumeStep: stepLabelAt(position.part, position.planMs) };
@@ -237,72 +272,105 @@ export function usePracticeSession({ run, preferences, quickStart, night, onIntr
       viewKey.current = key;
       setView(next);
     }
-  }, [intro, introMs, plans, run, settings, stepLabelAt]);
+  }, [clockMs, intro, introMs, plans, run, settings, stepLabelAt]);
 
   const transition = useCallback(
     (state: SessionState) => {
       if (state.status === 'paused' && stateRef.current?.status !== 'paused') markTiming(`Paused: ${state.reason}`);
       if (state.status === 'finished') markTiming(state.outcome === 'completed' ? 'Completed' : 'Ended early');
+      // Shown its how-to, a routine's next practice counts as introduced.
+      if (state.status === 'paused' && state.reason === 'prepare') {
+        const technique = techniqueOf(run.parts[state.part]);
+        if (technique) heard.current(technique.id);
+      }
       stateRef.current = state;
       render();
     },
-    [render],
+    [render, run.parts],
   );
 
   // ——— Segments ———
 
+  /** Plays a segment; with `introduction`, the spoken introduction first, on the same timeline. */
   const startGuidance = useCallback(
-    (state: SessionState) => {
+    (state: SessionState, introduction = false) => {
       if (state.status !== 'active') return;
       const { segment } = state;
       const cues: CueSettings = silentTones ? { ...settings.cues, mode: 'tones' } : settings.cues;
       const schedule = buildRunSchedule(plans, segment, cues, (id) => guide.clipLength(settings.voice, id), names);
-      markSegment(segment.purpose === 'settle' ? 'Guidance started' : `Resumed ${names[segment.part]} from plan ${formatClock(segment.startPlanMs)}`);
-      guide.startSegment(schedule, {
-        volume: silentTones ? (AppState.currentState === 'active' ? 0 : settings.lockedVolume) : settings.volume,
-        ...settings.audio,
-        title: run.name,
-        subtitle: 'Getting ready',
-        bed: settings.bed,
-        voice: settings.voice,
-      });
+      const offset = introduction && intro ? introMs + INTRO_GAP_MS : 0;
+      timeline.current = { offset, startedAt: Date.now() };
+      markSegment(introduction ? 'Introduction started' : segment.purpose === 'settle' ? 'Guidance started' : `Resumed ${names[segment.part]} from plan ${formatClock(segment.startPlanMs)}`);
+      guide.startSegment(
+        offset
+          ? {
+              cues: [{ atMs: 0, sound: `voice.${intro!.clip}`, haptic: null, nowPlaying: null }, ...schedule.cues.map((cue) => ({ ...cue, atMs: cue.atMs + offset }))],
+              endMs: schedule.endMs + offset,
+            }
+          : schedule,
+        {
+          volume: silentTones ? (AppState.currentState === 'active' ? 0 : settings.lockedVolume) : settings.volume,
+          ...settings.audio,
+          title: run.name,
+          subtitle: offset ? 'Introduction' : 'Getting ready',
+          bed: settings.bed,
+          voice: settings.voice,
+        },
+      );
     },
     // names derive from run, which is fixed for the screen.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [plans, run.name, settings],
+    [intro, introMs, plans, run.name, settings],
   );
 
-  const beginSettle = useCallback(() => {
-    if (intro) onIntroHeard(intro.id);
-    recordRef.current.startedAt = Date.now();
+  const logStart = useCallback(() => {
     beginTimingLog(
       run.name,
       `${Platform.OS} · ${settings.cues.mode} · ${OTHER_AUDIO_LOG[preferences.otherAudio]} · ${formatClock(segmentEndMs(plans, { purpose: 'settle', part: 0, startPlanMs: 0, activeBeforeMs: 0 }) - LEAD_MS)} planned`,
     );
-    const state = settle();
+  }, [plans, preferences.otherAudio, run.name, settings.cues.mode]);
+
+  const beginSettle = useCallback(() => {
+    if (intro) heard.current(intro.id);
+    recordRef.current.startedAt = Date.now();
+    logStart();
+    const state = settle(lastPartFrom(0));
     transition(state);
     startGuidance(state);
-  }, [intro, onIntroHeard, plans, run.name, settings, startGuidance, transition]);
+  }, [intro, lastPartFrom, logStart, startGuidance, transition]);
+
+  /**
+   * Once the spoken introduction's part of the timeline has played, the
+   * practice takes over that same timeline: no new segment, so this can run
+   * late, after JavaScript wakes on a locked phone.
+   */
+  const catchUp = useCallback(() => {
+    if (stateRef.current?.status !== 'intro' || !intro || intro.read) return;
+    const raw = guide.positionMs();
+    if (raw >= 0 && raw < timeline.current.offset) return;
+    heard.current(intro.id);
+    // A marker, not a new segment: the native timeline (and its cue clock) carries on.
+    markTiming('Guidance started');
+    recordRef.current.startedAt = timeline.current.startedAt + timeline.current.offset;
+    transition(settle(lastPartFrom(0)));
+  }, [intro, lastPartFrom, transition]);
 
   // Load sounds, then introduce or settle.
   useEffect(() => {
     let cancelled = false;
     const sounds = guide.practiceSounds(settings.cues.toneSet, settings.bed?.sound ?? null, settings.voice);
     guide
-      .prepareSounds(intro ? [...sounds, voiceSound(settings.voice, intro.clip)] : sounds)
+      .prepareSounds(intro && !intro.read ? [...sounds, voiceSound(settings.voice, intro.clip)] : sounds)
       .catch(() => undefined)
       .finally(() => {
         if (cancelled) return;
+        // Silent: the how-to on screen, waiting for Begin.
+        if (intro?.read) return transition(initialState(true));
         const introPlayable = intro && guide.clipLength(settings.voice, intro.clip) !== undefined;
-        if (introPlayable) {
-          transition(initialState(true));
-          guide.startSegment(
-            { cues: [{ atMs: 0, sound: `voice.${intro.clip}`, haptic: null, nowPlaying: null }], endMs: introMs },
-            { volume: settings.volume, ...settings.audio, title: run.name, subtitle: 'Introduction', bed: settings.bed, voice: settings.voice },
-          );
-        } else {
-          beginSettle();
-        }
+        if (!introPlayable) return beginSettle();
+        logStart();
+        transition(initialState(true));
+        startGuidance(settle(lastPartFrom(0)), true);
       });
     return () => {
       cancelled = true;
@@ -315,15 +383,18 @@ export function usePracticeSession({ run, preferences, quickStart, night, onIntr
 
   const pauseFor = useCallback(
     (reason: PauseReason) => {
+      catchUp();
       const state = stateRef.current;
-      // Interrupted during the introduction: pause before any practice time; Resume settles.
       if (state?.status === 'intro') {
+        // Nothing plays while Silent's how-to waits for Begin.
+        if (intro?.read) return;
+        // Interrupted during the introduction: pause before any practice time; Resume settles.
         guide.stop();
         transition({ status: 'paused', reason, part: 0, resumePlanMs: 0, activeMs: 0, confirmingEnd: false, done: [] });
         return;
       }
       if (state?.status !== 'active') return;
-      const clock = guide.pause();
+      const clock = pauseClock();
       const next = pause(plans, state, Math.max(0, clock), reason);
       transition(next);
       if (next.status === 'paused') {
@@ -332,29 +403,30 @@ export function usePracticeSession({ run, preferences, quickStart, night, onIntr
         guide.setNowPlaying(run.name, `Paused · round ${round} of ${plan.rounds}, ${formatClock(plan.durationMs - next.resumePlanMs)} left`);
       }
     },
-    [plans, run.name, transition],
+    [catchUp, intro, pauseClock, plans, run.name, transition],
   );
 
   const resumePractice = useCallback(() => {
     const state = stateRef.current;
     if (state?.status !== 'paused') return;
-    const next = resume(state);
+    const next = resume(state, lastPartFrom(state.part));
     // A pause during the introduction resumes into the first guidance.
     if (recordRef.current.startedAt === 0) recordRef.current.startedAt = Date.now();
     transition(next);
     startGuidance(next);
-  }, [startGuidance, transition]);
+  }, [lastPartFrom, startGuidance, transition]);
 
   const askToEnd = useCallback(() => {
+    catchUp();
     const state = stateRef.current;
     if (!state) return;
     if (state.status === 'active') {
-      const clock = guide.pause();
+      const clock = pauseClock();
       transition(requestEnd(plans, state, Math.max(0, clock)));
     } else if (state.status === 'paused') {
       transition({ ...state, confirmingEnd: true });
     }
-  }, [plans, transition]);
+  }, [catchUp, pauseClock, plans, transition]);
 
   const keepBreathing = useCallback(() => {
     const state = stateRef.current;
@@ -363,6 +435,7 @@ export function usePracticeSession({ run, preferences, quickStart, night, onIntr
   }, [resumePractice, transition]);
 
   const endSession = useCallback(() => {
+    catchUp();
     const state = stateRef.current;
     if (state?.status === 'intro') {
       // Nothing practiced yet: ending is cancelling, with no record.
@@ -371,14 +444,15 @@ export function usePracticeSession({ run, preferences, quickStart, night, onIntr
       return;
     }
     if (state?.status === 'active') {
-      const clock = guide.pause();
+      const clock = pauseClock();
       transition(endEarly(plans, pause(plans, state, Math.max(0, clock), 'user')));
     } else if (state?.status === 'paused') {
       transition(endEarly(plans, state));
     }
     guide.stop();
-  }, [plans, transition]);
+  }, [catchUp, pauseClock, plans, transition]);
 
+  /** Skip the spoken introduction, or Begin after Silent's how-to. */
   const skipIntro = useCallback(() => {
     if (stateRef.current?.status !== 'intro') return;
     guide.stop();
@@ -411,31 +485,20 @@ export function usePracticeSession({ run, preferences, quickStart, night, onIntr
 
   useEffect(() => {
     const timer = setInterval(() => {
+      catchUp();
       const state = stateRef.current;
-      if (state?.status === 'intro') {
-        const clock = guide.positionMs();
-        if (clock < 0 || clock >= introMs + 400) beginSettle();
-      } else if (state?.status === 'active') {
-        const clock = guide.positionMs();
+      if (state?.status === 'active') {
+        const clock = clockMs();
         // A released segment (-1) means the guide already played it to the end.
         if (clock < 0 || readPosition(plans, state.segment, clock).done) {
           transition(complete(plans, state));
-          return;
-        }
-        // Moving into a practice it hasn't taught: stop and show how, before its first cue.
-        const position = readPosition(plans, state.segment, clock);
-        if (position.lead === 'transition' && toPrepare.current.has(position.part)) {
-          toPrepare.current.delete(position.part);
-          const technique = techniqueOf(run.parts[position.part]);
-          if (technique) onIntroHeard(technique.id);
-          pauseFor('prepare');
           return;
         }
       }
       render();
     }, TICK_MS);
     return () => clearInterval(timer);
-  }, [beginSettle, introMs, onIntroHeard, pauseFor, plans, render, run.parts, transition]);
+  }, [catchUp, clockMs, plans, render, transition]);
 
   // ——— Interruptions, lock-screen controls, and locking in Silent ———
 
@@ -443,15 +506,18 @@ export function usePracticeSession({ run, preferences, quickStart, night, onIntr
     () =>
       guide.subscribe({
         onInterruption: (reason) => {
+          catchUp();
           // The guide already froze its clock at the interruption.
           const state = stateRef.current;
           if (state?.status === 'intro') return pauseFor(reason);
           if (state?.status !== 'active') return;
-          transition(pause(plans, state, Math.max(0, guide.positionMs()), reason));
+          transition(pause(plans, state, Math.max(0, clockMs()), reason));
         },
         // Events still arrive while Android pauses JS timers on a locked screen,
-        // so a practice that ends locked is completed and saved right away.
+        // so a practice that ends locked is completed and saved right away, and
+        // one that ends before a routine's next practice waits there.
         onSegmentEnded: () => {
+          catchUp();
           const state = stateRef.current;
           if (state?.status === 'active') transition(complete(plans, state));
         },
@@ -461,7 +527,7 @@ export function usePracticeSession({ run, preferences, quickStart, night, onIntr
           else endSession();
         },
       }),
-    [endSession, pauseFor, plans, resumePractice, transition],
+    [catchUp, clockMs, endSession, pauseFor, plans, resumePractice, transition],
   );
 
   useEffect(() => {
@@ -495,7 +561,8 @@ export function usePracticeSession({ run, preferences, quickStart, night, onIntr
   );
 
   // Screen readers hear each step once, at its boundary: “Inhale left, 4 seconds”, unless the
-  // Viram voice is speaking it (speechOwner). Pauses, countdowns, and the finish are always announced.
+  // Viram voice speaks that very step (speechOwner, and its clip fits the step; QA F03).
+  // Pauses, countdowns, and the finish are always announced.
   useEffect(() => {
     let message = '';
     if (view.kind === 'running') {
@@ -503,7 +570,9 @@ export function usePracticeSession({ run, preferences, quickStart, night, onIntr
       message = `${stepLabel(step)}, ${step.seconds} seconds`;
       if (announced.current !== view.stepKey) {
         announced.current = view.stepKey;
-        if (speech === 'screenReader') AccessibilityInfo.announceForAccessibility(message);
+        const asPlayed = { ...step, seconds: view.position.step.durationMs / 1000 };
+        const spoken = speech === 'viram' && soundForStep(settings.cues, asPlayed, view.position.roundNumber, (id) => guide.clipLength(settings.voice, id))?.startsWith('voice.');
+        if (!spoken) AccessibilityInfo.announceForAccessibility(message);
       }
     } else if (view.kind === 'paused' && !view.confirmingEnd && announced.current !== 'paused') {
       announced.current = 'paused';
@@ -519,7 +588,7 @@ export function usePracticeSession({ run, preferences, quickStart, night, onIntr
     }
     // names derive from run, which is fixed for the screen.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [plans, speech, view]);
+  }, [plans, settings, speech, view]);
 
   // Keep the lock screen's round line current while the app is open.
   useEffect(() => {

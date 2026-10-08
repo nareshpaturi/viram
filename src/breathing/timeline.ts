@@ -4,7 +4,7 @@
  * resume, or a routine transition) comes
  * first, then one cue per non-zero step boundary, then the completion cue.
  */
-import { countCue, cueFor, type CueId } from '../content/voice';
+import { countCue, cueFor, MAX_SPOKEN_COUNT, type CueId } from '../content/voice';
 import { LEAD_MS, segmentEndMs, segmentLayout, type Segment, type SessionPlan } from './session';
 import { hapticPattern, type HapticPhases, type HapticStyle, type Pulse } from '../haptics/patterns';
 import { formatClock } from './describe';
@@ -76,6 +76,8 @@ export function soundForStep(
  * timing-fallback rule). Counts carry no haptic.
  */
 export function countCues(step: Parameters<typeof stepMs>[0], atMs: number, stepSound: SoundId | null, clipMs: (id: CueId) => number | undefined): Cue[] {
+  // Past 20 the voice has no numbers; rather than stop partway, a longer step isn't counted (QA F06).
+  if (step.seconds > MAX_SPOKEN_COUNT) return [];
   const spokenUntil = stepSound?.startsWith('voice.') ? (clipMs(stepSound.slice('voice.'.length) as CueId) ?? 0) + VOICE_MARGIN_MS : 0;
   const cues: Cue[] = [];
   for (let n = 2; n <= Math.floor(step.seconds); n++) {
@@ -158,5 +160,9 @@ export function buildRunSchedule(
     if (span.part === segment.part) return shifted;
     return [{ atMs: span.offsetMs, sound: null, haptic: null, nowPlaying: `Up next · ${names[span.part]}` }, ...shifted];
   });
+  // A segment that stops before a part to prepare ends on its completion cue, naming what's next.
+  const next = spans[spans.length - 1].part + 1;
+  const completion = cues[cues.length - 1];
+  if (next < plans.length && completion?.nowPlaying === 'Practice complete') cues[cues.length - 1] = { ...completion, nowPlaying: `Up next · ${names[next]}` };
   return { cues, endMs: segmentEndMs(plans, segment) };
 }

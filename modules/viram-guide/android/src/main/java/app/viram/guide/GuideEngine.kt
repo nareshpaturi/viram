@@ -36,6 +36,8 @@ object GuideEngine {
   private const val RATE = 44_100
   private const val BLOCK = 512
   private const val RELEASE_AFTER_END_MS = 3_000.0
+  /** A completion sound can outlast the release point (Soft bells is 6 s); never wait longer than this. */
+  private const val MAX_TAIL_MS = 10_000.0
   private const val STALE_MS = 50.0
   private const val BED_RISE = 1f / (4 * RATE)
   private const val BED_FALL = 1f / (3 * RATE)
@@ -179,6 +181,8 @@ object GuideEngine {
   /** Freezes the clock and drops pending cues. Returns the position. */
   fun pause(): Double {
     val position = synchronized(lock) { pauseLocked() }
+    // A waveform already handed to the vibrator (taps through a long exhale) stops with the guidance.
+    PhaseHaptics.cancel(context)
     GuidePlaybackService.refresh()
     return position
   }
@@ -206,6 +210,7 @@ object GuideEngine {
 
   fun stop() {
     val thread: Thread?
+    PhaseHaptics.cancel(context)
     synchronized(lock) {
       generation += 1
       segmentActive = false
@@ -346,7 +351,9 @@ object GuideEngine {
       synchronized(lock) {
         output = track ?: return
         mixBlockLocked(mix)
-        val guidanceDone = segmentActive && frozenMs == null && positionMsLocked() >= endMs + RELEASE_AFTER_END_MS
+        // Released once the last sound has played out, so a long completion bell isn't cut off (QA F11).
+        val position = positionMsLocked()
+        val guidanceDone = segmentActive && frozenMs == null && position >= endMs + RELEASE_AFTER_END_MS && (voices.isEmpty() || position >= endMs + MAX_TAIL_MS)
         // Release atomically with the decision, so a new start() gets a fresh track.
         if (guidanceDone || (!segmentActive && voices.isEmpty())) {
           finished = true

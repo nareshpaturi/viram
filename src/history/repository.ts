@@ -158,6 +158,7 @@ function isPart(v: unknown): v is PartRecord {
     isSnapshot(p.steps) &&
     isTarget(p.target) &&
     Number.isFinite(p.activeMs) &&
+    p.activeMs >= 0 &&
     Number.isInteger(p.completedRounds) &&
     p.completedRounds >= 0 &&
     Number.isFinite(p.breathsPerMinute) &&
@@ -186,7 +187,8 @@ export function recordFromRow(row: Row): SessionRecord | null {
   const partsOk = parts === null || (Array.isArray(parts) && parts.length >= 1 && parts.every(isPart));
   const programOk = program === null || isProgramTag(program);
   const slowing = parseJson(row.slowing);
-  if (!source || !isOutcome(row.outcome) || !cueMode || !isSnapshot(steps) || !Number.isFinite(row.active_ms) || !partsOk || !programOk || !health) {
+  // A negative duration is malformed, not merely unusual: an import that holds one is rejected (QA F08).
+  if (!source || !isOutcome(row.outcome) || !cueMode || !isSnapshot(steps) || !Number.isFinite(row.active_ms) || row.active_ms < 0 || !partsOk || !programOk || !health) {
     return null;
   }
   return {
@@ -260,11 +262,15 @@ export function historyRepository(db: Db) {
       .filter((r): r is SessionRecord => r !== null);
 
   return {
-    /** Idempotent: saving the same record twice keeps one. */
+    /**
+     * Idempotent: saving the same record twice keeps one. Only a repeated id
+     * is skipped; any other constraint fails loudly, so an import can't
+     * report a record it silently dropped (QA F08).
+     */
     save(record: SessionRecord): void {
       const row = rowFrom(record);
       db.runSync(
-        `INSERT OR IGNORE INTO sessions (${COLUMNS}) VALUES (${COLUMN_NAMES.map(() => '?').join(', ')})`,
+        `INSERT INTO sessions (${COLUMNS}) VALUES (${COLUMN_NAMES.map(() => '?').join(', ')}) ON CONFLICT(id) DO NOTHING`,
         COLUMN_NAMES.map((column) => row[column]),
       );
     },

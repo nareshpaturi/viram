@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { AccessibilityInfo, StyleSheet, TextInput } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
-import { describeRhythm, describeTargetAndPlan } from '../src/breathing/describe';
+import { describeRhythm, describeTargetAndPlan, slowingLine } from '../src/breathing/describe';
 import { AppText } from '../src/components/AppText';
 import { Button } from '../src/components/Button';
 import { Card } from '../src/components/Card';
@@ -120,8 +120,10 @@ export default function SaveRhythm() {
       )}
       <Card>
         <AppText variant="bodyStrong">{describeRhythm(subject.steps)}</AppText>
+        {subject.slowing ? <AppText variant="label">{slowingLine(subject.steps, subject.slowing)}</AppText> : null}
+        {/* The same plan Adjust rhythm showed, slowing included (QA AQ-07). */}
         <AppText variant="label">
-          {describeTargetAndPlan(subject.steps, subject.target)}
+          {describeTargetAndPlan(subject.steps, subject.target, subject.slowing ?? null)}
         </AppText>
       </Card>
       <AppText variant="label">Saved on this device. You can keep up to {MAX_RHYTHMS} rhythms.</AppText>
