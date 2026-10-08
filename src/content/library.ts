@@ -506,7 +506,7 @@ export const LIBRARY: Technique[] = [
       roundsNote: '4-7-8 is taught in rounds. Start with 4, and build to 8 only when the hold feels easy.',
       lead: 'Breathe in for 4, hold for 7, and breathe out through your mouth for 8. The counts are a ratio, not a test: keep them comfortable.',
       takeCareShort: 'Start with 4 rounds. If the hold feels hard, count faster and keep the ratio.',
-      preparation: 'Before the first round, breathe out comfortably through your mouth. Then close your mouth.',
+      preparation: 'First, breathe out comfortably through your mouth. Then close your mouth.',
       howTo: [
         'Sit with your back straight, or lie down if you’re settling for sleep.',
         'Rest the tip of your tongue on the ridge just behind your upper front teeth, and keep it there.',
