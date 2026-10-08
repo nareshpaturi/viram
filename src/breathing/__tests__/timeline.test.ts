@@ -2,7 +2,7 @@ import { LIBRARY } from '../../content/library';
 import type { CueId } from '../../content/voice';
 import { LEAD_MS, sessionPlan } from '../session';
 import type { RhythmStep } from '../rhythm';
-import { buildSchedule, type CueSettings } from '../timeline';
+import { buildSchedule, guideCount, type CueSettings } from '../timeline';
 
 const practice = (id: string) => LIBRARY.find((t) => t.id === id)!.practice;
 const clips: Partial<Record<CueId, number>> = {
@@ -154,5 +154,19 @@ describe('per-phase haptic patterns in the schedule', () => {
     expect(cues[2].pulses).toBeUndefined();
     const none = buildSchedule(plan, 0, { ...base, haptics: null }, () => undefined).cues;
     expect(none.every((c) => !c.pulses && c.haptic === null)).toBe(true);
+  });
+});
+
+describe('guideCount', () => {
+  const shown = (countingAloud: boolean) => [0, 999, 1000, 2500, 3999].map((ms) => guideCount(4000, ms, countingAloud));
+
+  it('shows the seconds left in the step', () => {
+    expect(shown(false)).toEqual([4, 4, 3, 2, 1]);
+  });
+
+  it('shows the number being spoken while the voice counts, so screen and voice agree', () => {
+    // “Inhale” with 1, then “Two”, “Three”, “Four” on each whole second (countCues).
+    expect(shown(true)).toEqual([1, 1, 2, 3, 4]);
+    expect(guideCount(4000, 4000, true)).toBe(4);
   });
 });

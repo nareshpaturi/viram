@@ -3,6 +3,8 @@
  * JSON value per key; anything unreadable falls back to its default.
  */
 import { Platform } from 'react-native';
+import type { Music } from '../audio/music';
+import { DEFAULT_VOICE, VOICE_IDS, type VoiceId } from '../audio/voices';
 import { STEP_KINDS } from '../breathing/rhythm';
 import type { CueMode, HapticStrength, ToneSet } from '../breathing/timeline';
 import { DEFAULT_HAPTIC_PHASES, type HapticPhases, type HapticStyle } from '../haptics/patterns';
@@ -46,6 +48,12 @@ export interface Preferences {
   cueVolume: number;
   otherAudio: OtherAudio;
   toneSet: ToneSet;
+  /** Speaks cues, counts, names, and introductions. */
+  voice: VoiceId;
+  /** Background music under Voice and Tones. */
+  music: Music;
+  /** 0–1, relative to the device's media volume; set apart from the cue volume. */
+  musicVolume: number;
   keepScreenOn: boolean;
   introductions: Introductions;
   /** Technique IDs whose introduction has played once. */
@@ -90,6 +98,9 @@ export const DEFAULT_PREFERENCES: Preferences = {
   // works either way, so it plays along, without lowering the music.
   otherAudio: Platform.OS === 'ios' ? 'auto' : 'alongside',
   toneSet: 'soft-bells',
+  voice: DEFAULT_VOICE,
+  music: 'tanpura',
+  musicVolume: 0.5,
   keepScreenOn: false,
   introductions: 'first',
   introductionsHeard: [],
@@ -131,6 +142,9 @@ const VALIDATORS: { [K in keyof Preferences]: (v: unknown) => Preferences[K] | u
   cueVolume: (v) => (typeof v === 'number' && v >= 0 && v <= 1 ? v : undefined),
   otherAudio: (v) => (oneOf('auto', 'alongside', 'lower', 'pause')(v) ? v : undefined),
   toneSet: (v) => (oneOf('soft-bells', 'wood', 'chimes')(v) ? v : undefined),
+  voice: (v) => (oneOf(...VOICE_IDS)(v) ? v : undefined),
+  music: (v) => (oneOf('off', 'tanpura', 'pad')(v) ? v : undefined),
+  musicVolume: (v) => (typeof v === 'number' && v >= 0 && v <= 1 ? v : undefined),
   keepScreenOn: (v) => (isBoolean(v) ? v : undefined),
   introductions: (v) => (oneOf('first', 'always', 'never')(v) ? v : undefined),
   introductionsHeard: (v) =>

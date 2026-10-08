@@ -28,17 +28,26 @@ data class GuideCue(val atMs: Double, val sound: String?, val haptic: Int, val n
  *
  * A writer thread mixes cue sounds into a continuous AudioTrack stream, so
  * each cue lands on an exact frame and the clock is the frames actually
- * played. The stream keeps running (as silence) between cues, which, with the
- * mediaPlayback foreground service, keeps guidance going with the screen
- * locked, in Doze, and in battery saver.
+ * played. The stream keeps running (as silence or the music bed) between
+ * cues, which, with the mediaPlayback foreground service, keeps guidance
+ * going with the screen locked, in Doze, and in battery saver.
  */
 object GuideEngine {
   private const val RATE = 44_100
   private const val BLOCK = 512
   private const val RELEASE_AFTER_END_MS = 3_000.0
   private const val STALE_MS = 50.0
+  private const val BED_RISE = 1f / (4 * RATE)
+  private const val BED_FALL = 1f / (3 * RATE)
 
   private class Voice(val samples: FloatArray, val startFrame: Long, val gain: Float)
+
+  /** The looping music bed. Its gain eases toward `target`: in over 4 s, out over 3 s at full volume. */
+  private class Bed(val sound: String, val samples: FloatArray) {
+    var frame = 0
+    var gain = 0f
+    var target = 0f
+  }
 
   /** A cue written to the stream whose presentation time isn't known yet. */
   private class PendingTiming(val atMs: Double, val frame: Long, val sound: String, val generation: Int)
@@ -63,6 +72,11 @@ object GuideEngine {
   private var cues: List<GuideCue> = emptyList()
   private var nextCue = 0
   private val voices = ArrayList<Voice>()
+  private var bed: Bed? = null
+  /** The current one-shot sound; a new one replaces it, as on iOS. */
+  private var once: Voice? = null
+  /** “Play along” found another app's music playing when the session began, so the bed stays quiet. */
+  private var othersPlaying = false
   private var volume = 1f
   private var mixWithOthers = true
   private var generation = 0
@@ -102,7 +116,7 @@ object GuideEngine {
     val lengths = HashMap<String, Double>()
     for ((id, uri) in sounds) {
       // One unreadable file skips that sound only; its cue falls back to a tone or haptic.
-      val samples = buffers[id] ?: runCatching { WavDecoder.decode(context, uri, RATE) }.getOrNull()?.also { buffers[id] = it } ?: continue
+      val samples = buffers[id] ?: runCatching { AudioDecoder.decode(context, uri, RATE) }.getOrNull()?.also { buffers[id] = it } ?: continue
       lengths[id] = samples.size * 1000.0 / RATE
     }
     return lengths
@@ -132,11 +146,16 @@ object GuideEngine {
 
   // ——— Segment lifecycle ———
 
-  fun start(cues: List<GuideCue>, endMs: Double, volume: Float, mixWithOthers: Boolean, title: String, subtitle: String) {
+  fun start(
+    cues: List<GuideCue>, endMs: Double, volume: Float, mixWithOthers: Boolean, title: String, subtitle: String, bed: String?, bedVolume: Float,
+  ) {
     cues.forEach { cue -> cue.sound?.let { require(buffers.containsKey(it)) { "Sound $it was not preloaded" } } }
     synchronized(lock) {
       generation += 1
+      // Checked before this session's own stream exists, which would count as music too.
+      if (track == null) othersPlaying = mixWithOthers && audioManager.isMusicActive
       ensureTrackLocked()
+      startBedLocked(if (othersPlaying) null else bed, bedVolume)
       voices.clear()
       this.cues = cues.sortedBy { it.atMs }
       this.nextCue = 0
@@ -193,6 +212,7 @@ object GuideEngine {
       frozenMs = null
       cues = emptyList()
       voices.clear()
+      bed = null
       thread = writer
       writer = null
     }
@@ -226,12 +246,49 @@ object GuideEngine {
     GuidePlaybackService.refresh()
   }
 
-  /** A single sound outside a practice: “Hear it” and “Hear a sample”. */
-  fun playOnce(sound: String, volume: Float) {
-    val samples = buffers[sound] ?: throw IllegalArgumentException("Sound $sound was not preloaded")
+  /**
+   * A single sound outside a practice: “Hear it” and “Hear a sample”. With
+   * `maxMs`, only the start plays, fading in and out: a music bed's preview.
+   */
+  fun playOnce(sound: String, volume: Float, maxMs: Double?) {
+    val full = buffers[sound] ?: throw IllegalArgumentException("Sound $sound was not preloaded")
+    val samples = maxMs?.let { excerpt(full, it) } ?: full
     synchronized(lock) {
       ensureTrackLocked()
-      voices.add(Voice(samples, framesWritten, volume))
+      once?.let { voices.remove(it) }
+      once = Voice(samples, framesWritten, volume).also { voices.add(it) }
+    }
+  }
+
+  private fun excerpt(samples: FloatArray, ms: Double): FloatArray? {
+    val frames = msToFrames(ms).toInt()
+    if (frames <= 0 || frames >= samples.size) return null
+    val fadeIn = RATE * 0.3f
+    val fadeOut = minOf(frames, (RATE * 1.5).toInt()).toFloat()
+    return FloatArray(frames) { i -> samples[i] * minOf(1f, i / fadeIn, (frames - i) / fadeOut) }
+  }
+
+  // ——— Music bed ———
+
+  /** The same bed carries on across segments (introduction, settle, resume) without restarting. */
+  private fun startBedLocked(sound: String?, volume: Float) {
+    val samples = sound?.let { buffers[it] }
+    if (sound == null || samples == null) {
+      bed?.target = 0f
+      return
+    }
+    val current = bed?.takeIf { it.sound == sound } ?: Bed(sound, samples).also { bed = it }
+    current.target = volume
+  }
+
+  /** Adds the bed to a block, silent while paused and fading out under the completion cue. */
+  private fun mixBedLocked(mix: FloatArray) {
+    val b = bed ?: return
+    val target = if (segmentActive && frozenMs == null && positionMsLocked() < endMs) b.target else 0f
+    for (i in 0 until BLOCK) {
+      b.gain = if (b.gain < target) minOf(target, b.gain + BED_RISE) else maxOf(target, b.gain - BED_FALL)
+      mix[i] += b.samples[b.frame] * b.gain
+      if (++b.frame == b.samples.size) b.frame = 0
     }
   }
 
@@ -285,6 +342,7 @@ object GuideEngine {
           segmentEnded = guidanceDone
           segmentActive = false
           cues = emptyList()
+          bed = null
           track = null
           writer = null
           framesWritten = 0
@@ -374,6 +432,7 @@ object GuideEngine {
       }
       if (blockStart + BLOCK - voice.startFrame >= voice.samples.size) iterator.remove()
     }
+    mixBedLocked(mix)
     framesWritten += BLOCK
   }
 

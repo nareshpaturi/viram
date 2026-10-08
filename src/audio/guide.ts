@@ -14,6 +14,7 @@ import type { Pulse } from '../haptics/patterns';
 import { CUES } from '../content/voice';
 import { CLIP_MS, SOUND_ASSETS } from './manifest.generated';
 import { TIMING_LOG_ENABLED, recordCue } from './timingLog';
+import { voiceSound, type VoiceId } from './voices';
 
 // Development and internal builds report every cue's actual timing.
 if (TIMING_LOG_ENABLED && NativeGuide) {
@@ -39,6 +40,10 @@ export interface SegmentOptions {
   lowerOthers?: boolean;
   title: string;
   subtitle: string;
+  /** Music looped under the cues, or null. */
+  bed: { sound: string; volume: number } | null;
+  /** Speaks the schedule's voice clips. */
+  voice: VoiceId;
 }
 
 export interface GuideHandlers {
@@ -58,17 +63,25 @@ export function audioAvailable(): boolean {
   return NativeGuide !== null && !audioBroken;
 }
 
-/** Every sound a practice can use with these settings: cue clips and one tone set. */
-export function practiceSounds(toneSet: string): string[] {
+/**
+ * The timeline names voice clips without a voice (`voice.inhale`); the
+ * chosen voice's clip plays (`voice.af_heart.inhale`).
+ */
+function inVoice(sound: string, voice: VoiceId): string {
+  return sound.startsWith('voice.') ? voiceSound(voice, sound.slice('voice.'.length)) : sound;
+}
+
+/** Every sound a practice can use with these settings: one voice's cue clips, one tone set, and the music bed. */
+export function practiceSounds(toneSet: string, bed: string | null, voice: VoiceId): string[] {
   const kinds = ['inhale', 'hold', 'exhale', 'rest', 'complete'];
   // Night practice always finishes on the soft bells (FR-23), whatever the tone set.
   const tones = new Set([...kinds.map((k) => `tone.${toneSet}.${k}`), 'tone.soft-bells.complete']);
-  return [...tones, ...Object.keys(CUES).map((id) => `voice.${id}`)];
+  return [...tones, ...Object.keys(CUES).map((id) => voiceSound(voice, id)), ...(bed ? [bed] : [])];
 }
 
-/** Length of a loaded voice clip, from the build-time manifest. */
-export function clipLength(clipId: string): number | undefined {
-  return loaded.has(`voice.${clipId}`) ? CLIP_MS[clipId] : undefined;
+/** Length of one of a voice's loaded clips, from the build-time manifest. */
+export function clipLength(voice: VoiceId, clipId: string): number | undefined {
+  return loaded.has(voiceSound(voice, clipId)) ? CLIP_MS[voice]?.[clipId] : undefined;
 }
 
 async function uriFor(id: SoundId | string): Promise<string | null> {
@@ -123,16 +136,30 @@ function clearFallback() {
 // ——— Public API ———
 
 export function startSegment(schedule: GuideSchedule, options: SegmentOptions): void {
-  const cues = schedule.cues.map((cue) => ({
-    atMs: cue.atMs,
-    sound: cue.sound && loaded.has(cue.sound) ? cue.sound : null,
-    haptic: cue.haptic ? HAPTIC_LEVEL[cue.haptic] : 0,
-    pulses: flatPulses(cue.pulses),
-    nowPlaying: cue.nowPlaying,
-  }));
+  const { bed, voice, ...rest } = options;
+  const cues = schedule.cues.map((cue) => {
+    const sound = cue.sound && inVoice(cue.sound, voice);
+    return {
+      atMs: cue.atMs,
+      sound: sound && loaded.has(sound) ? sound : null,
+      haptic: cue.haptic ? HAPTIC_LEVEL[cue.haptic] : 0,
+      pulses: flatPulses(cue.pulses),
+      nowPlaying: cue.nowPlaying,
+    };
+  });
   if (audioAvailable()) {
     try {
-      NativeGuide!.startSegment({ cues, endMs: schedule.endMs, mixIfOthersPlaying: false, lowerOthers: false, ...options });
+      // A bed that failed to load is left out; the cues carry on without it.
+      const playable = bed && loaded.has(bed.sound) ? bed : null;
+      NativeGuide!.startSegment({
+        cues,
+        endMs: schedule.endMs,
+        mixIfOthersPlaying: false,
+        lowerOthers: false,
+        ...rest,
+        bed: playable?.sound ?? null,
+        bedVolume: playable?.volume ?? 0,
+      });
       return;
     } catch {
       audioBroken = true;
@@ -186,12 +213,15 @@ export function setNowPlaying(title: string, subtitle: string): void {
   if (audioAvailable()) NativeGuide!.setNowPlaying(title, subtitle);
 }
 
-/** “Hear it” and “Hear a sample”. Resolves false when audio is unavailable. */
-export async function playOnce(id: string, volume: number): Promise<boolean> {
+/**
+ * “Hear it” and “Hear a sample”; `maxMs` plays only the start, fading out (a
+ * music preview). Resolves false when audio is unavailable.
+ */
+export async function playOnce(id: string, volume: number, maxMs?: number): Promise<boolean> {
   await prepareSounds([id]);
   if (!audioAvailable() || !loaded.has(id)) return false;
   try {
-    NativeGuide!.playOnce(id, volume);
+    NativeGuide!.playOnce(id, volume, maxMs);
     return true;
   } catch {
     return false;

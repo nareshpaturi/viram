@@ -6,6 +6,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useReducedMotion } from '../src/accessibility/motion';
 import { describeRhythm, describeTarget, formatClock, routeLabel, stepLabel } from '../src/breathing/describe';
 import type { PauseReason } from '../src/breathing/session';
+import { guideCount } from '../src/breathing/timeline';
 import { AppText } from '../src/components/AppText';
 import { BreathingGuide } from '../src/components/BreathingGuide';
 import { Button } from '../src/components/Button';
@@ -60,7 +61,7 @@ function PracticeScreen({ run, quickStart }: { run: PracticeRun; quickStart: boo
   const reducedMotion = useReducedMotion(preferences.motion);
   const { width, height } = useWindowDimensions();
   const surface = useSurface();
-  const { plans, view, actions } = usePracticeSession({
+  const { plans, view, countingAloud, actions } = usePracticeSession({
     run,
     preferences,
     quickStart,
@@ -105,6 +106,7 @@ function PracticeScreen({ run, quickStart }: { run: PracticeRun; quickStart: boo
         durations={plans.map((p) => p.durationMs)}
         guideSize={guideSize}
         reducedMotion={reducedMotion}
+        countingAloud={countingAloud}
         showLockTip={showLockTip}
         quickStart={quickStart}
         actions={actions}
@@ -121,12 +123,14 @@ interface BodyProps {
   durations: number[];
   guideSize: number;
   reducedMotion: boolean;
+  /** The voice counts within steps, so the guide shows the count instead of seconds left. */
+  countingAloud: boolean;
   showLockTip: boolean;
   quickStart: boolean;
   actions: ReturnType<typeof usePracticeSession>['actions'];
 }
 
-function Body({ view, run, rounds, durations, guideSize, reducedMotion, showLockTip, quickStart, actions }: BodyProps) {
+function Body({ view, run, rounds, durations, guideSize, reducedMotion, countingAloud, showLockTip, quickStart, actions }: BodyProps) {
   const routine = run.parts.length > 1;
   const practiceOf = (part: number) => run.parts[part];
   const partLabel = (part: number) => (routine ? `Practice ${part + 1} of ${run.parts.length}` : null);
@@ -222,7 +226,7 @@ function Body({ view, run, rounds, durations, guideSize, reducedMotion, showLock
       // Half-second rhythms and gradual slowing show a ring instead of whole-second counts.
       const seconds = position.step.durationMs / 1000;
       const halfSeconds = !!practice.slowing || practice.steps.some((s) => !Number.isInteger(s.seconds));
-      const secondsLeft = halfSeconds ? null : Math.ceil((position.step.durationMs - position.step.elapsedMs) / 1000);
+      const count = halfSeconds ? null : guideCount(position.step.durationMs, position.step.elapsedMs, countingAloud);
       const route = routeLabel(step);
       const caption = captionFor(practice, position.step.index) ?? [practice.name, subtitleOf(practice)].filter(Boolean).join(' · ');
       const remaining = roundsTarget
@@ -242,7 +246,7 @@ function Body({ view, run, rounds, durations, guideSize, reducedMotion, showLock
               stepKey={view.stepKey}
               durationMs={position.step.durationMs}
               elapsedMs={position.step.elapsedMs}
-              secondsLeft={secondsLeft}
+              count={count}
               frozen={false}
               reducedMotion={reducedMotion}
               size={guideSize}

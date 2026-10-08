@@ -24,6 +24,9 @@ struct SegmentOptions: Record {
   @Field var lowerOthers: Bool = false
   @Field var title: String = ""
   @Field var subtitle: String = ""
+  /// Music bed looped under the segment.
+  @Field var bed: String? = nil
+  @Field var bedVolume: Double = 0
 }
 
 /// JS surface of the guide. All timing lives in GuideEngine on the audio clock.
@@ -58,7 +61,9 @@ public class ViramGuideModule: Module {
         // takes the audio so the lock screen shows the practice's controls.
         mixWithOthers: options.mixWithOthers || (options.mixIfOthersPlaying && AVAudioSession.sharedInstance().isOtherAudioPlaying),
         title: options.title,
-        subtitle: options.subtitle
+        subtitle: options.subtitle,
+        bed: options.bed,
+        bedVolume: Float(options.bedVolume)
       )
     }
 
@@ -90,8 +95,8 @@ public class ViramGuideModule: Module {
       self.engine.timingLog = enabled
     }
 
-    Function("playOnce") { (sound: String, volume: Double) in
-      try self.engine.playOnce(sound, volume: Float(volume))
+    Function("playOnce") { (sound: String, volume: Double, maxMs: Double?) in
+      try self.engine.playOnce(sound, volume: Float(volume), maxMs: maxMs)
     }
   }
 }

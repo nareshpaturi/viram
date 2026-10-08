@@ -30,6 +30,9 @@ export interface NativeSegment {
   lowerOthers: boolean;
   title: string;
   subtitle: string;
+  /** Music bed looped under the segment, or null for none. The same bed carries on across segments. */
+  bed: string | null;
+  bedVolume: number;
 }
 
 type GuideEvents = {
@@ -51,7 +54,8 @@ declare class ViramGuideModule extends NativeModule<GuideEvents> {
   stop(): void;
   setVolume(volume: number): void;
   setNowPlaying(title: string, subtitle: string): void;
-  playOnce(sound: string, volume: number): void;
+  /** Plays one sound; `maxMs` plays just its start, fading out (a music preview). */
+  playOnce(sound: string, volume: number, maxMs?: number): void;
   setTimingLog(enabled: boolean): void;
 }
 

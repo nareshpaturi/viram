@@ -37,8 +37,8 @@ The v1.0 code for D01–D22 is in place on branch `claude/implement-v1`. It is v
 | D11 | Done: My rhythms, 20 limit, 1–40 plain-text names, rename and delete, snapshot tests | — |
 | D12 | Done: library and guides from `src/content`; “Reviewed by” only from a record; “Hear it” hidden until D23 | Coherent-breathing name decision |
 | D13 | Done: side indicator, Hum wave, route labels, progress ring for half seconds, library adjust keeps structure | Eyes-closed tests (Alpha 2) |
-| D14 | Code done with placeholder `say` clips: manifest with limits in CI, voice-or-tone rule, captioned introductions (First time / Always / Never), About disclosure | Locked voice session within ±250 ms |
-| D15 | Code done: cue volume, Play along / Pause it, three generated tone sets, haptic strength, keep screen on | Sound-design lane's final tone sets; music ducking on devices |
+| D14 | Code done; clips now generated locally with Kokoro (`npm run audio:voice-kokoro`), replacing the `say` placeholders: manifest with limits in CI, voice-or-tone rule, captioned introductions (First time / Always / Never), About disclosure | Locked voice session within ±250 ms; voice choice and listener gate (D23) |
+| D15 | Code done: cue volume, Play along / Pause it, three generated tone sets in one key (Sa = C♯), music beds (Tanpura, Soft pad) with their own volume, haptic strength, keep screen on | Listening test of the tones and beds; music ducking and the bed on devices |
 | D16 | Done: `src/sharing/link.ts`, round trips, 10,000-link fuzz, length budget | — |
 | D17 | Done: share preview (Share sheet and Copy), incoming preview, invalid state, save from link, first use first | — |
 | D18 | Code done: `site/` (fallback page with a decoder matched to the app's in tests, privacy, support, AASA, assetlinks), associated domains and verified intent filter | Register and host viram.app; Team ID, Play signing fingerprint, App Store URL; three messaging apps on devices |

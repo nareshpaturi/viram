@@ -45,8 +45,8 @@ interface Props {
   stepKey: string;
   durationMs: number;
   elapsedMs: number;
-  /** Whole seconds left; null shows the step ring (half-second rhythms). */
-  secondsLeft: number | null;
+  /** The number shown (seconds left, or the spoken count); null shows the step ring (half-second rhythms). */
+  count: number | null;
   frozen: boolean;
   reducedMotion: boolean;
   size: number;
@@ -65,12 +65,12 @@ interface Props {
  * clock-driven renders; nothing here keeps its own time. Night practice
  * dims the disc and halves the glow.
  */
-export function BreathingGuide({ kind, hum, stepKey, durationMs, elapsedMs, secondsLeft, frozen, reducedMotion, size, progress }: Props) {
+export function BreathingGuide({ kind, hum, stepKey, durationMs, elapsedMs, count, frozen, reducedMotion, size, progress }: Props) {
   const surface = useSurface();
   const id = useSvgId('guide');
   const scale = useRef(new Animated.Value(scaleAt(kind, elapsedMs / durationMs))).current;
   const ring = useRef(new Animated.Value(elapsedMs / durationMs)).current;
-  const showRing = secondsLeft === null && !reducedMotion;
+  const showRing = count === null && !reducedMotion;
   const outer = size / 2 - 1.5;
   const stepRadius = size / 2 - 10;
   const circumference = 2 * Math.PI * stepRadius;
@@ -81,7 +81,9 @@ export function BreathingGuide({ kind, hum, stepKey, durationMs, elapsedMs, seco
     scale.setValue(reducedMotion ? 0.8 : scaleAt(kind, p));
     ring.setValue(p);
     if (frozen || reducedMotion || remaining === 0) return;
-    const easing = Easing.inOut(Easing.sin);
+    // Moving within the cue's first syllable, then settling slowly, like a breath filling or emptying.
+    // An ease-in-out stood still for the first half second, so the guide seemed to lag the voice.
+    const easing = Easing.bezier(0.25, 0.1, 0.25, 1);
     const animations = [Animated.timing(scale, { toValue: scaleAt(kind, 1), duration: remaining, easing, useNativeDriver: true })];
     if (showRing) animations.push(Animated.timing(ring, { toValue: 1, duration: remaining, easing: Easing.linear, useNativeDriver: false }));
     const running = Animated.parallel(animations);
@@ -151,9 +153,9 @@ export function BreathingGuide({ kind, hum, stepKey, durationMs, elapsedMs, seco
             />
           </Svg>
         ) : null}
-        {secondsLeft !== null ? (
+        {count !== null ? (
           <AppText variant="countdown" maxFontSizeMultiplier={1.4} style={{ color: surface.count }}>
-            {secondsLeft}
+            {count}
           </AppText>
         ) : null}
       </View>

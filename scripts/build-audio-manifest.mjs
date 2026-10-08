@@ -1,9 +1,10 @@
-// Measures every bundled clip and tone and writes src/audio/manifest.generated.ts,
+// Measures every bundled clip, tone, and music bed and writes src/audio/manifest.generated.ts,
 // the static require map the app loads sounds from and the clip lengths the
 // cue scheduler's voice-or-tone rule uses (FR-03). Fails when a cue clip is
 // over its limit or an expected file is missing.
 // Run with `npm run audio:manifest`; `--check` verifies the file is current (CI).
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { VOICE_IDS } from '../src/audio/voices.ts';
 import { LIBRARY } from '../src/content/library.ts';
 import { CUES } from '../src/content/voice.ts';
 import { durationMs } from './lib/wav.mjs';
@@ -11,6 +12,7 @@ import { durationMs } from './lib/wav.mjs';
 const OUTPUT = 'src/audio/manifest.generated.ts';
 const TONE_SETS = ['soft-bells', 'wood', 'chimes'];
 const TONE_KINDS = ['inhale', 'hold', 'exhale', 'rest', 'complete'];
+const MUSIC = ['tanpura', 'pad'];
 // Placeholder clips are replaced in D23; flip this when the licensed voice lands.
 const PLACEHOLDER_VOICE = true;
 
@@ -26,24 +28,34 @@ for (const set of TONE_SETS) {
   }
 }
 
+for (const bed of MUSIC) {
+  const file = `assets/music/${bed}.wav`;
+  if (!existsSync(file)) errors.push(`missing ${file}`);
+  else sounds.push([`music.${bed}`, file]);
+}
+
 const clipIds = [
   ...Object.keys(CUES),
   ...LIBRARY.map((t) => t.guidance.introduction.clip),
   ...LIBRARY.flatMap((t) => (t.guidance.introduction.long ? [t.guidance.introduction.long.clip] : [])),
   ...LIBRARY.flatMap((t) => (t.pronunciation ? [t.pronunciation.clip] : [])),
 ];
-for (const id of clipIds) {
-  const file = `assets/voice/${id}.wav`;
-  // A missing clip falls back to its tone at runtime, but the build expects the full set.
-  if (!existsSync(file)) {
-    errors.push(`missing ${file}`);
-    continue;
+// Every voice has the full set, each clip as WAV or (introductions) AAC.
+for (const voice of VOICE_IDS) {
+  clipMs[voice] = {};
+  for (const id of clipIds) {
+    const file = ['wav', 'm4a'].map((ext) => `assets/voice/${voice}/${id}.${ext}`).find(existsSync);
+    // A missing clip falls back to its tone at runtime, but the build expects the full set.
+    if (!file) {
+      errors.push(`missing assets/voice/${voice}/${id}.wav (or .m4a)`);
+      continue;
+    }
+    const ms = durationMs(file);
+    const limit = CUES[id]?.maxSeconds;
+    if (limit !== undefined && ms > limit * 1000) errors.push(`${voice}/${id} is ${ms} ms; limit ${limit * 1000} ms`);
+    sounds.push([`voice.${voice}.${id}`, file]);
+    clipMs[voice][id] = ms;
   }
-  const ms = durationMs(file);
-  const limit = CUES[id]?.maxSeconds;
-  if (limit !== undefined && ms > limit * 1000) errors.push(`${id} is ${ms} ms; limit ${limit * 1000} ms`);
-  sounds.push([`voice.${id}`, file]);
-  clipMs[id] = ms;
 }
 
 if (errors.length) {
@@ -59,8 +71,8 @@ export const SOUND_ASSETS = {
 ${sounds.map(([id, file]) => `  '${id}': require('../../${file}'),`).join('\n')}
 } as const;
 
-/** Measured clip lengths in milliseconds, by clip ID. */
-export const CLIP_MS: Record<string, number> = ${JSON.stringify(clipMs, null, 2)};
+/** Measured clip lengths in milliseconds, by voice, then clip ID. */
+export const CLIP_MS: Record<string, Record<string, number>> = ${JSON.stringify(clipMs, null, 2)};
 
 /** True while assets/voice holds text-to-speech placeholders (not for release). */
 export const PLACEHOLDER_VOICE = ${PLACEHOLDER_VOICE};
@@ -74,5 +86,5 @@ if (process.argv.includes('--check')) {
   console.log('Audio manifest is current.');
 } else {
   writeFileSync(OUTPUT, source);
-  console.log(`Wrote ${OUTPUT}: ${sounds.length} sounds, ${Object.keys(clipMs).length} clips.`);
+  console.log(`Wrote ${OUTPUT}: ${sounds.length} sounds, ${clipIds.length} clips in each of ${VOICE_IDS.length} voices.`);
 }
