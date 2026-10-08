@@ -2,7 +2,7 @@ import Svg, { Circle, Defs, G, Path, RadialGradient, Stop } from 'react-native-s
 import type { RhythmStep } from '../breathing/rhythm';
 import { useSvgId } from '../light/Wash';
 import { useSurface } from '../night/surface';
-import { AIR, airAt, arrowHead, curvePath, linePath, onSide, point, segment, SLASH, tangent, type Curve } from '../practice/noseAir';
+import { airAt, airFor, arrowHead, curvePath, linePath, point, segment, slashFor, tangent } from '../practice/noseAir';
 
 /** Welcome's nose: the bridge, then the base with both nostrils. */
 const BRIDGE = 'M146 98C146 122 144 142 139 158';
@@ -42,7 +42,6 @@ export function NoseDrawing({ step, look, size, progress, reducedMotion }: Props
     look === 'full'
       ? 'translate(150 135) scale(1.45) translate(-150 -142)'
       : `translate(150 150) scale(1.15) translate(-150 ${hum ? -163 : -177})`;
-  const closed = step.side ? (step.side === 'left' ? 'right' : 'left') : null;
   // Air goes through the open side, or both sides when neither is closed (A
   // only). A hum's waves already show the breath leaving, so it draws no air.
   const airSides: ('left' | 'right')[] = hum ? [] : step.side ? [step.side] : look === 'full' ? ['left', 'right'] : [];
@@ -66,7 +65,7 @@ export function NoseDrawing({ step, look, size, progress, reducedMotion }: Props
       <G transform={transform} fill="none" strokeLinecap="round" strokeLinejoin="round">
         <Path d={BRIDGE} stroke={ink} strokeOpacity={0.92} strokeWidth={weights.nose} />
         <Path d={BASE} stroke={ink} strokeOpacity={0.92} strokeWidth={weights.nose} />
-        {closed ? <Path d={linePath(onSide(SLASH, closed))} stroke={ink} strokeWidth={weights.slash} /> : null}
+        {step.side ? <Path d={linePath(slashFor(step.side))} stroke={ink} strokeWidth={weights.slash} /> : null}
         {hum ? (
           <>
             <Path d={LIPS} stroke={ink} strokeOpacity={0.92} strokeWidth={weights.nose} />
@@ -75,7 +74,7 @@ export function NoseDrawing({ step, look, size, progress, reducedMotion }: Props
         ) : null}
         {air
           ? airSides.map((side) => {
-              const curve = onSide(AIR, side) as Curve;
+              const curve = airFor(side);
               const travel = tangent(curve, air.head);
               const direction = air.inward ? travel : { x: -travel.x, y: -travel.y };
               return (

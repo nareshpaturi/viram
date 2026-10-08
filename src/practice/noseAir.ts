@@ -20,15 +20,27 @@ export const AIR: Curve = [
   { x: 136, y: 192 },
 ];
 
-/** The slash over a closed right nostril; mirrored for the left. */
+/**
+ * The slash over a closed left nostril, mirrored for the right. (The board
+ * draws M156 176L169 189 over the right nostril for “Inhale left”; this is
+ * its mirror, so every shape here is drawn for the left side.)
+ */
 export const SLASH: readonly [Pt, Pt] = [
-  { x: 156, y: 176 },
-  { x: 169, y: 189 },
+  { x: 144, y: 176 },
+  { x: 131, y: 189 },
 ];
 
 /** Left is drawn; right is its mirror across the nose (x = 150). */
 export const mirror = (p: Pt): Pt => ({ x: 300 - p.x, y: p.y });
 export const onSide = <T extends readonly Pt[]>(points: T, side: 'left' | 'right'): T => (side === 'left' ? points : (points.map(mirror) as unknown as T));
+
+type Side = 'left' | 'right';
+const other = (side: Side): Side => (side === 'left' ? 'right' : 'left');
+
+/** The air's path through the open nostril. */
+export const airFor = (open: Side): Curve => onSide(AIR, open);
+/** The slash over the closed nostril: always the side opposite the open one. */
+export const slashFor = (open: Side): readonly [Pt, Pt] => onSide(SLASH, other(open));
 
 const lerp = (a: Pt, b: Pt, t: number): Pt => ({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
 

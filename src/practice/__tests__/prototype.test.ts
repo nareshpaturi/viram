@@ -1,5 +1,5 @@
 import type { RhythmStep } from '../../breathing/rhythm';
-import { AIR, airAt, arrowHead, mirror, point, segment, tangent, TRACE } from '../noseAir';
+import { AIR, airAt, airFor, arrowHead, mirror, point, segment, slashFor, tangent, TRACE } from '../noseAir';
 import { breathesThroughNose, drawingLabel, drawsInB, practiceNote, practiceVariant } from '../prototype';
 
 const inhale = (extra: Partial<RhythmStep> = {}): RhythmStep => ({ kind: 'inhale', seconds: 4, ...extra });
@@ -45,6 +45,24 @@ describe('the air', () => {
     expect(point(AIR, 0)).toEqual(AIR[0]);
     expect(point(AIR, 1)).toEqual(AIR[3]);
     expect(mirror(AIR[3])).toEqual({ x: 164, y: 192 });
+  });
+
+  it('never puts the slash and the air in the same nostril', () => {
+    for (const open of ['left', 'right'] as const) {
+      const slash = slashFor(open);
+      const slashX = (slash[0].x + slash[1].x) / 2;
+      const nostrilX = airFor(open)[3].x;
+      // The nose's midline is x = 150; mirror view puts the practitioner's left on the left.
+      expect(Math.sign(slashX - 150)).toBe(-Math.sign(nostrilX - 150));
+      expect(Math.sign(nostrilX - 150)).toBe(open === 'left' ? -1 : 1);
+    }
+  });
+
+  it('draws the board’s slash, over the right nostril, for Inhale left', () => {
+    expect(slashFor('left')).toEqual([
+      { x: 156, y: 176 },
+      { x: 169, y: 189 },
+    ]);
   });
 
   it('splits the curve so its pieces meet it', () => {
