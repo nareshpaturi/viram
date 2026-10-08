@@ -82,7 +82,11 @@ jobs:
           # FR-18: Apple Health may be written (mindful sessions) and never read.
           grep -q "NSHealthUpdateUsageDescription" ios/Viram/Info.plist
           ! grep -E "NSHealthShareUsageDescription|NSHealthClinicalHealthRecordsShareUsageDescription" ios/Viram/Info.plist
-      # Builds the app with its widget and its Apple Watch app (targets/).
+      # The embedded Apple Watch app (targets/watch) needs the watchOS platform.
+      - name: watchOS platform
+        run: xcrun simctl list runtimes | grep -q watchOS || xcodebuild -downloadPlatform watchOS
+      # Builds the app with its widget and its Apple Watch app (targets/). No -sdk: it would
+      # force the watch target onto the iOS SDK; the destination picks each target's simulator SDK.
       - run: |
           xcodebuild -workspace ios/Viram.xcworkspace -scheme Viram -configuration Debug \
-            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+            -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
