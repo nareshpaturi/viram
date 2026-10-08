@@ -198,22 +198,3 @@ export const PRACTICE_LIGHT: Wash = {
   ],
   glows: [],
 };
-
-/** Welcome's halo behind its large rhythm orb, per wash. */
-export const WELCOME_HALO: Record<Exclude<WashName, 'night'>, GlowStop[]> = {
-  dawn: [
-    { offset: 0, color: SAFFRON, opacity: 0.24 },
-    { offset: 0.45, color: SAFFRON, opacity: 0.08 },
-    { offset: 0.7, color: SAFFRON, opacity: 0 },
-  ],
-  day: [
-    { offset: 0, color: '#FFFFFF', opacity: 0.75 },
-    { offset: 0.45, color: '#FFFFFF', opacity: 0.25 },
-    { offset: 0.7, color: '#FFFFFF', opacity: 0 },
-  ],
-  dusk: [
-    { offset: 0, color: CORAL, opacity: 0.16 },
-    { offset: 0.45, color: CORAL, opacity: 0.05 },
-    { offset: 0.7, color: CORAL, opacity: 0 },
-  ],
-};
