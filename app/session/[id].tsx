@@ -1,6 +1,6 @@
 import { StyleSheet } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
-import { describePace, describeRhythm, describeSlowing, formatClock, perMinute } from '../../src/breathing/describe';
+import { describePace, describeSlowing, formatClock, perMinute, rhythmLine } from '../../src/breathing/describe';
 import { formatPace, planFor } from '../../src/breathing/rhythm';
 import { AppText } from '../../src/components/AppText';
 import { Button } from '../../src/components/Button';
@@ -57,7 +57,7 @@ export default function SessionDetail() {
       <Card>
         {record.parts ? null : (
           <>
-            <AppText>{describeRhythm(record.steps).replace(/^./, (c) => c.toUpperCase())}</AppText>
+            <AppText>{rhythmLine(record.steps)}</AppText>
             {record.slowing ? <AppText variant="label">{describeSlowing(record.steps, record.slowing)}</AppText> : null}
             <AppText variant="label">
               Guided pace: {perMinute(record.slowing ? describePace(planFor(record.steps, record.target, record.slowing)) : formatPace(record.breathsPerMinute))}
