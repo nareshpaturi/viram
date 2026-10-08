@@ -1,0 +1,13 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <application>
+    <!-- Sessions from Viram on Wear OS, delivered even when the app isn't running. -->
+    <service
+      android:name="app.viram.companion.CompanionListenerService"
+      android:exported="true">
+      <intent-filter>
+        <action android:name="com.google.android.gms.wearable.DATA_CHANGED" />
+        <data android:scheme="wear" android:host="*" android:pathPrefix="/viram/session" />
+      </intent-filter>
+    </service>
+  </application>
+</manifest>
