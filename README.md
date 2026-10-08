@@ -3,11 +3,13 @@
 **Steady breath. Steady mind.** Pranayama, guided at your pace: a free, offline
 pranayama app for iOS and Android.
 
-v1.0 has eight gentle techniques with sourced guides, and flexible rhythms by
-minutes or rounds. Voice, tone, and haptic cues keep guiding with the screen
-locked. It also has My rhythms, share links for teachers, app-icon quick
-actions, local history with export and import, and a published free-core
-promise. There is no account, no ads, and no analytics.
+Twelve gentle techniques with sourced guides, and flexible rhythms by minutes
+or rounds. Voice (English and Hindi), tone, and haptic cues keep guiding with
+the screen locked, under optional music. It also has routines, two programs,
+My rhythms, share links for teachers, a breath circle or illustrated visual
+guide, a daily reminder, Apple Health and Health Connect, a home-screen widget,
+Apple Watch and Wear OS companions, app-icon quick actions, and local history
+with export and import. There is no account, no ads, and no analytics.
 
 > **The voice still needs its listener gate.** `assets/voice/` holds clips
 > generated locally with Kokoro, an open-source voice model
@@ -105,6 +107,7 @@ app/                         expo-router screens
   (tabs)/                    Breathe · Practices · History · Settings
   welcome.tsx                one-screen first use
   practice.tsx               intro → settle → guidance → paused / end confirmation
+  visual-guide.tsx           breath circle or illustrated guide, with silent previews
   complete.tsx               completion; saves the record, retry on failure
   technique/[id].tsx         technique guide
   adjust.tsx                 Adjust rhythm (library structure or the four-row builder)
@@ -112,7 +115,9 @@ app/                         expo-router screens
   rhythms.tsx                My rhythms
   share.tsx, r/[payload].tsx share preview and incoming link
   session/[id].tsx           history detail
-  settings/                  cues & sound, your data, safety, privacy, about, sources
+  routine/, program/         routines (2–6 practices) and the two curated programs
+  health.tsx                 Apple Health / Health Connect connection
+  settings/                  cues & sound, reminder, longer holds, watch, your data, safety, privacy, about, sources
 src/
   breathing/                 pure step engine, rhythm math, session state machine, cue timeline
   content/                   bundled technique library, sources, voice cue rules, safety copy
@@ -123,9 +128,17 @@ src/
   settings/, storage/        preferences, migrations, database opener
   data/transfer.ts           export and import
   quickstart/                app-icon quick actions
+  routines/, programs/       routine and program models
+  reminder/, health/         daily reminder and Health writing
+  companion/, widget/        watch companions and the home-screen widget
   components/                shared, token-driven UI
   theme.ts                   brand tokens and text styles
 modules/viram-guide/         native guide: Swift (AVAudioEngine) and Kotlin (AudioTrack + mediaPlayback service)
+modules/viram-health/        Apple Health and Health Connect
+modules/viram-companion/     WatchConnectivity and the Wear OS Data Layer
+modules/viram-widget/        widget data for iOS and Android
+targets/                     the watchOS app and the iOS widget (@bacons/apple-targets)
+plugins/                     config plugins: the Wear OS module, local notifications only
 site/                        static viram.app: link fallback page, privacy, support, link-verification files
 assets/tones, assets/music  tone sets and music beds, all in Sa = C♯
 assets/voice/<voice>         each voice's clips: cues as WAV, introductions as AAC (Kokoro, pending the listener gate)
@@ -136,4 +149,4 @@ assets/voice/<voice>         each voice's clips: cues as WAV, introductions as A
 - **Local-first.** Sessions, My rhythms, and preferences live in SQLite (`viram.sqlite`) with forward-only migrations. Each migration runs in one transaction, so a failure keeps the data and shows a recoverable error. The file is in iCloud and device backups and in Android Auto Backup.
 - **One clock.** The native guide schedules every cue on the audio clock and reports its position. The screen derives everything from `(session state, clock)`. JavaScript never times cues. See [the locked-audio decision](docs/decisions/locked-audio.md).
 - **Validated boundaries.** Rhythms from storage, route params, share links, and import files all pass the same rules (`validateRhythm`). Link content is shown as plain text only. Instructions and safety text come from the bundled library.
-- **No Health in v1.0.** Apple Health and Health Connect session writing return with v1.1-E; the v1.0 binary requests no Health, microphone, or notification permission.
+- **Permissions only when asked.** Health (Apple Health, Health Connect) and notifications (the daily reminder) are requested only when the person turns them on. There is no microphone permission.
