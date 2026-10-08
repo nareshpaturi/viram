@@ -3,7 +3,9 @@
  * JSON value per key; anything unreadable falls back to its default.
  */
 import { Platform } from 'react-native';
+import { STEP_KINDS } from '../breathing/rhythm';
 import type { CueMode, HapticStrength, ToneSet } from '../breathing/timeline';
+import { DEFAULT_HAPTIC_PHASES, type HapticPhases, type HapticStyle } from '../haptics/patterns';
 import type { NightSetting } from '../night/surface';
 import type { Db } from '../storage/db';
 import { parsePractice, type Practice } from '../practice/practice';
@@ -24,6 +26,10 @@ export interface Preferences {
   cueMode: CueMode;
   haptics: boolean;
   hapticStrength: HapticStrength;
+  /** How each step feels (src/haptics/patterns.ts). */
+  hapticStyle: HapticStyle;
+  /** Which steps get a haptic; the exhale's can be turned off, for example. */
+  hapticPhases: HapticPhases;
   /** 0–1, relative to the device's media volume. */
   cueVolume: number;
   otherAudio: OtherAudio;
@@ -60,6 +66,8 @@ export const DEFAULT_PREFERENCES: Preferences = {
   cueMode: 'voice',
   haptics: true,
   hapticStrength: 'medium',
+  hapticStyle: 'marks',
+  hapticPhases: DEFAULT_HAPTIC_PHASES,
   cueVolume: 0.8,
   // iOS shows lock-screen controls only for a session that pauses other audio
   // (docs/decisions/locked-audio.md), so that is its default. Android keeps
@@ -95,6 +103,13 @@ const VALIDATORS: { [K in keyof Preferences]: (v: unknown) => Preferences[K] | u
   cueMode: (v) => (oneOf('voice', 'tones', 'silent')(v) ? v : undefined),
   haptics: (v) => (isBoolean(v) ? v : undefined),
   hapticStrength: (v) => (oneOf('light', 'medium', 'strong')(v) ? v : undefined),
+  hapticStyle: (v) => (oneOf('marks', 'through')(v) ? v : undefined),
+  hapticPhases: (v) => {
+    const p = v as HapticPhases;
+    return typeof v === 'object' && v !== null && STEP_KINDS.every((k) => isBoolean(p[k]))
+      ? { inhale: p.inhale, hold: p.hold, exhale: p.exhale, rest: p.rest }
+      : undefined;
+  },
   cueVolume: (v) => (typeof v === 'number' && v >= 0 && v <= 1 ? v : undefined),
   otherAudio: (v) => (oneOf('alongside', 'pause')(v) ? v : undefined),
   toneSet: (v) => (oneOf('soft-bells', 'wood', 'chimes')(v) ? v : undefined),
