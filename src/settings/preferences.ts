@@ -5,15 +5,29 @@
 import { Platform } from 'react-native';
 import type { Music } from '../audio/music';
 import { DEFAULT_VOICE, VOICE_IDS, type VoiceId } from '../audio/voices';
+import { STEP_KINDS } from '../breathing/rhythm';
 import type { CueMode, HapticStrength, ToneSet } from '../breathing/timeline';
+import { DEFAULT_HAPTIC_PHASES, type HapticPhases, type HapticStyle } from '../haptics/patterns';
 import type { NightSetting } from '../night/surface';
 import type { Db } from '../storage/db';
 import { parsePractice, type Practice } from '../practice/practice';
 
-export type OtherAudio = 'alongside' | 'pause';
+/**
+ * Other apps' music and podcasts during practice (FR-03; research: people
+ * want their own music to keep playing, at its own volume).
+ *   auto       iOS default: play along if something is already playing as
+ *              the practice starts; otherwise take the audio, so the lock
+ *              screen shows the practice's controls.
+ *   alongside  play along, never lowering it (Android default).
+ *   lower      Android: play along, lowering it briefly under each cue.
+ *   pause      pause it for the practice.
+ */
+export type OtherAudio = 'auto' | 'alongside' | 'lower' | 'pause';
 export type Introductions = 'first' | 'always' | 'never';
 export type Motion = 'system' | 'reduced';
 export type IntroLength = 'short' | 'long';
+/** iPhone, Silent: what happens when the screen locks, since iOS can't play haptics then. */
+export type SilentLocked = 'pause' | 'tones';
 /** FR-17: one local reminder a day, off until the practitioner turns it on. */
 export interface Reminder {
   enabled: boolean;
@@ -26,6 +40,10 @@ export interface Preferences {
   cueMode: CueMode;
   haptics: boolean;
   hapticStrength: HapticStrength;
+  /** How each step feels (src/haptics/patterns.ts). */
+  hapticStyle: HapticStyle;
+  /** Which steps get a haptic; the exhale's can be turned off, for example. */
+  hapticPhases: HapticPhases;
   /** 0–1, relative to the device's media volume. */
   cueVolume: number;
   otherAudio: OtherAudio;
@@ -49,6 +67,11 @@ export interface Preferences {
   /** “Not now”: per technique, only sessions after this time count toward the next offer. */
   progressionSnoozed: Record<string, number>;
   reminder: Reminder;
+  silentLocked: SilentLocked;
+  /** Holds and rests up to 60 s in Adjust rhythm (src/content/longHolds.ts). */
+  longHolds: boolean;
+  /** The completion screen has offered the reminder once (src/reminder/offer.ts). */
+  reminderOffered: boolean;
   /** FR-23: Off, 9 PM–6 AM, or Always. */
   nightPractice: NightSetting;
   /** FR-19: count each second within a step (Voice mode). */
@@ -66,11 +89,14 @@ export const DEFAULT_PREFERENCES: Preferences = {
   cueMode: 'voice',
   haptics: true,
   hapticStrength: 'medium',
+  hapticStyle: 'marks',
+  hapticPhases: DEFAULT_HAPTIC_PHASES,
   cueVolume: 0.8,
   // iOS shows lock-screen controls only for a session that pauses other audio
-  // (docs/decisions/locked-audio.md), so that is its default. Android keeps
-  // “Play along”: its media notification works either way and cues duck music.
-  otherAudio: Platform.OS === 'ios' ? 'pause' : 'alongside',
+  // (docs/decisions/locked-audio.md). Automatic keeps them when nothing else
+  // is playing, and never stops music that is. Android's media notification
+  // works either way, so it plays along, without lowering the music.
+  otherAudio: Platform.OS === 'ios' ? 'auto' : 'alongside',
   toneSet: 'soft-bells',
   voice: DEFAULT_VOICE,
   music: 'tanpura',
@@ -84,6 +110,9 @@ export const DEFAULT_PREFERENCES: Preferences = {
   progressionStopped: [],
   progressionSnoozed: {},
   reminder: { enabled: false, hour: 7, minute: 30 },
+  reminderOffered: false,
+  longHolds: false,
+  silentLocked: 'pause',
   nightPractice: 'off',
   healthConnected: false,
   healthDismissed: false,
@@ -103,8 +132,15 @@ const VALIDATORS: { [K in keyof Preferences]: (v: unknown) => Preferences[K] | u
   cueMode: (v) => (oneOf('voice', 'tones', 'silent')(v) ? v : undefined),
   haptics: (v) => (isBoolean(v) ? v : undefined),
   hapticStrength: (v) => (oneOf('light', 'medium', 'strong')(v) ? v : undefined),
+  hapticStyle: (v) => (oneOf('marks', 'through')(v) ? v : undefined),
+  hapticPhases: (v) => {
+    const p = v as HapticPhases;
+    return typeof v === 'object' && v !== null && STEP_KINDS.every((k) => isBoolean(p[k]))
+      ? { inhale: p.inhale, hold: p.hold, exhale: p.exhale, rest: p.rest }
+      : undefined;
+  },
   cueVolume: (v) => (typeof v === 'number' && v >= 0 && v <= 1 ? v : undefined),
-  otherAudio: (v) => (oneOf('alongside', 'pause')(v) ? v : undefined),
+  otherAudio: (v) => (oneOf('auto', 'alongside', 'lower', 'pause')(v) ? v : undefined),
   toneSet: (v) => (oneOf('soft-bells', 'wood', 'chimes')(v) ? v : undefined),
   voice: (v) => (oneOf(...VOICE_IDS)(v) ? v : undefined),
   music: (v) => (oneOf('off', 'tanpura', 'pad')(v) ? v : undefined),
@@ -127,6 +163,9 @@ const VALIDATORS: { [K in keyof Preferences]: (v: unknown) => Preferences[K] | u
   voiceCounting: (v) => (isBoolean(v) ? v : undefined),
   introLength: (v) => (oneOf('short', 'long')(v) ? v : undefined),
   healthDismissed: (v) => (isBoolean(v) ? v : undefined),
+  reminderOffered: (v) => (isBoolean(v) ? v : undefined),
+  longHolds: (v) => (isBoolean(v) ? v : undefined),
+  silentLocked: (v) => (oneOf('pause', 'tones')(v) ? v : undefined),
   reminder: (v) => {
     const r = v as Reminder;
     return typeof v === 'object' && v !== null && isBoolean(r.enabled) && isInt(r.hour, 0, 23) && isInt(r.minute, 0, 59)

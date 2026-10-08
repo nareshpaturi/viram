@@ -90,3 +90,42 @@ export function monthSummary(records: readonly SessionRecord[], at: Month): Mont
         : `${title}: ${daysPracticed} ${daysPracticed === 1 ? 'day' : 'days'} practiced, ${minutes} ${minutes === 1 ? 'minute' : 'minutes'}.`,
   };
 }
+
+export interface AllTime {
+  practices: number;
+  minutes: number;
+  daysPracticed: number;
+  /** “24 practices · 3 h 10 min · 12 days”, plain and quiet. */
+  line: string;
+  spoken: string;
+}
+
+const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+
+/** “45 min”, “1 h”, “3 h 10 min” */
+export function hoursAndMinutes(minutes: number): string {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return h === 0 ? `${m} min` : m === 0 ? `${h} h` : `${h} h ${m} min`;
+}
+
+/**
+ * Totals since the first practice (research: users ask for long-term
+ * totals). Days are local calendar days. Still no streaks, averages, or
+ * charts: just what was made.
+ */
+export function allTime(records: readonly SessionRecord[]): AllTime {
+  const days = new Set(records.map((r) => new Date(r.startedAt).toDateString()));
+  const minutes = toMinutes(records.reduce((sum, r) => sum + r.activeMs, 0));
+  const practices = records.length;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  const spokenTime = [h ? plural(h, 'hour', 'hours') : '', m || !h ? plural(m, 'minute', 'minutes') : ''].filter(Boolean).join(' ');
+  return {
+    practices,
+    minutes,
+    daysPracticed: days.size,
+    line: [plural(practices, 'practice', 'practices'), hoursAndMinutes(minutes), plural(days.size, 'day', 'days')].join(' · '),
+    spoken: `Since you began: ${plural(practices, 'practice', 'practices')}, ${spokenTime}, on ${plural(days.size, 'day', 'days')}.`,
+  };
+}

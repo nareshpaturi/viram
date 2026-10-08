@@ -9,7 +9,7 @@ import { MonthCalendar } from '../../src/components/MonthCalendar';
 import { recordLine } from '../../src/components/RoutineParts';
 import { Screen } from '../../src/components/Screen';
 import { Segmented } from '../../src/components/Segmented';
-import { monthOf, monthSummary, shiftMonth, type Month } from '../../src/history/calendar';
+import { allTime, monthOf, monthSummary, shiftMonth, type Month } from '../../src/history/calendar';
 import { groupByDay, timeLabel } from '../../src/history/format';
 import type { SessionRecord } from '../../src/history/repository';
 import { stores } from '../../src/storage';
@@ -29,7 +29,8 @@ type HistoryView = 'list' | 'calendar';
 
 /**
  * History (FR-05, FR-16): a quiet record, as a list grouped by day or as a
- * month calendar. No streaks, scores, or charts.
+ * month calendar, under one line of totals since the first practice. No
+ * streaks, scores, or charts.
  */
 export default function History() {
   const [state, setState] = useState<Load>({ status: 'loading' });
@@ -46,6 +47,7 @@ export default function History() {
         Your practice
       </AppText>
       <AppText style={styles.muted}>A record of the space you made.</AppText>
+      {hasRecords ? <AllTimeLine records={state.records} /> : null}
       {hasRecords ? (
         <Segmented
           label="Show history as"
@@ -102,7 +104,20 @@ export default function History() {
   );
 }
 
+function AllTimeLine({ records }: { records: SessionRecord[] }) {
+  const totals = allTime(records);
+  return (
+    <View accessible accessibilityLabel={totals.spoken}>
+      <AppText variant="overline">SINCE YOU BEGAN</AppText>
+      <AppText variant="bodyStrong" style={styles.totals}>
+        {totals.line}
+      </AppText>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   muted: { color: colors.inkSoft },
+  totals: { color: colors.pine },
   empty: { gap: spacing.md, marginTop: spacing.lg },
 });

@@ -1,0 +1,7 @@
+<resources>
+  <string name="app_name">Viram</string>
+  <!-- Lets Viram on the phone see that this app is installed. -->
+  <string-array name="android_wear_capabilities" translatable="false">
+    <item>viram_wear</item>
+  </string-array>
+</resources>

@@ -1,0 +1,10 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": {
+    "modules": ["ViramCompanionModule"],
+    "appDelegateSubscribers": ["CompanionAppDelegate"]
+  },
+  "android": {
+    "modules": ["app.viram.companion.ViramCompanionModule"]
+  }
+}

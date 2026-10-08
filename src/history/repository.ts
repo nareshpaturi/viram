@@ -6,7 +6,7 @@
  * session carries its program and session number (FR-20).
  */
 import type { CueMode } from '../breathing/timeline';
-import { isValidSlowing, type RhythmStep, type Slowing, type Target } from '../breathing/rhythm';
+import { isValidSlowing, MAX_LONG_HOLD_SECONDS, type RhythmStep, type Slowing, type Target } from '../breathing/rhythm';
 import type { Db } from '../storage/db';
 import type { PracticeSource } from '../practice/practice';
 
@@ -136,7 +136,7 @@ function isSnapshot(steps: unknown): steps is RhythmStep[] {
     steps.every((s) => {
       if (typeof s !== 'object' || s === null) return false;
       const step = s as RhythmStep;
-      return ['inhale', 'hold', 'exhale', 'rest'].includes(step.kind) && typeof step.seconds === 'number' && step.seconds >= 0 && step.seconds <= 20;
+      return ['inhale', 'hold', 'exhale', 'rest'].includes(step.kind) && typeof step.seconds === 'number' && step.seconds >= 0 && step.seconds <= MAX_LONG_HOLD_SECONDS;
     })
   );
 }

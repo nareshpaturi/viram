@@ -1,7 +1,7 @@
 /// <reference types="node" />
 import { LIBRARY } from '../../content/library';
 import { isValidSeconds, isValidTarget } from '../../breathing/rhythm';
-import { cleanName, decodeShareLink, encodeShareLink, findTechnique, type SharedRhythm } from '../link';
+import { cleanName, decodeShareLink, encodeShareLink, findTechnique, validateRhythm, type SharedRhythm } from '../link';
 
 const fromTechnique = (id: string, name = findTechnique(id)!.name): SharedRhythm => {
   const { steps, target } = findTechnique(id)!.practice;
@@ -47,6 +47,14 @@ describe('share links', () => {
     expect(decodeShareLink(encodeShareLink(half))).toEqual({ ok: true, rhythm: half });
   });
 
+  it('round-trips any whole minute from 1 to 60', () => {
+    for (const minutes of [1, 2, 7, 15, 45, 60]) {
+      const rhythm = { ...custom, target: { minutes } };
+      expect(encodeShareLink(rhythm)).toContain(`_m${minutes}_`);
+      expect(decodeShareLink(encodeShareLink(rhythm))).toEqual({ ok: true, rhythm });
+    }
+  });
+
   it('accepts the app scheme and a bare payload', () => {
     const payload = encodeShareLink(custom).split('/r/')[1];
     expect(decodeShareLink(`viram://r/${payload}`).ok).toBe(true);
@@ -64,7 +72,7 @@ describe('share links', () => {
   it.each([
     ['unknown version', '2_ _m5_i4-h4-e4-r4_QQ'],
     ['unknown technique', '1_kapalabhati_m5_i4-e6_QQ'],
-    ['minutes not offered', '1__m7_i4-h4-e4-r4_QQ'],
+    ['minutes past 60', '1__m61_i4-h4-e4-r4_QQ'],
     ['rounds over 108', '1__r109_i4-h4-e4-r4_QQ'],
     ['rounds zero', '1__r0_i4-h4-e4-r4_QQ'],
     ['inhale over 20', '1__m5_i21-h4-e4-r4_QQ'],
@@ -123,5 +131,14 @@ describe('share links', () => {
       const increment = rhythm.techniqueId ? findTechnique(rhythm.techniqueId)!.practice.increment : 1;
       for (const step of rhythm.steps) expect(isValidSeconds(step.kind, step.seconds, increment)).toBe(true);
     }
+  });
+});
+
+describe('longer holds and links', () => {
+  it('keeps long holds out of links but in the practitioner’s own data', () => {
+    const long: SharedRhythm = { ...custom, steps: custom.steps.map((s) => (s.kind === 'hold' ? { ...s, seconds: 40 } : s)) };
+    expect(validateRhythm(long)).toBeNull();
+    expect(validateRhythm(long, { longHolds: true })).not.toBeNull();
+    expect(decodeShareLink('1__m5_i4-h40-e6-r0_QQ').ok).toBe(false);
   });
 });

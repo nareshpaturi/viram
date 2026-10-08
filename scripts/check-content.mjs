@@ -5,7 +5,6 @@ import { SOURCES } from '../src/content/sources.ts';
 import { CUES, cueFor } from '../src/content/voice.ts';
 import { planFor as enginePlan, isValidSeconds } from '../src/breathing/rhythm.ts';
 
-const MINUTE_TARGETS = [1, 3, 5, 10];
 /** PRD library defaults table: the only techniques with a v1.1 progression path. */
 const PROGRESSION_PATHS = ['sama-vritti', 'visama-vritti', 'nadi-shodhana', 'ujjayi'];
 // About 40 seconds at a calm 120–130 words per minute (brand voice spec).
@@ -77,7 +76,7 @@ export function checkLibrary() {
     if (!steps.some((s) => s.kind === 'inhale') || !steps.some((s) => s.kind === 'exhale')) fail(at, 'needs an inhale and an exhale');
     const breathingSteps = steps.filter((s) => s.kind === 'inhale' || s.kind === 'exhale');
     if (breathingSteps.some((s) => s.side) && !breathingSteps.every((s) => s.side)) fail(at, 'side labels must cover every inhale and exhale');
-    if ('minutes' in target && !MINUTE_TARGETS.includes(target.minutes)) fail(at, 'minutes target must be 1, 3, 5, or 10');
+    if ('minutes' in target && !(Number.isInteger(target.minutes) && target.minutes >= 1 && target.minutes <= 60)) fail(at, 'minutes target must be 1–60');
     if ('rounds' in target && !(Number.isInteger(target.rounds) && target.rounds >= 1 && target.rounds <= 108)) fail(at, 'rounds target must be 1–108');
 
     // Gentle progression (FR-15): only where the PRD defines a path; each

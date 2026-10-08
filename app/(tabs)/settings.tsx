@@ -9,6 +9,8 @@ import { TONE_SET_LABEL } from '../../src/audio/toneSets';
 import { TIMING_LOG_ENABLED } from '../../src/audio/timingLog';
 import { reminderTime } from '../../src/reminder/reminder';
 import { HEALTH_NAME, healthAvailable } from '../../src/health/health';
+import { longHoldsOffered } from '../../src/content/longHolds';
+import { WATCH_NAME, useWatchState } from '../../src/companion/watchState';
 import { usePreferences } from '../../src/settings/PreferencesProvider';
 import { stores } from '../../src/storage';
 
@@ -16,6 +18,7 @@ import { stores } from '../../src/storage';
 export default function Settings() {
   const { preferences, update } = usePreferences();
   const [saved, setSaved] = useState(0);
+  const watch = useWatchState();
   useFocusEffect(useCallback(() => setSaved(stores().rhythms.count()), []));
   const cues = [
     MODE_LABEL[preferences.cueMode],
@@ -67,6 +70,12 @@ export default function Settings() {
           onPress={() => router.push('/settings/reminder')}
         />
         <ListRow title="My rhythms" subtitle={`${saved} saved`} onPress={() => router.push('/rhythms')} />
+        {watch !== 'none' ? (
+          <ListRow title={WATCH_NAME} subtitle={watch === 'installed' ? 'Practise from your wrist' : 'Viram isn’t on your watch yet'} onPress={() => router.push('/settings/watch')} />
+        ) : null}
+        {longHoldsOffered() ? (
+          <ListRow title="Longer holds" subtitle={preferences.longHolds ? 'Up to 60 seconds' : 'Off · holds up to 20 seconds'} onPress={() => router.push('/settings/holds')} />
+        ) : null}
       </RowGroup>
       <RowGroup title="Your data">
         {healthAvailable() || preferences.healthConnected ? (

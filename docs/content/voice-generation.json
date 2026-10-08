@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-08T03:38:13.953Z",
+  "generatedAt": "2026-10-08T04:11:23.354Z",
   "generator": "Kokoro-82M v1.0 (kokoro-onnx), scripts/render-voice-kokoro.mjs",
   "voices": {
     "af_heart": {
@@ -19,6 +19,12 @@
     },
     "hm_psi": {
       "lang": "en-us"
+    },
+    "hf_alpha-hi": {
+      "lang": "hi"
+    },
+    "hm_psi-hi": {
+      "lang": "hi"
     }
   },
   "introFormat": "AAC, 64 kbps, mono, 44.1 kHz (.m4a)",

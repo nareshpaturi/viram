@@ -75,7 +75,7 @@ function checkRhythm(value: unknown): SavedRhythm | null {
   const r = value as SavedRhythm;
   if (typeof r.id !== 'string' || !r.id || !['custom', 'adjusted', 'link'].includes(r.origin)) return null;
   if (!Number.isFinite(r.createdAt) || !Number.isFinite(r.updatedAt)) return null;
-  const checked = validateRhythm({ name: r.name, steps: r.steps, target: r.target, techniqueId: r.techniqueId ?? null });
+  const checked = validateRhythm({ name: r.name, steps: r.steps, target: r.target, techniqueId: r.techniqueId ?? null }, { longHolds: true });
   const slowing = checked && checkSlowing(checked.techniqueId, checked.steps, r.slowing);
   if (!checked || slowing === false) return null;
   return { id: r.id, ...checked, slowing, origin: r.origin, createdAt: r.createdAt, updatedAt: r.updatedAt };

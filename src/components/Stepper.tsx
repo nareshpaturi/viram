@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useGlass } from '../light/light';
 import { colors, radius, spacing, touchTarget } from '../theme';
@@ -18,7 +19,8 @@ interface Props {
 
 /**
  * − value + with 48 pt targets. Screen readers get one adjustable control;
- * only the out-of-range action is disabled.
+ * only the out-of-range action is disabled. Holding − or + repeats, so a
+ * long range (1–60 minutes, 1–108 rounds) is a hold away, not dozens of taps.
  */
 export function Stepper({ label, display, spoken, onDecrement, onIncrement, canDecrement, canIncrement, hint }: Props) {
   return (
@@ -52,11 +54,36 @@ export function Stepper({ label, display, spoken, onDecrement, onIncrement, canD
   );
 }
 
+/** The first repeat waits for a deliberate hold; repeats then quicken a little. */
+const REPEAT_DELAY_MS = 450;
+const REPEAT_MS = [160, 160, 160, 110, 110, 110, 80];
+
 function StepButton({ symbol, onPress, disabled }: { symbol: string; onPress: () => void; disabled: boolean }) {
   const glass = useGlass();
+  // The repeat calls the latest handler, which sees the value the last repeat set.
+  const latest = useRef(onPress);
+  latest.current = onPress;
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const stop = () => {
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = null;
+  };
+  const repeat = (count: number) => {
+    latest.current();
+    timer.current = setTimeout(() => repeat(count + 1), REPEAT_MS[Math.min(count, REPEAT_MS.length - 1)]);
+  };
+  useEffect(() => stop, []);
+  // Reaching the end of the range disables the button and ends the hold.
+  useEffect(() => {
+    if (disabled) stop();
+  }, [disabled]);
+
   return (
     <Pressable
       onPress={onPress}
+      onLongPress={() => repeat(0)}
+      delayLongPress={REPEAT_DELAY_MS}
+      onPressOut={stop}
       disabled={disabled}
       importantForAccessibility="no"
       accessibilityElementsHidden

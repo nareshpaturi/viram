@@ -15,6 +15,8 @@ import { Button } from '../src/components/Button';
 import { QuickActionsBridge } from '../src/quickstart/QuickActionsBridge';
 import { ReminderBridge } from '../src/reminder/ReminderBridge';
 import { HealthBridge } from '../src/health/HealthBridge';
+import { CompanionBridge } from '../src/companion/CompanionBridge';
+import { WidgetBridge } from '../src/widget/WidgetBridge';
 import { PreferencesProvider } from '../src/settings/PreferencesProvider';
 import { stores } from '../src/storage';
 import { colors, fonts, spacing } from '../src/theme';
@@ -57,6 +59,8 @@ export default function RootLayout() {
       <QuickActionsBridge />
       <ReminderBridge />
       <HealthBridge />
+      <CompanionBridge />
+      <WidgetBridge />
       <Stack
         screenOptions={{
           animation: 'fade',
@@ -86,6 +90,8 @@ export default function RootLayout() {
         <Stack.Screen name="session/[id]" options={{ title: 'Practice details' }} />
         <Stack.Screen name="settings/sound" options={{ title: 'Cues & sound' }} />
         <Stack.Screen name="settings/reminder" options={{ title: 'Daily reminder' }} />
+        <Stack.Screen name="settings/holds" options={{ title: 'Longer holds' }} />
+        <Stack.Screen name="settings/watch" options={{ title: 'Watch' }} />
         <Stack.Screen name="health" options={{ title: Platform.OS === 'android' ? 'Health Connect' : 'Apple Health' }} />
         <Stack.Screen name="settings/data" options={{ title: 'Your data' }} />
         <Stack.Screen name="settings/safety" options={{ title: 'Safety & wellbeing' }} />

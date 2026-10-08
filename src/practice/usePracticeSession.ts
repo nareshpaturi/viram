@@ -13,7 +13,8 @@ import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import * as guide from '../audio/guide';
 import { CLIP_MS } from '../audio/manifest.generated';
 import { musicSound } from '../audio/music';
-import { voiceSound } from '../audio/voices';
+import { voiceLanguage, voiceSound } from '../audio/voices';
+import { HINDI_INTROS } from '../content/hindi';
 import { beginTimingLog, markSegment, markTiming } from '../audio/timingLog';
 import { formatClock, stepLabel } from '../breathing/describe';
 import { planStepAt } from '../breathing/rhythm';
@@ -39,7 +40,7 @@ import {
 } from '../breathing/session';
 import { buildRunSchedule, roundLine, type CueSettings } from '../breathing/timeline';
 import type { PartRecord, RecordSource, SessionRecord } from '../history/repository';
-import type { Preferences } from '../settings/preferences';
+import type { OtherAudio, Preferences } from '../settings/preferences';
 import { newId } from '../storage/db';
 import { techniqueOf } from './practice';
 import type { PracticeRun } from './run';
@@ -128,6 +129,25 @@ function buildRecord(
   };
 }
 
+/** What the guide is told about other audio (FR-03); Automatic is decided natively as each segment starts. */
+function otherAudioOptions(otherAudio: OtherAudio) {
+  return {
+    mixWithOthers: otherAudio === 'alongside' || otherAudio === 'lower',
+    mixIfOthersPlaying: otherAudio === 'auto',
+    lowerOthers: otherAudio === 'lower',
+  };
+}
+
+/** Silent's soft tones on a locked iPhone are never louder than this. */
+const SILENT_LOCKED_VOLUME = 0.4;
+
+const OTHER_AUDIO_LOG: Record<OtherAudio, string> = {
+  auto: 'other audio automatic',
+  alongside: 'play along',
+  lower: 'play along, lowered under cues',
+  pause: 'pause other audio',
+};
+
 export function usePracticeSession({ run, preferences, quickStart, night, onIntroHeard }: Options) {
   // Settings are fixed for the length of a practice.
   const [settings] = useState(() => ({
@@ -135,17 +155,22 @@ export function usePracticeSession({ run, preferences, quickStart, night, onIntr
       mode: preferences.cueMode,
       toneSet: preferences.toneSet,
       haptics: preferences.haptics ? preferences.hapticStrength : null,
+      hapticStyle: preferences.hapticStyle,
+      hapticPhases: preferences.hapticPhases,
       softFinish: night,
       counting: preferences.voiceCounting,
     } satisfies CueSettings,
     volume: preferences.cueVolume,
-    mixWithOthers: preferences.otherAudio === 'alongside',
+    audio: otherAudioOptions(preferences.otherAudio),
     voice: preferences.voice,
     // Music plays under Voice and Tones; Silent stays silent.
     bed:
       preferences.cueMode !== 'silent' && preferences.music !== 'off'
         ? { sound: musicSound(preferences.music), volume: preferences.musicVolume }
         : null,
+    // iPhone can't play haptics locked, so Silent can carry soft tones, heard only while locked.
+    silentTones: Platform.OS === 'ios' && preferences.cueMode === 'silent' && preferences.silentLocked === 'tones',
+    lockedVolume: Math.min(preferences.cueVolume, SILENT_LOCKED_VOLUME),
   }));
   const [plans] = useState(() => run.parts.map((p) => sessionPlan(p.steps, p.target, p.slowing ?? null)));
   const names = run.parts.map((p) => p.name);
@@ -159,8 +184,11 @@ export function usePracticeSession({ run, preferences, quickStart, night, onIntr
         (preferences.introductions === 'first' && !preferences.introductionsHeard.includes(technique.id)));
     if (!wanted) return null;
     const { introduction } = technique.guidance;
-    const chosen = preferences.introLength === 'long' && introduction.long ? introduction.long : introduction;
-    return { id: technique.id, clip: chosen.clip, lines: chosen.lines };
+    const long = preferences.introLength === 'long' && introduction.long;
+    const chosen = long ? introduction.long! : introduction;
+    // Captions are in the language the voice speaks (src/content/hindi.ts for Hindi voices).
+    const hindi = voiceLanguage(preferences.voice) === 'hi' ? HINDI_INTROS[technique.id] : undefined;
+    return { id: technique.id, clip: chosen.clip, lines: hindi ? (long ? hindi.long : hindi.lines) : chosen.lines };
   });
   const introMs = intro ? (CLIP_MS[settings.voice]?.[intro.clip] ?? 0) : 0;
 
@@ -253,11 +281,12 @@ export function usePracticeSession({ run, preferences, quickStart, night, onIntr
     (state: SessionState) => {
       if (state.status !== 'active') return;
       const { segment } = state;
-      const schedule = buildRunSchedule(plans, segment, settings.cues, (id) => guide.clipLength(settings.voice, id), names);
+      const cues: CueSettings = settings.silentTones ? { ...settings.cues, mode: 'tones' } : settings.cues;
+      const schedule = buildRunSchedule(plans, segment, cues, (id) => guide.clipLength(settings.voice, id), names);
       markSegment(segment.purpose === 'settle' ? 'Guidance started' : `Resumed ${names[segment.part]} from plan ${formatClock(segment.startPlanMs)}`);
       guide.startSegment(schedule, {
-        volume: settings.volume,
-        mixWithOthers: settings.mixWithOthers,
+        volume: settings.silentTones ? (AppState.currentState === 'active' ? 0 : settings.lockedVolume) : settings.volume,
+        ...settings.audio,
         title: run.name,
         subtitle: 'Getting ready',
         bed: settings.bed,
@@ -274,7 +303,7 @@ export function usePracticeSession({ run, preferences, quickStart, night, onIntr
     recordRef.current.startedAt = Date.now();
     beginTimingLog(
       run.name,
-      `${Platform.OS} · ${settings.cues.mode} · ${settings.mixWithOthers ? 'play along' : 'pause other audio'} · ${formatClock(segmentEndMs(plans, { purpose: 'settle', part: 0, startPlanMs: 0, activeBeforeMs: 0 }) - LEAD_MS)} planned`,
+      `${Platform.OS} · ${settings.cues.mode} · ${OTHER_AUDIO_LOG[preferences.otherAudio]} · ${formatClock(segmentEndMs(plans, { purpose: 'settle', part: 0, startPlanMs: 0, activeBeforeMs: 0 }) - LEAD_MS)} planned`,
     );
     const state = settle();
     transition(state);
@@ -295,7 +324,7 @@ export function usePracticeSession({ run, preferences, quickStart, night, onIntr
           transition(initialState(true));
           guide.startSegment(
             { cues: [{ atMs: 0, sound: `voice.${intro.clip}`, haptic: null, nowPlaying: null }], endMs: introMs },
-            { volume: settings.volume, mixWithOthers: settings.mixWithOthers, title: run.name, subtitle: 'Introduction', bed: settings.bed, voice: settings.voice },
+            { volume: settings.volume, ...settings.audio, title: run.name, subtitle: 'Introduction', bed: settings.bed, voice: settings.voice },
           );
         } else {
           beginSettle();
@@ -454,15 +483,17 @@ export function usePracticeSession({ run, preferences, quickStart, night, onIntr
 
   useEffect(() => {
     // Silent keeps going locked only where a haptic can still guide: Android with haptics on.
-    const pausesOnLock = settings.cues.mode === 'silent' && (Platform.OS === 'ios' || settings.cues.haptics === null);
+    // On iPhone, Silent can instead carry quiet tones that are heard only while locked.
+    const pausesOnLock = settings.cues.mode === 'silent' && !settings.silentTones && (Platform.OS === 'ios' || settings.cues.haptics === null);
     const subscription = AppState.addEventListener('change', (status) => {
       if (status === 'background') markTiming('App in background (locked or switched away)');
       if (status === 'active') markTiming('App in foreground');
       if (status === 'background' && pausesOnLock) pauseFor('locked');
+      if (settings.silentTones && (status === 'background' || status === 'active')) guide.setVolume(status === 'active' ? 0 : settings.lockedVolume);
       if (status === 'active') render();
     });
     return () => subscription.remove();
-  }, [pauseFor, render, settings.cues]);
+  }, [pauseFor, render, settings]);
 
   // The screen stays on in Silent, or when the person asked for it.
   useEffect(() => {
