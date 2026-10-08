@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AccessibilityInfo, Pressable, StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { describeRhythm, describeTarget, rhythmLine } from '../src/breathing/describe';
@@ -104,6 +104,8 @@ function CompleteScreen() {
   const [phaseAnswer, setPhaseAnswer] = useState<string | null>(null);
   const [reminderOffer, setReminderOffer] = useState<ReminderOffer | null>(null);
   const easier = useMemo(() => (record ? easierPractice(record) : null), [record]);
+  // The saved check grows with its label, up to 200%.
+  const checkSize = 14 * Math.min(useWindowDimensions().fontScale, 2);
 
   useEffect(() => {
     if (!record) return;
@@ -260,7 +262,7 @@ function CompleteScreen() {
         </AppText>
       ) : saved ? (
         <View style={styles.saved} accessible accessibilityLabel="Saved on this device">
-          <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={surface.night ? NIGHT.accent : colors.pine} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
+          <Svg width={checkSize} height={checkSize} viewBox="0 0 24 24" fill="none" stroke={surface.night ? NIGHT.accent : colors.pine} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
             <Path d="M5 12.5l4.5 4.5L19 7.5" />
           </Svg>
           <AppText variant="label" style={styles.savedText}>

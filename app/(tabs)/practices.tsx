@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { describeTarget } from '../../src/breathing/describe';
 import { practiceFromRhythm, rhythmSubtitle } from '../../src/rhythms/describe';
@@ -24,7 +24,7 @@ import { WASHES } from '../../src/light/washes';
 import { usePreferences } from '../../src/settings/PreferencesProvider';
 import type { PracticesSection } from '../../src/settings/preferences';
 import { stores } from '../../src/storage';
-import { colors, radius, spacing, textStyles, touchTarget } from '../../src/theme';
+import { colors, fonts, radius, spacing, textStyles, touchTarget } from '../../src/theme';
 
 const FAMILIES: { family: Technique['family']; title: string }[] = [
   { family: 'classical', title: 'Classical pranayama' },
@@ -39,6 +39,7 @@ const FAMILIES: { family: Technique['family']; title: string }[] = [
 export default function Practices() {
   const { preferences, update } = usePreferences();
   const section = preferences.practicesSection;
+  const { fontScale } = useWindowDimensions();
   const [rhythms, setRhythms] = useState<SavedRhythm[]>([]);
   const [routines, setRoutines] = useState<Routine[]>([]);
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
@@ -82,7 +83,10 @@ export default function Practices() {
           autoCorrect={false}
           clearButtonMode="while-editing"
           returnKeyType="search"
-          style={styles.searchInput}
+          // Scaled like AppText, up to 200%: maxFontSizeMultiplier measures
+          // the field at the uncapped size and pushes its text off center.
+          allowFontScaling={false}
+          style={[styles.searchInput, { fontSize: textStyles.body.fontSize * Math.min(fontScale, 2) }]}
         />
       </View>
       {searching ? (
@@ -197,6 +201,9 @@ const SECTIONS: { value: PracticesSection; label: string }[] = [
 /** Techniques, Programs, or Saved: pill segments announced as tabs. */
 function SectionTabs({ value, onChange }: { value: PracticesSection; onChange: (section: PracticesSection) => void }) {
   const glass = useGlass();
+  // Equal thirds, until large text needs the room: then each tab takes its
+  // label's width and they wrap.
+  const wrap = useWindowDimensions().fontScale > 1.3;
   return (
     <View accessibilityRole="tablist" accessibilityLabel="Practice sections" style={styles.tabs}>
       {SECTIONS.map((section) => {
@@ -209,11 +216,12 @@ function SectionTabs({ value, onChange }: { value: PracticesSection; onChange: (
             accessibilityState={{ selected }}
             style={({ pressed }) => [
               styles.tab,
+              wrap ? styles.tabWrapped : styles.tabThird,
               selected ? styles.tabSelected : { backgroundColor: glass.fill, borderColor: glass.outline },
               pressed && styles.pressed,
             ]}
           >
-            <AppText variant="control" numberOfLines={1} adjustsFontSizeToFit style={[styles.tabText, selected && styles.tabTextSelected]}>
+            <AppText variant="control" style={[styles.tabText, selected && styles.tabTextSelected]}>
               {section.label}
             </AppText>
           </Pressable>
@@ -308,9 +316,11 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     paddingHorizontal: 18,
   },
-  searchInput: { ...textStyles.body, flex: 1, minWidth: 0, paddingVertical: spacing.ms },
-  tabs: { flexDirection: 'row', gap: spacing.sm, marginTop: -2, marginBottom: spacing.sm },
-  tab: { flex: 1, minHeight: touchTarget, borderRadius: radius.pill, borderWidth: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.sm },
+  searchInput: { fontFamily: fonts.sansRegular, color: colors.ink, flex: 1, minWidth: 0, paddingVertical: spacing.ms },
+  tabs: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: -2, marginBottom: spacing.sm },
+  tabThird: { flex: 1 },
+  tabWrapped: { flexGrow: 1, flexBasis: 'auto', paddingHorizontal: spacing.md },
+  tab: { minHeight: touchTarget, borderRadius: radius.pill, borderWidth: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.sm },
   tabSelected: { backgroundColor: colors.pine, borderColor: colors.pine },
   tabText: { fontSize: 15 },
   tabTextSelected: { color: colors.surface },
