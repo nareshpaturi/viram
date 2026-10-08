@@ -38,9 +38,13 @@ export function defaultPractice(): Practice {
   return practiceFromTechnique(LIBRARY.find((t) => t.id === DEFAULT_TECHNIQUE_ID)!);
 }
 
-/** “1-minute box breathing” quick action. */
-export function oneMinuteBox(): Practice {
-  return { ...defaultPractice(), target: { minutes: 1 } };
+/**
+ * “5-minute box breathing” quick action. It was 1 minute; sessions of 4–5
+ * minutes or more help and retain better than 1–2 minute ones (Bischof
+ * 2025; Bentley 2023), so the shortcut no longer promotes the shortest.
+ */
+export function quickBox(): Practice {
+  return { ...defaultPractice(), target: { minutes: 5 } };
 }
 
 export function customPractice(): Practice {

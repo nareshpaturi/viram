@@ -28,7 +28,7 @@ const record = (id: string, practiceId: string): SessionRecord => {
 };
 
 describe('quick actions', () => {
-  it('offers only 1-minute box breathing with no history', () => {
+  it('offers only 5-minute box breathing with no history', () => {
     expect(quickActionItems(null, []).map((a) => a.id)).toEqual(['box']);
     expect(quickActionItems(technique('bhramari'), []).map((a) => a.id)).toEqual(['box']);
   });

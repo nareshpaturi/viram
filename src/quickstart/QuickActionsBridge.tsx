@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import * as QuickActions from 'expo-quick-actions';
 import { router } from 'expo-router';
 import { practiceHref, practicePath } from '../practice/launch';
-import { oneMinuteBox, parsePractice, type Practice } from '../practice/practice';
+import { parsePractice, quickBox, type Practice } from '../practice/practice';
 import { readyPractice } from '../practice/ready';
 import type { Preferences } from '../settings/preferences';
 import { usePreferences } from '../settings/PreferencesProvider';
@@ -23,7 +23,7 @@ function exists(practice: Practice): boolean {
 
 /** The practice an action starts, or null when it no longer exists (open Breathe). */
 function practiceFor(action: { id: string; params?: Record<string, unknown> | null }, preferences: Preferences): Practice | null {
-  if (action.id === 'box') return oneMinuteBox();
+  if (action.id === 'box') return quickBox();
   if (action.id === 'last') {
     const last = preferences.lastPractice;
     return last && exists(last) ? last : null;
