@@ -300,7 +300,7 @@ function Body({ view, run, rounds, durations, guideSize, reducedMotion, counting
             </AppText>
             {view.reason === 'locked' && Platform.OS === 'ios' ? (
               <AppText variant="label" style={styles.muted}>
-                iPhone can’t tap while it’s locked. To keep going locked, choose Soft tones for Silent in Cues & sound.
+                iPhone can’t play haptics while it’s locked. To keep going locked, choose Soft tones for Silent in Cues & sound.
               </AppText>
             ) : null}
             <AppText style={styles.muted}>Resume starts {view.resumeStep} again after a three-second countdown.</AppText>

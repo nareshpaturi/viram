@@ -25,7 +25,7 @@ export function lockBehavior(input: { mode: CueMode; haptics: boolean; silentLoc
 export const MODE_HELP: Record<LockBehavior, string> = {
   voice: 'Voice says each step, like “Inhale left.” It keeps guiding when you lock your phone.',
   tones: 'A different sound marks each step. The tones keep guiding when you lock your phone.',
-  haptics: 'No sound. The screen stays on. If you lock your phone, haptic taps keep guiding.',
+  haptics: 'No sound. The screen stays on. If you lock your phone, haptics keep guiding.',
   softTones: 'No sound while you watch. The screen stays on. If you lock your phone, soft tones keep guiding.',
   pauses: 'No sound. The screen stays on, and locking your phone pauses the practice.',
 };
@@ -34,7 +34,7 @@ export const MODE_HELP: Record<LockBehavior, string> = {
 export const LOCK_TIP: Record<LockBehavior, string | null> = {
   voice: 'You can lock your phone. The voice keeps guiding.',
   tones: 'You can lock your phone. The tones keep guiding.',
-  haptics: 'You can lock your phone. Haptic taps keep guiding.',
+  haptics: 'You can lock your phone. Haptics keep guiding.',
   softTones: 'You can lock your phone. Soft tones keep guiding.',
   pauses: null,
 };
@@ -66,9 +66,9 @@ export const PAUSE_TITLE: Record<PauseReason, string> = {
   locked: 'Paused when your phone locked.',
 };
 
-/** Breathe's Guidance row: “Voice and haptic taps”, “Tones, no haptics”, “Haptic taps only”. */
+/** Breathe's Guidance row: “Voice and haptics”, “Tones, no haptics”, “Silent with haptics”. */
 export function guidanceLine(mode: CueMode, haptics: boolean): string {
-  if (mode === 'silent') return haptics ? 'Haptic taps only' : 'Silent, no haptics';
+  if (mode === 'silent') return haptics ? 'Silent with haptics' : 'Silent, no haptics';
   const name = mode === 'voice' ? 'Voice' : 'Tones';
-  return haptics ? `${name} and haptic taps` : `${name}, no haptics`;
+  return haptics ? `${name} and haptics` : `${name}, no haptics`;
 }

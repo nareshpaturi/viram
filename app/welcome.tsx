@@ -56,7 +56,7 @@ function WelcomeScreen({ wash }: { wash: ReturnType<typeof useEverydayWash> }) {
       footer={
         <>
           <AppText variant="label" style={styles.cueNote}>
-            Voice guidance and haptic taps are on. Change them anytime.
+            Voice guidance and haptics are on. Change them anytime.
           </AppText>
           <Button title="Continue" onPress={onContinue} />
         </>

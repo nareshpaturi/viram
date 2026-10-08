@@ -41,8 +41,8 @@ describe('duration sheet', () => {
 
 describe('guidance line', () => {
   it('sums up the cue mode and haptics', () => {
-    expect(guidanceLine('voice', true)).toBe('Voice and haptic taps');
+    expect(guidanceLine('voice', true)).toBe('Voice and haptics');
     expect(guidanceLine('tones', false)).toBe('Tones, no haptics');
-    expect(guidanceLine('silent', true)).toBe('Haptic taps only');
+    expect(guidanceLine('silent', true)).toBe('Silent with haptics');
   });
 });

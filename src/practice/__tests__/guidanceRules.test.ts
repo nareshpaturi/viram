@@ -21,7 +21,7 @@ describe('lock behavior', () => {
 
   it('says so, and offers the lock tip only when practice keeps going', () => {
     expect(MODE_HELP.pauses).toContain('pauses the practice');
-    expect(MODE_HELP.haptics).toContain('haptic taps keep guiding');
+    expect(MODE_HELP.haptics).toContain('haptics keep guiding');
     expect(LOCK_TIP.pauses).toBeNull();
     expect(LOCK_TIP.voice).toBe('You can lock your phone. The voice keeps guiding.');
   });
