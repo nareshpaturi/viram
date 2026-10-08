@@ -9,9 +9,11 @@ import { guideCount } from '../src/breathing/timeline';
 import { AppText } from '../src/components/AppText';
 import { BreathingGuide } from '../src/components/BreathingGuide';
 import { Button } from '../src/components/Button';
+import { NoseDrawing } from '../src/components/NoseDrawing';
 import { SideIndicator } from '../src/components/SideIndicator';
 import { LOCK_TIP, PAUSE_TITLE, screenReaderNote } from '../src/practice/guidanceRules';
 import { practicePath } from '../src/practice/launch';
+import { breathesThroughNose, drawingLabel, drawsInB, practiceNote, practiceVariant, type PracticeScreen } from '../src/practice/prototype';
 import { captionFor, subtitleOf } from '../src/practice/practice';
 import { parseRun, type PracticeRun } from '../src/practice/run';
 import { findTechnique } from '../src/sharing/link';
@@ -20,7 +22,7 @@ import { Wash } from '../src/light/Wash';
 import { PRACTICE_LIGHT } from '../src/light/washes';
 import { SurfaceProvider, useSurface } from '../src/night/surface';
 import { usePreferences } from '../src/settings/PreferencesProvider';
-import { colors, spacing, touchTarget } from '../src/theme';
+import { colors, fonts, spacing, touchTarget } from '../src/theme';
 
 
 function readRun(raw: string | undefined): PracticeRun | null {
@@ -102,6 +104,7 @@ function PracticeScreen({ run, quickStart }: { run: PracticeRun; quickStart: boo
         countingAloud={countingAloud}
         lockTip={lockTip}
         voiceOwnsSpeech={speech === 'viram'}
+        variant={practiceVariant(preferences.practiceScreen)}
         quickStart={quickStart}
         actions={actions}
       />
@@ -123,11 +126,13 @@ interface BodyProps {
   lockTip: string | null;
   /** A screen reader is on and the Viram voice speaks the steps (UX06). */
   voiceOwnsSpeech: boolean;
+  /** The prototype for the moderated test (development builds only). */
+  variant: PracticeScreen;
   quickStart: boolean;
   actions: ReturnType<typeof usePracticeSession>['actions'];
 }
 
-function Body({ view, run, rounds, durations, guideSize, reducedMotion, countingAloud, lockTip, voiceOwnsSpeech, quickStart, actions }: BodyProps) {
+function Body({ view, run, rounds, durations, guideSize, reducedMotion, countingAloud, lockTip, voiceOwnsSpeech, variant, quickStart, actions }: BodyProps) {
   const routine = run.parts.length > 1;
   const practiceOf = (part: number) => run.parts[part];
   const partLabel = (part: number) => (routine ? `Practice ${part + 1} of ${run.parts.length}` : null);
@@ -227,39 +232,87 @@ function Body({ view, run, rounds, durations, guideSize, reducedMotion, counting
       const count = halfSeconds ? null : guideCount(position.step.durationMs, position.step.elapsedMs, countingAloud);
       const route = routeLabel(step);
       const caption = captionFor(practice, position.step.index) ?? [practice.name, subtitleOf(practice)].filter(Boolean).join(' · ');
-      const remaining = roundsTarget
-        ? `${position.roundsLeft} ${position.roundsLeft === 1 ? 'round' : 'rounds'} left · ${formatClock(position.remainingMs)}`
-        : `${formatClock(position.remainingMs)} remaining`;
+      // The prototype shows time remaining only, with no round count (UX09).
+      const prototype = variant !== 'current';
+      const remaining =
+        roundsTarget && !prototype
+          ? `${position.roundsLeft} ${position.roundsLeft === 1 ? 'round' : 'rounds'} left · ${formatClock(position.remainingMs)}`
+          : `${formatClock(position.remainingMs)} remaining`;
+      // A draws the nose instead of the guide, unless the practice breathes through the mouth or chants.
+      const drawA = variant === 'a' && breathesThroughNose(practice.steps);
+      // B draws above the guide, only where the guide can't show it: the open side, or a hum.
+      const drawB = variant === 'b' && drawsInB(step);
+      const stepProgress = position.step.durationMs > 0 ? position.step.elapsedMs / position.step.durationMs : 1;
+      const secondsLeft = Math.max(1, Math.ceil((position.step.durationMs - position.step.elapsedMs) / 1000));
+      const note = practiceNote(practice.steps, subtitleOf(practice));
+      // One element for the step, its route, and its caption, so Pause comes right after it in focus order;
+      // its label always reads the current step (UX06).
+      const stepA11y = [stepLabel(step), route, halfSeconds ? `${caption} ${seconds} seconds.` : caption].filter(Boolean).join('. ');
       return (
         <View style={styles.fill}>
           <TopBar left={{ label: 'End', onPress: actions.askToEnd }} right={remaining} />
-          <AppText variant="label" style={styles.progress}>
-            {routine ? `${practice.name} · ` : ''}Round {position.roundNumber} of {rounds[view.part]} · Step {stepNumber} of {activeSteps.length}
-          </AppText>
-          <View style={styles.center}>
-            {step.side ? <SideIndicator open={step.side} /> : null}
-            <BreathingGuide
-              kind={step.kind}
-              hum={step.cue === 'hum' || step.cue === 'om'}
-              stepKey={view.stepKey}
-              durationMs={position.step.durationMs}
-              elapsedMs={position.step.elapsedMs}
-              count={count}
-              frozen={false}
-              reducedMotion={reducedMotion}
-              size={guideSize}
-              progress={1 - position.remainingMs / durations[view.part]}
-            />
-            {/* One element for the step, its route, and its caption, so Pause comes right after it in focus order;
-                its label always reads the current step (UX06). */}
-            <View style={styles.step} accessible accessibilityRole="header" accessibilityLabel={[stepLabel(step), route, halfSeconds ? `${caption} ${seconds} seconds.` : caption].filter(Boolean).join('. ')}>
-              <AppText variant="phase" style={styles.centerText}>
-                {stepLabel(step)}
+          {prototype ? (
+            <View style={styles.practiceName}>
+              <AppText variant="bodyStrong" style={[styles.centerText, styles.nameText]}>
+                {practice.name}
               </AppText>
-              {route ? <AppText variant="bodyStrong" style={[styles.centerText, styles.route]}>{route}</AppText> : null}
-              <AppText style={[styles.centerText, styles.muted]}>{halfSeconds ? `${caption} ${seconds} seconds.` : caption}</AppText>
+              {note ? <AppText variant="label" style={styles.muted}>{note}</AppText> : null}
             </View>
-          </View>
+          ) : (
+            <AppText variant="label" style={styles.progress}>
+              {routine ? `${practice.name} · ` : ''}Round {position.roundNumber} of {rounds[view.part]} · Step {stepNumber} of {activeSteps.length}
+            </AppText>
+          )}
+          {drawA ? (
+            <View style={styles.center}>
+              <View style={styles.stepA} accessible accessibilityRole="header" accessibilityLabel={stepA11y}>
+                <AppText variant="phase" style={[styles.centerText, styles.phaseA]}>
+                  {stepLabel(step)}
+                </AppText>
+                {route ? <AppText variant="bodyStrong" style={[styles.centerText, styles.route]}>{route}</AppText> : null}
+                <AppText style={styles.muted}>
+                  {secondsLeft} {secondsLeft === 1 ? 'second' : 'seconds'} left
+                </AppText>
+              </View>
+              <NoseDrawing step={step} look="full" size={guideSize} progress={stepProgress} reducedMotion={reducedMotion} />
+              {step.side ? <SideIndicator open={step.side} detailed /> : null}
+              <AppText style={[styles.centerText, styles.muted, styles.captionA]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+                {halfSeconds ? `${caption} ${seconds} seconds.` : caption}
+              </AppText>
+            </View>
+          ) : (
+            <View style={styles.center}>
+              {drawB ? (
+                <View style={styles.drawingB}>
+                  <NoseDrawing step={step} look="compact" size={120} progress={stepProgress} reducedMotion={reducedMotion} />
+                  <AppText variant="label" style={styles.drawingLabel} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+                    {drawingLabel(step)}
+                  </AppText>
+                </View>
+              ) : step.side ? (
+                <SideIndicator open={step.side} />
+              ) : null}
+              <BreathingGuide
+                kind={step.kind}
+                hum={!drawB && (step.cue === 'hum' || step.cue === 'om')}
+                stepKey={view.stepKey}
+                durationMs={position.step.durationMs}
+                elapsedMs={position.step.elapsedMs}
+                count={count}
+                frozen={false}
+                reducedMotion={reducedMotion}
+                size={guideSize}
+                progress={1 - position.remainingMs / durations[view.part]}
+              />
+              <View style={styles.step} accessible accessibilityRole="header" accessibilityLabel={stepA11y}>
+                <AppText variant="phase" style={styles.centerText}>
+                  {stepLabel(step)}
+                </AppText>
+                {route ? <AppText variant="bodyStrong" style={[styles.centerText, styles.route]}>{route}</AppText> : null}
+                <AppText style={[styles.centerText, styles.muted]}>{halfSeconds ? `${caption} ${seconds} seconds.` : caption}</AppText>
+              </View>
+            </View>
+          )}
           <Button title="Pause" variant="onPine" onPress={actions.pause} />
         </View>
       );
@@ -358,4 +411,12 @@ const styles = StyleSheet.create({
   captionPast: { color: colors.practiceTextMuted },
   actions: { gap: spacing.ms },
   pressed: { opacity: 0.7 },
+  // The prototype (batch 3).
+  practiceName: { alignItems: 'center', gap: 2 },
+  nameText: { color: colors.practiceText, fontSize: 15, lineHeight: 20 },
+  stepA: { alignItems: 'center', gap: spacing.xs },
+  phaseA: { fontSize: 34, lineHeight: 40 },
+  captionA: { fontSize: 17, lineHeight: 24 },
+  drawingB: { alignItems: 'center', gap: spacing.xs },
+  drawingLabel: { color: colors.practiceText, fontFamily: fonts.sansSemibold },
 });
