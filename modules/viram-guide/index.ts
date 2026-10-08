@@ -39,6 +39,8 @@ type GuideEvents = {
   onRemoteCommand(event: { command: RemoteCommand }): void;
   onInterruption(event: { reason: InterruptionReason; positionMs: number }): void;
   onSegmentEnded(): void;
+  /** A one-shot from playOnce played to its end (not when stopped or replaced). */
+  onPreviewEnded(): void;
   /** Developer timing log: how far from its planned time a cue reached the output. */
   onCueTiming(event: { atMs: number; driftMs: number; sound: string }): void;
 };
@@ -56,6 +58,8 @@ declare class ViramGuideModule extends NativeModule<GuideEvents> {
   setNowPlaying(title: string, subtitle: string): void;
   /** Plays one sound; `maxMs` plays just its start, fading out (a music preview). */
   playOnce(sound: string, volume: number, maxMs?: number): void;
+  /** Stops what playOnce is playing; a practice in progress carries on. */
+  stopOnce(): void;
   setTimingLog(enabled: boolean): void;
 }
 

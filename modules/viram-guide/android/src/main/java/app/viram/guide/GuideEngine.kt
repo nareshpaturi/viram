@@ -260,6 +260,17 @@ object GuideEngine {
     }
   }
 
+  /**
+   * Stops a preview (UX10). The writer releases the track by itself once nothing is playing;
+   * up to one buffer (20–80 ms) already written can still sound, as with pause.
+   */
+  fun stopOnce() {
+    synchronized(lock) {
+      once?.let { voices.remove(it) }
+      once = null
+    }
+  }
+
   private fun excerpt(samples: FloatArray, ms: Double): FloatArray? {
     val frames = msToFrames(ms).toInt()
     if (frames <= 0 || frames >= samples.size) return null
@@ -430,7 +441,14 @@ object GuideEngine {
         val index = blockStart + i - voice.startFrame
         if (index >= 0 && index < voice.samples.size) mix[i] += voice.samples[index.toInt()] * voice.gain
       }
-      if (blockStart + BLOCK - voice.startFrame >= voice.samples.size) iterator.remove()
+      if (blockStart + BLOCK - voice.startFrame >= voice.samples.size) {
+        iterator.remove()
+        // A one-shot that played to its end: the preview button resets (UX10).
+        if (voice === once) {
+          once = null
+          events.post { emit?.invoke("onPreviewEnded", emptyMap()) }
+        }
+      }
     }
     mixBedLocked(mix)
     framesWritten += BLOCK

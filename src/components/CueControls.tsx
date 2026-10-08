@@ -1,5 +1,5 @@
 import { Platform, StyleSheet, View } from 'react-native';
-import { playOnce } from '../audio/guide';
+import { usePreview } from '../audio/usePreview';
 import { voiceSound } from '../audio/voices';
 import type { CueMode } from '../breathing/timeline';
 import { lockBehavior, MODE_HELP } from '../practice/guidanceRules';
@@ -17,9 +17,10 @@ export const MODE_LABEL: Record<CueMode, string> = { voice: 'Voice', tones: 'Ton
 export function CueControls() {
   const { preferences, update } = usePreferences();
 
+  const { playing, toggle } = usePreview();
   const sample = () => {
     const sound = preferences.cueMode === 'voice' ? voiceSound(preferences.voice, 'inhale') : `tone.${preferences.toneSet}.inhale`;
-    if (preferences.cueMode !== 'silent') void playOnce(sound, preferences.cueVolume);
+    if (preferences.cueMode !== 'silent') toggle('cue', sound, preferences.cueVolume);
   };
 
   return (
@@ -64,7 +65,7 @@ export function CueControls() {
           { value: 'reduced', label: 'Reduced' },
         ]}
       />
-      {preferences.cueMode !== 'silent' ? <Button title="Hear a sample" variant="secondary" onPress={sample} /> : null}
+      {preferences.cueMode !== 'silent' ? <Button title={playing === 'cue' ? 'Stop sample' : 'Hear a sample'} variant="secondary" onPress={sample} /> : null}
     </View>
   );
 }

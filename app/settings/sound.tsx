@@ -1,11 +1,13 @@
 import { Platform, StyleSheet } from 'react-native';
-import { playOnce } from '../../src/audio/guide';
 import { MUSIC_CHOICES, MUSIC_LABEL, MUSIC_PREVIEW_MS, musicSound } from '../../src/audio/music';
 import { TONE_SETS, TONE_SET_LABEL } from '../../src/audio/toneSets';
+import { usePreview } from '../../src/audio/usePreview';
 import { VOICES, VOICE_IDS, VOICE_PREVIEW_MS, voiceLanguage, voiceSound } from '../../src/audio/voices';
 import { AppText } from '../../src/components/AppText';
 import { Button } from '../../src/components/Button';
 import { CueControls } from '../../src/components/CueControls';
+import { PlayButton } from '../../src/components/PlayButton';
+import { RadioCard, RadioRow } from '../../src/components/RadioCard';
 import { Screen } from '../../src/components/Screen';
 import { Segmented } from '../../src/components/Segmented';
 import { SwitchRow } from '../../src/components/SwitchRow';
@@ -17,52 +19,91 @@ import { colors, spacing } from '../../src/theme';
 /** Cues & sound (FR-03 sound controls). Every choice persists and applies from the next practice. */
 export default function CuesAndSound() {
   const { preferences, update } = usePreferences();
+  // Choosing never plays; each row has its own sample (UX10).
+  const { playing, toggle } = usePreview();
+  const status = (key: string) => (playing === key ? 'Playing sample' : null);
+  const introSample = voiceSound(preferences.voice, preferences.introLength === 'long' ? 'intro-long.sama-vritti' : 'intro.sama-vritti');
 
   return (
     <Screen edges={['left', 'right']}>
       <CueControls />
 
-      <Section title="VOICE" help="Speaks every cue, count, name, and introduction. Choosing one plays a short sample.">
-        <Segmented
-          label="Voice"
-          wrap
-          value={preferences.voice}
-          onChange={(voice) => {
-            update({ voice });
-            void playOnce(voiceSound(voice, 'intro.sama-vritti'), preferences.cueVolume, VOICE_PREVIEW_MS);
-          }}
-          options={VOICE_IDS.map((value) => ({ value, label: VOICES[value].label, accessibilityLabel: VOICES[value].spoken }))}
-        />
+      <Section title="VOICE" help="Speaks every cue, count, name, and introduction. Tap play to hear a voice before you choose it.">
+        <RadioCard label="Voice">
+          {VOICE_IDS.map((voice, i) => (
+            <RadioRow
+              key={voice}
+              ring="leading"
+              label={VOICES[voice].label}
+              detail={status(`voice:${voice}`)}
+              accessibilityLabel={VOICES[voice].spoken}
+              selected={preferences.voice === voice}
+              onPress={() => update({ voice })}
+              last={i === VOICE_IDS.length - 1}
+              accessory={
+                <PlayButton
+                  label={VOICES[voice].spoken}
+                  playing={playing === `voice:${voice}`}
+                  onPress={() => toggle(`voice:${voice}`, voiceSound(voice, 'intro.sama-vritti'), preferences.cueVolume, VOICE_PREVIEW_MS)}
+                />
+              }
+            />
+          ))}
+        </RadioCard>
         {voiceLanguage(preferences.voice) === 'hi' ? (
           <AppText variant="label">Cues, counts, and introductions are spoken in Hindi, with Hindi captions. The screens stay in English.</AppText>
         ) : null}
       </Section>
 
       <Section title="MUSIC" help="Plays softly under Voice and Tones, in tune with the tones. Silent stays silent, and it stays quiet whenever Viram is playing along with your own music.">
-        <Segmented
-          label="Music"
-          value={preferences.music}
-          onChange={(music) => {
-            update({ music });
-            if (music !== 'off') void playOnce(musicSound(music), preferences.musicVolume, MUSIC_PREVIEW_MS);
-          }}
-          options={MUSIC_CHOICES.map((value) => ({ value, label: MUSIC_LABEL[value] }))}
-        />
+        <RadioCard label="Music">
+          {MUSIC_CHOICES.map((music, i) => (
+            <RadioRow
+              key={music}
+              ring="leading"
+              label={MUSIC_LABEL[music]}
+              detail={status(`music:${music}`)}
+              selected={preferences.music === music}
+              onPress={() => update({ music })}
+              last={i === MUSIC_CHOICES.length - 1}
+              accessory={
+                music === 'off' ? null : (
+                  <PlayButton
+                    label={MUSIC_LABEL[music]}
+                    playing={playing === `music:${music}`}
+                    onPress={() => toggle(`music:${music}`, musicSound(music), preferences.musicVolume, MUSIC_PREVIEW_MS)}
+                  />
+                )
+              }
+            />
+          ))}
+        </RadioCard>
         {preferences.music !== 'off' ? (
           <VolumeStepper label="Music volume" value={preferences.musicVolume} onChange={(musicVolume) => update({ musicVolume })} />
         ) : null}
       </Section>
 
       <Section title="TONE SET" help="A different sound for each step.">
-        <Segmented
-          label="Tone set"
-          value={preferences.toneSet}
-          onChange={(toneSet) => {
-            update({ toneSet });
-            void playOnce(`tone.${toneSet}.inhale`, preferences.cueVolume);
-          }}
-          options={TONE_SETS.map((value) => ({ value, label: TONE_SET_LABEL[value] }))}
-        />
+        <RadioCard label="Tone set">
+          {TONE_SETS.map((toneSet, i) => (
+            <RadioRow
+              key={toneSet}
+              ring="leading"
+              label={TONE_SET_LABEL[toneSet]}
+              detail={status(`tones:${toneSet}`)}
+              selected={preferences.toneSet === toneSet}
+              onPress={() => update({ toneSet })}
+              last={i === TONE_SETS.length - 1}
+              accessory={
+                <PlayButton
+                  label={TONE_SET_LABEL[toneSet]}
+                  playing={playing === `tones:${toneSet}`}
+                  onPress={() => toggle(`tones:${toneSet}`, `tone.${toneSet}.inhale`, preferences.cueVolume)}
+                />
+              }
+            />
+          ))}
+        </RadioCard>
       </Section>
 
       <Section title="OTHER AUDIO" help={OTHER_AUDIO_HELP}>
@@ -145,9 +186,9 @@ export default function CuesAndSound() {
           ]}
         />
         <Button
-          title="Hear a sample"
+          title={playing === 'intro' ? 'Stop sample' : 'Hear a sample'}
           variant="secondary"
-          onPress={() => void playOnce(voiceSound(preferences.voice, preferences.introLength === 'long' ? 'intro-long.sama-vritti' : 'intro.sama-vritti'), preferences.cueVolume)}
+          onPress={() => toggle('intro', introSample, preferences.cueVolume)}
         />
       </Section>
 
