@@ -1,5 +1,5 @@
 import type { SessionRecord } from '../repository';
-import { monthRange, monthSummary, shiftMonth } from '../calendar';
+import { allTime, hoursAndMinutes, monthRange, monthSummary, shiftMonth } from '../calendar';
 
 let n = 0;
 const record = (startedAt: Date, minutes: number, change: Partial<SessionRecord> = {}): SessionRecord => ({
@@ -82,5 +82,25 @@ describe('practice calendar', () => {
   it('moves between months across years', () => {
     expect(shiftMonth({ year: 2026, month: 0 }, -1)).toEqual({ year: 2025, month: 11 });
     expect(shiftMonth({ year: 2026, month: 11 }, 1)).toEqual({ year: 2027, month: 0 });
+  });
+});
+
+describe('all-time totals', () => {
+  it('counts practices, minutes, and local days, with no streaks', () => {
+    const records = [
+      record(new Date(2026, 8, 3, 7, 0), 5),
+      record(new Date(2026, 8, 3, 21, 0), 10),
+      record(new Date(2026, 8, 20, 7, 0), 50),
+    ];
+    const totals = allTime(records);
+    expect(totals).toMatchObject({ practices: 3, minutes: 65, daysPracticed: 2 });
+    expect(totals.line).toBe('3 practices · 1 h 5 min · 2 days');
+    expect(totals.spoken).toBe('Since you began: 3 practices, 1 hour 5 minutes, on 2 days.');
+  });
+
+  it('reads naturally for one short practice and whole hours', () => {
+    expect(allTime([record(new Date(2026, 8, 3, 7, 0), 3)]).line).toBe('1 practice · 3 min · 1 day');
+    expect(hoursAndMinutes(120)).toBe('2 h');
+    expect(hoursAndMinutes(0)).toBe('0 min');
   });
 });
