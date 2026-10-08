@@ -1,5 +1,8 @@
 // Minimal 16-bit PCM WAV reading and writing for the audio asset scripts.
-import { readFileSync, writeFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 export const SAMPLE_RATE = 44100;
 
@@ -54,4 +57,20 @@ export function writeWav(path, samples) {
   header.write('data', 36, 'ascii');
   header.writeUInt32LE(data.length, 40);
   writeFileSync(path, Buffer.concat([header, data]));
+}
+
+/**
+ * Converts any audio file macOS reads to a bundled voice clip: 44.1 kHz mono,
+ * trimmed to 10 ms before the voice and 50 ms after it.
+ */
+export function writeVoiceClip(source, dest) {
+  const work = mkdtempSync(join(tmpdir(), 'viram-clip-'));
+  const converted = join(work, 'clip.wav');
+  execFileSync('afconvert', ['-f', 'WAVE', '-d', 'LEI16@44100', '-c', '1', source, converted]);
+  const { samples } = readWav(converted);
+  rmSync(work, { recursive: true, force: true });
+  const loud = (x) => Math.abs(x) > 0.01;
+  const start = Math.max(0, samples.findIndex(loud) - 441);
+  const end = Math.min(samples.length, samples.length - [...samples].reverse().findIndex(loud) + 2205);
+  writeWav(dest, samples.subarray(start, end));
 }

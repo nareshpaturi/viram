@@ -9,7 +9,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { LIBRARY } from '../src/content/library.ts';
 import { CUES } from '../src/content/voice.ts';
-import { readWav, writeWav } from './lib/wav.mjs';
+import { writeVoiceClip } from './lib/wav.mjs';
 
 const VOICE = process.env.VIRAM_TTS_VOICE ?? 'Samantha';
 const OUT = 'assets/voice';
@@ -17,18 +17,12 @@ const work = mkdtempSync(join(tmpdir(), 'viram-voice-'));
 // `--missing` renders only clips that don't exist yet, leaving the rest untouched.
 const onlyMissing = process.argv.includes('--missing');
 
-/** Speaks `text`, trims silence, and writes a 44.1 kHz mono WAV. */
+/** Speaks `text` and writes it as a trimmed 44.1 kHz mono WAV. */
 function speak(id, text, rate) {
   if (onlyMissing && existsSync(join(OUT, `${id}.wav`))) return;
   const aiff = join(work, `${id}.aiff`);
-  const wav = join(work, `${id}.wav`);
   execFileSync('say', ['-v', VOICE, '-r', String(rate), '-o', aiff, text]);
-  execFileSync('afconvert', ['-f', 'WAVE', '-d', 'LEI16@44100', '-c', '1', aiff, wav]);
-  const { samples } = readWav(wav);
-  const loud = (x) => Math.abs(x) > 0.01;
-  const start = Math.max(0, samples.findIndex(loud) - 441);
-  const end = Math.min(samples.length, samples.length - [...samples].reverse().findIndex(loud) + 2205);
-  writeWav(join(OUT, `${id}.wav`), samples.subarray(start, end));
+  writeVoiceClip(aiff, join(OUT, `${id}.wav`));
 }
 
 mkdirSync(OUT, { recursive: true });
