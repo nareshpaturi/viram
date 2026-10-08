@@ -1,0 +1,14 @@
+<!-- Redrawn when the ready practice changes; hourly so “Practiced today” turns over at midnight. -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+  android:minWidth="110dp"
+  android:minHeight="50dp"
+  android:targetCellWidth="2"
+  android:targetCellHeight="1"
+  android:minResizeWidth="110dp"
+  android:minResizeHeight="50dp"
+  android:resizeMode="horizontal|vertical"
+  android:updatePeriodMillis="3600000"
+  android:initialLayout="@layout/viram_widget"
+  android:previewLayout="@layout/viram_widget"
+  android:description="@string/viram_widget_description"
+  android:widgetCategory="home_screen" />

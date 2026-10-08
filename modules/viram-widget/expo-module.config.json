@@ -1,0 +1,9 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": {
+    "modules": ["ViramWidgetModule"]
+  },
+  "android": {
+    "modules": ["app.viram.widget.ViramWidgetModule"]
+  }
+}

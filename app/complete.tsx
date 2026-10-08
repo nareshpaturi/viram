@@ -34,6 +34,7 @@ import { askForReminderPermission, reminderTime } from '../src/reminder/reminder
 import { refreshReminder } from '../src/reminder/ReminderBridge';
 import { practiceFromRecord } from '../src/quickstart/quickActions';
 import { refreshQuickActions } from '../src/quickstart/QuickActionsBridge';
+import { refreshWidget } from '../src/widget/WidgetBridge';
 import { LightProvider, useEverydayWash, useGlass, useWash } from '../src/light/light';
 import { Halo, Wash } from '../src/light/Wash';
 import { BLOOM, WASHES } from '../src/light/washes';
@@ -124,6 +125,7 @@ function CompleteScreen() {
     setState(result);
     if (result === 'saved') {
       refreshQuickActions(preferences);
+      refreshWidget(preferences);
       // Health writing follows the local save, never replaces it (FR-18).
       if (preferences.healthConnected && healthEligible(record)) {
         setHealth('pending');

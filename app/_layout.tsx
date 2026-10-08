@@ -16,6 +16,7 @@ import { QuickActionsBridge } from '../src/quickstart/QuickActionsBridge';
 import { ReminderBridge } from '../src/reminder/ReminderBridge';
 import { HealthBridge } from '../src/health/HealthBridge';
 import { CompanionBridge } from '../src/companion/CompanionBridge';
+import { WidgetBridge } from '../src/widget/WidgetBridge';
 import { PreferencesProvider } from '../src/settings/PreferencesProvider';
 import { stores } from '../src/storage';
 import { colors, fonts, spacing } from '../src/theme';
@@ -59,6 +60,7 @@ export default function RootLayout() {
       <ReminderBridge />
       <HealthBridge />
       <CompanionBridge />
+      <WidgetBridge />
       <Stack
         screenOptions={{
           animation: 'fade',
