@@ -37,7 +37,7 @@ import {
 } from '../breathing/session';
 import { buildRunSchedule, roundLine, type CueSettings } from '../breathing/timeline';
 import type { PartRecord, RecordSource, SessionRecord } from '../history/repository';
-import type { Preferences } from '../settings/preferences';
+import type { OtherAudio, Preferences } from '../settings/preferences';
 import { newId } from '../storage/db';
 import { techniqueOf } from './practice';
 import type { PracticeRun } from './run';
@@ -126,6 +126,22 @@ function buildRecord(
   };
 }
 
+/** What the guide is told about other audio (FR-03); Automatic is decided natively as each segment starts. */
+function otherAudioOptions(otherAudio: OtherAudio) {
+  return {
+    mixWithOthers: otherAudio === 'alongside' || otherAudio === 'lower',
+    mixIfOthersPlaying: otherAudio === 'auto',
+    lowerOthers: otherAudio === 'lower',
+  };
+}
+
+const OTHER_AUDIO_LOG: Record<OtherAudio, string> = {
+  auto: 'other audio automatic',
+  alongside: 'play along',
+  lower: 'play along, lowered under cues',
+  pause: 'pause other audio',
+};
+
 export function usePracticeSession({ run, preferences, quickStart, night, onIntroHeard }: Options) {
   // Settings are fixed for the length of a practice.
   const [settings] = useState(() => ({
@@ -133,11 +149,13 @@ export function usePracticeSession({ run, preferences, quickStart, night, onIntr
       mode: preferences.cueMode,
       toneSet: preferences.toneSet,
       haptics: preferences.haptics ? preferences.hapticStrength : null,
+      hapticStyle: preferences.hapticStyle,
+      hapticPhases: preferences.hapticPhases,
       softFinish: night,
       counting: preferences.voiceCounting,
     } satisfies CueSettings,
     volume: preferences.cueVolume,
-    mixWithOthers: preferences.otherAudio === 'alongside',
+    audio: otherAudioOptions(preferences.otherAudio),
   }));
   const [plans] = useState(() => run.parts.map((p) => sessionPlan(p.steps, p.target, p.slowing ?? null)));
   const names = run.parts.map((p) => p.name);
@@ -249,7 +267,7 @@ export function usePracticeSession({ run, preferences, quickStart, night, onIntr
       markSegment(segment.purpose === 'settle' ? 'Guidance started' : `Resumed ${names[segment.part]} from plan ${formatClock(segment.startPlanMs)}`);
       guide.startSegment(schedule, {
         volume: settings.volume,
-        mixWithOthers: settings.mixWithOthers,
+        ...settings.audio,
         title: run.name,
         subtitle: 'Getting ready',
       });
@@ -264,7 +282,7 @@ export function usePracticeSession({ run, preferences, quickStart, night, onIntr
     recordRef.current.startedAt = Date.now();
     beginTimingLog(
       run.name,
-      `${Platform.OS} · ${settings.cues.mode} · ${settings.mixWithOthers ? 'play along' : 'pause other audio'} · ${formatClock(segmentEndMs(plans, { purpose: 'settle', part: 0, startPlanMs: 0, activeBeforeMs: 0 }) - LEAD_MS)} planned`,
+      `${Platform.OS} · ${settings.cues.mode} · ${OTHER_AUDIO_LOG[preferences.otherAudio]} · ${formatClock(segmentEndMs(plans, { purpose: 'settle', part: 0, startPlanMs: 0, activeBeforeMs: 0 }) - LEAD_MS)} planned`,
     );
     const state = settle();
     transition(state);
@@ -285,7 +303,7 @@ export function usePracticeSession({ run, preferences, quickStart, night, onIntr
           transition(initialState(true));
           guide.startSegment(
             { cues: [{ atMs: 0, sound: `voice.${intro.clip}`, haptic: null, nowPlaying: null }], endMs: CLIP_MS[intro.clip] },
-            { volume: settings.volume, mixWithOthers: settings.mixWithOthers, title: run.name, subtitle: 'Introduction' },
+            { volume: settings.volume, ...settings.audio, title: run.name, subtitle: 'Introduction' },
           );
         } else {
           beginSettle();

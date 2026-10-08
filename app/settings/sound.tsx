@@ -1,4 +1,4 @@
-import { StyleSheet } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
 import { playOnce } from '../../src/audio/guide';
 import { TONE_SETS, TONE_SET_LABEL } from '../../src/audio/toneSets';
 import { AppText } from '../../src/components/AppText';
@@ -7,6 +7,7 @@ import { CueControls } from '../../src/components/CueControls';
 import { Screen } from '../../src/components/Screen';
 import { Segmented } from '../../src/components/Segmented';
 import { SwitchRow } from '../../src/components/SwitchRow';
+import { ToggleChips } from '../../src/components/ToggleChips';
 import { usePreferences } from '../../src/settings/PreferencesProvider';
 import { colors, spacing } from '../../src/theme';
 
@@ -30,20 +31,45 @@ export default function CuesAndSound() {
         />
       </Section>
 
-      <Section title="OTHER AUDIO" help="Music and podcasts. Play along keeps them playing under the cues. Pause it stops them while you practice and shows the practice on your lock screen.">
+      <Section title="OTHER AUDIO" help={OTHER_AUDIO_HELP}>
         <Segmented
           label="Other audio"
+          wrap
           value={preferences.otherAudio}
           onChange={(otherAudio) => update({ otherAudio })}
-          options={[
-            { value: 'alongside', label: 'Play along' },
-            { value: 'pause', label: 'Pause it' },
-          ]}
+          options={OTHER_AUDIO_OPTIONS}
         />
       </Section>
 
       {preferences.haptics ? (
-        <Section title="HAPTIC STRENGTH">
+        <Section title="HAPTICS" help="Each step feels different, and the exhale is the longest. Viram on your watch follows these too.">
+          <Segmented
+            label="Haptic style"
+            value={preferences.hapticStyle}
+            onChange={(hapticStyle) => update({ hapticStyle })}
+            options={[
+              { value: 'marks', label: 'Marks', accessibilityLabel: 'Marks: a tap or buzz as each step begins' },
+              { value: 'through', label: 'Through the breath', accessibilityLabel: 'Through the breath: taps all through the inhale and the exhale' },
+            ]}
+          />
+          <AppText variant="label">
+            {preferences.hapticStyle === 'through'
+              ? 'Quick taps grow through the inhale; slow taps fade through the exhale.'
+              : 'A rising double tap to breathe in, a light tap to hold, a long soft buzz to breathe out.'}
+          </AppText>
+          <AppText variant="label">On these steps</AppText>
+          <ToggleChips
+            label="Haptics on"
+            options={[
+              { key: 'inhale', label: 'Inhale' },
+              { key: 'hold', label: 'Hold' },
+              { key: 'exhale', label: 'Exhale' },
+              { key: 'rest', label: 'Rest' },
+            ]}
+            value={preferences.hapticPhases}
+            onChange={(hapticPhases) => update({ hapticPhases })}
+          />
+          <AppText variant="label">Strength</AppText>
           <Segmented
             label="Haptic strength"
             value={preferences.hapticStrength}
@@ -106,6 +132,24 @@ export default function CuesAndSound() {
     </Screen>
   );
 }
+
+const OTHER_AUDIO_OPTIONS =
+  Platform.OS === 'ios'
+    ? [
+        { value: 'auto' as const, label: 'Automatic' },
+        { value: 'alongside' as const, label: 'Play along' },
+        { value: 'pause' as const, label: 'Pause it' },
+      ]
+    : [
+        { value: 'alongside' as const, label: 'Play along' },
+        { value: 'lower' as const, label: 'Lower it', accessibilityLabel: 'Lower it under each cue' },
+        { value: 'pause' as const, label: 'Pause it' },
+      ];
+
+const OTHER_AUDIO_HELP =
+  Platform.OS === 'ios'
+    ? 'Music and podcasts. Automatic keeps them playing if they’re on when you begin; otherwise Viram takes the audio, so your lock screen shows the practice. Play along never stops them. Pause it always does.'
+    : 'Music and podcasts. Play along keeps them playing at their own volume. Lower it dips them briefly under each cue. Pause it stops them while you practise.';
 
 function Section({ title, help, children }: { title: string; help?: string; children: React.ReactNode }) {
   return (

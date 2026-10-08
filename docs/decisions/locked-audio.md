@@ -37,6 +37,8 @@ How does Viram keep voice and tone cues within ±250 ms with the screen locked, 
 6. **The silent switch** doesn't mute cues. The `.playback` category keeps the prototype's locked decision: a breathing guide that goes mute is a broken guide.
 7. **Lock-screen text** (round and time left) travels with the cues and updates natively at each round start, because Android pauses JS timers in the background.
 8. A cue already written to the Android buffer (at most one buffer, about 20–80 ms) can still sound right after a pause.
+9. **Other audio, revisited (research gaps, October 2026).** Users' most common sound complaint is an app stopping or lowering their own music. So iOS now defaults to *Automatic*: as each segment starts, if another app's audio is already playing (`AVAudioSession.isOtherAudioPlaying`), Viram plays along; otherwise it takes the audio as *Pause other audio* does, which keeps the lock-screen controls of consequence 1 whenever nothing else is playing. *Play along* and *Pause it* remain. On Android, *Play along* no longer lowers other audio; the brief duck under each cue is now its own choice, *Lower it*.
+10. **Haptics differ by phase.** Each step cue carries its pattern from `src/haptics/patterns.ts` (a rising double tap for the inhale, a long soft buzz for the exhale, light taps for holds and rest, or taps through the breath). iOS plays it with Core Haptics (foreground only, as before); Android plays it as one vibrator waveform at the cue's heard time, so it keeps its timing locked.
 
 ## Evidence still required (blocks CP1b)
 

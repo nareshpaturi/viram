@@ -51,7 +51,7 @@ export function CueControls() {
           onIncrement={() => update({ cueVolume: (volume + 1) / 10 })}
         />
       ) : null}
-      <SwitchRow label="Haptic taps" description="At each step change" value={preferences.haptics} onChange={(haptics) => update({ haptics })} />
+      <SwitchRow label="Haptics" description="A different feel for each step" value={preferences.haptics} onChange={(haptics) => update({ haptics })} />
       <AppText variant="overline" accessibilityRole="header" style={styles.section}>
         MOTION
       </AppText>

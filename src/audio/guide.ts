@@ -10,6 +10,7 @@ import { Asset } from 'expo-asset';
 import * as Haptics from 'expo-haptics';
 import NativeGuide, { type InterruptionReason, type RemoteCommand } from '../../modules/viram-guide';
 import type { HapticStrength, SoundId } from '../breathing/timeline';
+import type { Pulse } from '../haptics/patterns';
 import { CUES } from '../content/voice';
 import { CLIP_MS, SOUND_ASSETS } from './manifest.generated';
 import { TIMING_LOG_ENABLED, recordCue } from './timingLog';
@@ -24,13 +25,18 @@ export type { InterruptionReason, RemoteCommand };
 
 /** A timeline segment, or an introduction clip played as a one-cue segment. */
 export interface GuideSchedule {
-  cues: { atMs: number; sound: string | null; haptic: HapticStrength | null; nowPlaying: string | null }[];
+  cues: { atMs: number; sound: string | null; haptic: HapticStrength | null; pulses?: Pulse[]; nowPlaying: string | null }[];
   endMs: number;
 }
 
 export interface SegmentOptions {
   volume: number;
+  /** Play along with other audio (FR-03). */
   mixWithOthers: boolean;
+  /** Automatic: play along only if other audio is already playing as the segment starts (iOS). */
+  mixIfOthersPlaying?: boolean;
+  /** While playing along, lower other audio briefly under each cue (Android). */
+  lowerOthers?: boolean;
   title: string;
   subtitle: string;
 }
@@ -103,6 +109,12 @@ function hapticNow(level: number) {
   if (style) Haptics.impactAsync(style).catch(() => undefined);
 }
 
+/** The nearest impact a JS-clock fallback can play for one pulse. */
+const pulseLevel = (pulse: Pulse) => (pulse.amplitude < 0.45 ? 1 : pulse.amplitude < 0.8 ? 2 : 3);
+
+/** [atMs, ms, amplitude, …] for the native engines. */
+const flatPulses = (pulses: readonly Pulse[] | undefined) => (pulses ?? []).flatMap((p) => [p.atMs, p.ms, p.amplitude]);
+
 function clearFallback() {
   fallbackTimers.forEach(clearTimeout);
   fallbackTimers = [];
@@ -115,11 +127,12 @@ export function startSegment(schedule: GuideSchedule, options: SegmentOptions): 
     atMs: cue.atMs,
     sound: cue.sound && loaded.has(cue.sound) ? cue.sound : null,
     haptic: cue.haptic ? HAPTIC_LEVEL[cue.haptic] : 0,
+    pulses: flatPulses(cue.pulses),
     nowPlaying: cue.nowPlaying,
   }));
   if (audioAvailable()) {
     try {
-      NativeGuide!.startSegment({ cues, endMs: schedule.endMs, ...options });
+      NativeGuide!.startSegment({ cues, endMs: schedule.endMs, mixIfOthersPlaying: false, lowerOthers: false, ...options });
       return;
     } catch {
       audioBroken = true;
@@ -128,7 +141,13 @@ export function startSegment(schedule: GuideSchedule, options: SegmentOptions): 
   clearFallback();
   fallbackStart = now();
   fallbackFrozen = null;
-  fallbackTimers = cues.filter((c) => c.haptic > 0).map((c) => setTimeout(() => hapticNow(c.haptic), c.atMs));
+  fallbackTimers = schedule.cues.flatMap((c) =>
+    c.pulses?.length
+      ? c.pulses.map((p) => setTimeout(() => hapticNow(pulseLevel(p)), c.atMs + p.atMs))
+      : c.haptic
+        ? [setTimeout(() => hapticNow(HAPTIC_LEVEL[c.haptic!]), c.atMs)]
+        : [],
+  );
 }
 
 /** Clock position of the current segment in ms, or -1 when idle. */

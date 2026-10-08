@@ -6,6 +6,7 @@
  */
 import { countCue, cueFor, type CueId } from '../content/voice';
 import { LEAD_MS, segmentEndMs, segmentLayout, type Segment, type SessionPlan } from './session';
+import { hapticPattern, type HapticPhases, type HapticStyle, type Pulse } from '../haptics/patterns';
 import { formatClock } from './describe';
 import { planBoundaries, stepMs, type StepKind } from './rhythm';
 
@@ -21,6 +22,9 @@ export interface CueSettings {
   softFinish?: boolean;
   /** Fuller voice (FR-19): count each whole second within a step, in Voice mode. */
   counting?: boolean;
+  /** How each step feels (src/haptics/patterns.ts); marks on every step when unset. */
+  hapticStyle?: HapticStyle;
+  hapticPhases?: HapticPhases;
 }
 
 export type SoundId = `tone.${ToneSet}.${StepKind | 'complete'}` | `voice.${CueId}`;
@@ -29,6 +33,8 @@ export interface Cue {
   atMs: number;
   sound: SoundId | null;
   haptic: HapticStrength | null;
+  /** The step's haptic pattern; without one, `haptic` is a single tap. */
+  pulses?: Pulse[];
   /** Lock-screen line from this cue on; set at each round start. */
   nowPlaying: string | null;
 }
@@ -100,10 +106,13 @@ export function buildSchedule(
   const cues: Cue[] = planBoundaries(plan, startPlanMs, plan.durationMs).flatMap(({ atMs, round, index, step }, i) => {
     const sound = soundForStep(settings, step, round + 1, clipMs);
     const at = leadMs + atMs - startPlanMs;
+    // Each step's pattern differs by phase; a phase that's off has none.
+    const pulses = settings.haptics ? hapticPattern(step.kind, stepMs(step), settings.hapticStyle ?? 'marks', settings.haptics, settings.hapticPhases) : [];
     const stepCue: Cue = {
       atMs: at,
       sound,
-      haptic: settings.haptics,
+      haptic: pulses.length ? settings.haptics : null,
+      ...(pulses.length ? { pulses } : {}),
       nowPlaying: i === 0 || index === firstStep ? roundLine(round + 1, plan.rounds, plan.durationMs - atMs) : null,
     };
     return settings.counting && settings.mode === 'voice' ? [stepCue, ...countCues(step, at, sound, clipMs)] : [stepCue];

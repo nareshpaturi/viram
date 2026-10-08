@@ -1,6 +1,7 @@
 import { LIBRARY } from '../../content/library';
 import type { CueId } from '../../content/voice';
 import { LEAD_MS, sessionPlan } from '../session';
+import type { RhythmStep } from '../rhythm';
 import { buildSchedule, type CueSettings } from '../timeline';
 
 const practice = (id: string) => LIBRARY.find((t) => t.id === id)!.practice;
@@ -128,5 +129,30 @@ describe('counting within steps (FR-19)', () => {
     // “Inhale left” runs 1.3 s, so the count starts at three.
     expect(cues[1]).toMatchObject({ atMs: LEAD_MS + 2000, sound: 'voice.count-3' });
     expect(buildSchedule(inOut(4, 6), 0, counting, withCounts(900)).cues).toHaveLength(3);
+  });
+});
+
+describe('per-phase haptic patterns in the schedule', () => {
+  const box: RhythmStep[] = [
+    { kind: 'inhale', seconds: 4 },
+    { kind: 'hold', seconds: 4 },
+    { kind: 'exhale', seconds: 4 },
+    { kind: 'rest', seconds: 4 },
+  ];
+  const plan = sessionPlan(box, { rounds: 1 });
+  const base = { mode: 'tones' as const, toneSet: 'soft-bells' as const, haptics: 'medium' as const };
+
+  it('gives each step its own pattern, the exhale the longest', () => {
+    const cues = buildSchedule(plan, 0, base, () => undefined).cues.slice(0, 4);
+    expect(cues.map((c) => c.pulses?.length)).toEqual([2, 1, 1, 1]);
+    expect(cues[2].pulses![0].ms).toBeGreaterThan(cues[0].pulses![1].ms);
+  });
+
+  it('leaves a phase that is off without any haptic, and no haptics without pulses', () => {
+    const cues = buildSchedule(plan, 0, { ...base, hapticPhases: { inhale: true, hold: true, exhale: false, rest: true } }, () => undefined).cues;
+    expect(cues[2]).toMatchObject({ haptic: null });
+    expect(cues[2].pulses).toBeUndefined();
+    const none = buildSchedule(plan, 0, { ...base, haptics: null }, () => undefined).cues;
+    expect(none.every((c) => !c.pulses && c.haptic === null)).toBe(true);
   });
 });

@@ -147,8 +147,8 @@ describe('my rhythms', () => {
 });
 
 describe('preferences', () => {
-  it('pauses other audio by default on iOS, for lock-screen controls', () => {
-    expect(freshStores().preferences.read().otherAudio).toBe('pause');
+  it('decides other audio automatically on iOS: plays along with music, otherwise shows lock-screen controls', () => {
+    expect(freshStores().preferences.read().otherAudio).toBe('auto');
   });
 
   it('defaults, persists, and ignores bad values', () => {

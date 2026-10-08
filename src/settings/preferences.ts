@@ -10,7 +10,17 @@ import type { NightSetting } from '../night/surface';
 import type { Db } from '../storage/db';
 import { parsePractice, type Practice } from '../practice/practice';
 
-export type OtherAudio = 'alongside' | 'pause';
+/**
+ * Other apps' music and podcasts during practice (FR-03; research: people
+ * want their own music to keep playing, at its own volume).
+ *   auto       iOS default: play along if something is already playing as
+ *              the practice starts; otherwise take the audio, so the lock
+ *              screen shows the practice's controls.
+ *   alongside  play along, never lowering it (Android default).
+ *   lower      Android: play along, lowering it briefly under each cue.
+ *   pause      pause it for the practice.
+ */
+export type OtherAudio = 'auto' | 'alongside' | 'lower' | 'pause';
 export type Introductions = 'first' | 'always' | 'never';
 export type Motion = 'system' | 'reduced';
 export type IntroLength = 'short' | 'long';
@@ -72,9 +82,10 @@ export const DEFAULT_PREFERENCES: Preferences = {
   hapticPhases: DEFAULT_HAPTIC_PHASES,
   cueVolume: 0.8,
   // iOS shows lock-screen controls only for a session that pauses other audio
-  // (docs/decisions/locked-audio.md), so that is its default. Android keeps
-  // “Play along”: its media notification works either way and cues duck music.
-  otherAudio: Platform.OS === 'ios' ? 'pause' : 'alongside',
+  // (docs/decisions/locked-audio.md). Automatic keeps them when nothing else
+  // is playing, and never stops music that is. Android's media notification
+  // works either way, so it plays along, without lowering the music.
+  otherAudio: Platform.OS === 'ios' ? 'auto' : 'alongside',
   toneSet: 'soft-bells',
   keepScreenOn: false,
   introductions: 'first',
@@ -114,7 +125,7 @@ const VALIDATORS: { [K in keyof Preferences]: (v: unknown) => Preferences[K] | u
       : undefined;
   },
   cueVolume: (v) => (typeof v === 'number' && v >= 0 && v <= 1 ? v : undefined),
-  otherAudio: (v) => (oneOf('alongside', 'pause')(v) ? v : undefined),
+  otherAudio: (v) => (oneOf('auto', 'alongside', 'lower', 'pause')(v) ? v : undefined),
   toneSet: (v) => (oneOf('soft-bells', 'wood', 'chimes')(v) ? v : undefined),
   keepScreenOn: (v) => (isBoolean(v) ? v : undefined),
   introductions: (v) => (oneOf('first', 'always', 'never')(v) ? v : undefined),

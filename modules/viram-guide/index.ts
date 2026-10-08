@@ -12,8 +12,10 @@ export type RemoteCommand = 'play' | 'pause' | 'end';
 export interface NativeCue {
   atMs: number;
   sound: string | null;
-  /** 0 none, 1 light, 2 medium, 3 strong. */
+  /** 0 none, 1 light, 2 medium, 3 strong: a single tap when there are no pulses. */
   haptic: number;
+  /** The step's haptic pattern as [atMs, ms, amplitude 0–1, …] from the cue (src/haptics/patterns.ts). */
+  pulses: number[];
   nowPlaying: string | null;
 }
 
@@ -22,6 +24,10 @@ export interface NativeSegment {
   endMs: number;
   volume: number;
   mixWithOthers: boolean;
+  /** Automatic: decide at the start, from whether other audio is already playing. */
+  mixIfOthersPlaying: boolean;
+  /** Android: lower other audio briefly under each cue while playing along. */
+  lowerOthers: boolean;
   title: string;
   subtitle: string;
 }

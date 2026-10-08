@@ -7,6 +7,8 @@ struct GuideCue {
   let atMs: Double
   let sound: String?
   let haptic: Int
+  /// The step's haptic pattern as [atMs, ms, amplitude, …]; empty plays `haptic` as one tap.
+  var pulses: [Double] = []
   let nowPlaying: String?
 }
 
@@ -45,6 +47,8 @@ final class GuideEngine {
   private let clockLock = NSLock()
   private let format = AVAudioFormat(standardFormatWithSampleRate: GuideEngine.sampleRate, channels: 1)!
   private let callObserver = CXCallObserver()
+  /// Created on the main thread with the engine; used only there.
+  private let haptics = PhaseHaptics()
 
   private var engine = AVAudioEngine()
   private var voices = [AVAudioPlayerNode(), AVAudioPlayerNode()]
@@ -89,6 +93,8 @@ final class GuideEngine {
     clockLock.lock()
     generation += 1
     clockLock.unlock()
+    // A pattern still running (taps through a long exhale) ends with its segment.
+    DispatchQueue.main.async { [haptics] in haptics.stop() }
   }
 
   private func locked<T>(_ read: () -> T) -> T {
@@ -340,7 +346,7 @@ final class GuideEngine {
             node.scheduleBuffer(buffer, at: at, options: [], completionHandler: nil)
           }
         }
-        scheduleHaptic(cue.haptic, host: host)
+        scheduleHaptic(cue, host: host)
         if let text = cue.nowPlaying { scheduleNowPlaying(text, host: host) }
       }
       nextCue += 1
@@ -361,16 +367,15 @@ final class GuideEngine {
     }
   }
 
-  private func scheduleHaptic(_ level: Int, host: UInt64) {
-    guard level > 0 else { return }
+  private func scheduleHaptic(_ cue: GuideCue, host: UInt64) {
+    guard cue.haptic > 0 || !cue.pulses.isEmpty else { return }
     let expected = generation
     let deadline = DispatchTime(uptimeNanoseconds: UInt64(Self.ms(ticks: host) * 1_000_000))
     // iOS only allows haptics in the foreground; locked practice relies on audio.
     DispatchQueue.main.asyncAfter(deadline: deadline) { [weak self] in
       guard let self, UIApplication.shared.applicationState == .active else { return }
       guard self.locked({ self.generation }) == expected else { return }
-      let style: UIImpactFeedbackGenerator.FeedbackStyle = level == 1 ? .light : level == 2 ? .medium : .heavy
-      UIImpactFeedbackGenerator(style: style).impactOccurred()
+      if cue.pulses.isEmpty { self.haptics.impact(cue.haptic) } else { self.haptics.play(cue.pulses, fallbackLevel: cue.haptic) }
     }
   }
 
