@@ -2,15 +2,18 @@ import { Pressable, StyleSheet } from 'react-native';
 import Svg, { Path, Rect } from 'react-native-svg';
 import { colors } from '../theme';
 
-/** A sample's play button (UX10): play on mist; while playing, a white stop square on pine. */
-export function PlayButton({ playing, label, onPress }: { playing: boolean; label: string; onPress: () => void }) {
+/**
+ * A sample's play button (UX10): play on mist (on white in a selected,
+ * mist-filled row, so it stays visible); while playing, a white stop square on pine.
+ */
+export function PlayButton({ playing, label, onPress, onMist }: { playing: boolean; label: string; onPress: () => void; onMist?: boolean }) {
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={playing ? `Stop sample of ${label}` : `Play a sample of ${label}`}
       hitSlop={2}
-      style={({ pressed }) => [styles.button, { backgroundColor: playing ? colors.pine : colors.mist }, pressed && styles.pressed]}
+      style={({ pressed }) => [styles.button, { backgroundColor: playing ? colors.pine : onMist ? colors.white : colors.mist }, pressed && styles.pressed]}
     >
       <Svg width={14} height={14} viewBox="0 0 14 14">
         {playing ? <Rect x={2} y={2} width={10} height={10} rx={2} fill={colors.white} /> : <Path d="M4 2.5v9l7.5-4.5z" fill={colors.pine} />}

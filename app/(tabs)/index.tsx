@@ -157,7 +157,7 @@ export default function Breathe() {
           <Chevron />
         </Pressable>
       ) : null}
-      <View style={[styles.stage, { height: orb.size + 14 }]}>
+      <View style={[styles.stage, { height: orb.size }]}>
         <Halo stops={HALO[wash]} size={orb.halo} style={[styles.halo, { marginLeft: -orb.halo / 2, marginTop: -orb.halo / 2 }]} />
         <RhythmOrb steps={practice.steps} size={orb.size} />
       </View>
@@ -294,7 +294,8 @@ const styles = StyleSheet.create({
   view: { fontFamily: fonts.sansSemibold, fontSize: 15, color: colors.pine },
   stage: { alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center' },
   halo: { position: 'absolute', left: '50%', top: '50%' },
-  nameLink: { alignSelf: 'center', alignItems: 'center', gap: 2, minHeight: touchTarget },
+  // 12 below the orb, as on the board (the screen's gap is 16).
+  nameLink: { alignSelf: 'center', alignItems: 'center', gap: 2, minHeight: touchTarget, marginTop: -4 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   name: { fontFamily: fonts.sansSemibold, fontSize: 22, lineHeight: 28 },
   subtitle: { fontSize: 15, lineHeight: 20, color: colors.inkSoftOnWash, textAlign: 'center' },

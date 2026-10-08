@@ -44,6 +44,7 @@ export default function CuesAndSound() {
                 <PlayButton
                   label={VOICES[voice].spoken}
                   playing={playing === `voice:${voice}`}
+                  onMist={preferences.voice === voice}
                   onPress={() => toggle(`voice:${voice}`, voiceSound(voice, 'intro.sama-vritti'), preferences.cueVolume, VOICE_PREVIEW_MS)}
                 />
               }
@@ -71,6 +72,7 @@ export default function CuesAndSound() {
                   <PlayButton
                     label={MUSIC_LABEL[music]}
                     playing={playing === `music:${music}`}
+                    onMist={preferences.music === music}
                     onPress={() => toggle(`music:${music}`, musicSound(music), preferences.musicVolume, MUSIC_PREVIEW_MS)}
                   />
                 )
@@ -98,6 +100,7 @@ export default function CuesAndSound() {
                 <PlayButton
                   label={TONE_SET_LABEL[toneSet]}
                   playing={playing === `tones:${toneSet}`}
+                  onMist={preferences.toneSet === toneSet}
                   onPress={() => toggle(`tones:${toneSet}`, `tone.${toneSet}.inhale`, preferences.cueVolume)}
                 />
               }
