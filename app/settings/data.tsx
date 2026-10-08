@@ -10,6 +10,7 @@ import { ConfirmPanel } from '../../src/components/ConfirmPanel';
 import { Screen } from '../../src/components/Screen';
 import { applyImport, buildExport, checkImport, exportFileName, type ImportPlan } from '../../src/data/transfer';
 import { refreshQuickActions } from '../../src/quickstart/QuickActionsBridge';
+import { refreshWidget } from '../../src/widget/WidgetBridge';
 import { usePreferences } from '../../src/settings/PreferencesProvider';
 import { stores } from '../../src/storage';
 import { colors, spacing } from '../../src/theme';
@@ -32,7 +33,7 @@ const IMPORT_PROBLEM = {
  */
 export default function YourData() {
   const params = useLocalSearchParams<{ delete?: string }>();
-  const { preferences } = usePreferences();
+  const { preferences, reload } = usePreferences();
   const [mode, setMode] = useState<Mode>(params.delete ? { kind: 'confirmDelete' } : { kind: 'idle' });
 
   const exportData = async () => {
@@ -111,7 +112,10 @@ export default function YourData() {
               onPress={() => {
                 try {
                   applyImport(plan, stores());
-                  refreshQuickActions(preferences);
+                  // Restored settings apply now, not after a restart (QA F02, AQ-04); reminders and the watch follow the context.
+                  const restored = reload();
+                  refreshQuickActions(restored);
+                  refreshWidget(restored);
                   setMode({ kind: 'idle', message: 'Imported. Everything new from the file is now on this device.' });
                 } catch {
                   setMode({ kind: 'idle', message: 'The import didn’t finish, so nothing was changed. Try again.' });

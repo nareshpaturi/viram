@@ -3,9 +3,10 @@
  * completed, the practice plan, and a snapshot of the definition. At most
  * one is active at a time.
  */
+import { MAX_ROUTINE_PARTS } from '../practice/run';
 import { newId, type Db } from '../storage/db';
-import type { Program } from './definitions';
-import type { Enrollment, EnrollmentState, PracticePlan } from './engine';
+import type { Program, ProgramPhase } from './definitions';
+import { sessionPractices, type Enrollment, type EnrollmentState, type PracticePlan } from './engine';
 
 interface Row {
   id: string;
@@ -22,16 +23,39 @@ interface Row {
 
 const COLUMNS = 'id, program_id, content_version, definition, state, completed_sessions, plan, started_at, updated_at, last_session_at';
 
+const text = (v: unknown): v is string => typeof v === 'string' && v.length > 0;
+const optionalText = (v: unknown) => v === undefined || typeof v === 'string';
+
+/**
+ * A program snapshot every program screen can show and every session can
+ * run: all its words, and each session's parts as runnable library
+ * practices within their bounds (QA F07, AQ-05).
+ */
 function isProgram(v: unknown): v is Program {
   if (typeof v !== 'object' || v === null) return false;
   const p = v as Program;
-  return (
-    typeof p.id === 'string' &&
-    typeof p.name === 'string' &&
-    Array.isArray(p.sessions) &&
-    p.sessions.length > 0 &&
-    p.sessions.every((s) => Array.isArray(s.parts) && s.parts.length > 0 && s.parts.every((part) => typeof part.techniqueId === 'string' && Number.isInteger(part.minutes)))
+  if (![p.id, p.name, p.shortName, p.eyebrow, p.description, p.summary].every(text) || !Number.isInteger(p.version)) return false;
+  if (!(p.next === null || text(p.next))) return false;
+  if (!Array.isArray(p.sessions) || p.sessions.length === 0) return false;
+  const sessionsOk = p.sessions.every(
+    (s) =>
+      typeof s === 'object' &&
+      s !== null &&
+      Array.isArray(s.parts) &&
+      s.parts.length > 0 &&
+      s.parts.length <= MAX_ROUTINE_PARTS &&
+      s.parts.every((part) => typeof part === 'object' && part !== null && text(part.techniqueId) && Number.isInteger(part.minutes)) &&
+      optionalText(s.label) &&
+      optionalText(s.introduces) &&
+      sessionPractices(s) !== null,
   );
+  return sessionsOk && (p.phases === null || (Array.isArray(p.phases) && p.phases.every((phase) => isPhase(phase, p.sessions.length))));
+}
+
+function isPhase(v: unknown, sessions: number): v is ProgramPhase {
+  if (typeof v !== 'object' || v === null) return false;
+  const phase = v as ProgramPhase;
+  return Number.isInteger(phase.first) && Number.isInteger(phase.last) && phase.first >= 1 && phase.first <= phase.last && phase.last <= sessions && text(phase.summary) && text(phase.intro);
 }
 
 function isPlan(v: unknown): v is PracticePlan {
