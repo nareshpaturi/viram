@@ -9,6 +9,7 @@ import { STEP_KINDS } from '../breathing/rhythm';
 import type { CueMode, HapticStrength, ToneSet } from '../breathing/timeline';
 import { DEFAULT_HAPTIC_PHASES, type HapticPhases, type HapticStyle } from '../haptics/patterns';
 import type { NightSetting } from '../night/surface';
+import type { PracticeScreen } from '../practice/prototype';
 import type { Db } from '../storage/db';
 import { parsePractice, type Practice } from '../practice/practice';
 
@@ -72,6 +73,8 @@ export interface Preferences {
   silentLocked: SilentLocked;
   /** The Practices tab last open. */
   practicesSection: PracticesSection;
+  /** Developer: which practice screen to show (development builds only). */
+  practiceScreen: PracticeScreen;
   /** Holds and rests up to 60 s in Adjust rhythm (src/content/longHolds.ts). */
   longHolds: boolean;
   /** The completion screen has offered the reminder once (src/reminder/offer.ts). */
@@ -118,6 +121,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   longHolds: false,
   silentLocked: 'pause',
   practicesSection: 'techniques',
+  practiceScreen: 'current',
   nightPractice: 'off',
   healthConnected: false,
   healthDismissed: false,
@@ -172,6 +176,7 @@ const VALIDATORS: { [K in keyof Preferences]: (v: unknown) => Preferences[K] | u
   longHolds: (v) => (isBoolean(v) ? v : undefined),
   silentLocked: (v) => (oneOf('pause', 'tones')(v) ? v : undefined),
   practicesSection: (v) => (oneOf('techniques', 'programs', 'saved')(v) ? v : undefined),
+  practiceScreen: (v) => (oneOf('current', 'a', 'b')(v) ? v : undefined),
   reminder: (v) => {
     const r = v as Reminder;
     return typeof v === 'object' && v !== null && isBoolean(r.enabled) && isInt(r.hour, 0, 23) && isInt(r.minute, 0, 59)
