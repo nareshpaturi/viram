@@ -8,7 +8,7 @@
  */
 module.exports = {
   type: 'widget',
-  name: 'ViramWidget',
+  name: 'BreatheWidget',
   displayName: 'Breathe',
   icon: '../../assets/icon.png',
   deploymentTarget: '17.0',
