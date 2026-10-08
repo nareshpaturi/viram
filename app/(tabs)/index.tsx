@@ -1,17 +1,24 @@
 import { useCallback, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { AppText } from '../../src/components/AppText';
 import { BrandMark } from '../../src/components/BrandMark';
-import { Button, ButtonRow } from '../../src/components/Button';
-import { Card } from '../../src/components/Card';
-import { CueControls, MODE_LABEL } from '../../src/components/CueControls';
-import { RhythmFeature } from '../../src/components/RhythmFeature';
+import { formatClock, rhythmLine, slowingLine } from '../../src/breathing/describe';
+import { planFor } from '../../src/breathing/rhythm';
+import { Button } from '../../src/components/Button';
+import { Chevron } from '../../src/components/Chevron';
+import { CueControls } from '../../src/components/CueControls';
+import { DurationSheet } from '../../src/components/DurationSheet';
+import { RhythmOrb } from '../../src/components/RhythmOrb';
 import { Screen } from '../../src/components/Screen';
-import { SessionDots } from '../../src/components/SessionDots';
 import { Sheet } from '../../src/components/Sheet';
+import { Frosted, useGlass, useWash } from '../../src/light/light';
+import { Halo } from '../../src/light/Wash';
+import { HALO } from '../../src/light/washes';
+import { durationRow } from '../../src/practice/durationOptions';
+import { guidanceLine } from '../../src/practice/guidanceRules';
 import { practiceHref } from '../../src/practice/launch';
-import { subtitleOf, techniqueOf } from '../../src/practice/practice';
+import { subtitleOf, techniqueOf, type Practice } from '../../src/practice/practice';
 import { readyPractice } from '../../src/practice/ready';
 import {
   acknowledge,
@@ -24,11 +31,10 @@ import {
   welcomeBack,
   type Enrollment,
 } from '../../src/programs/engine';
-import { useGlass } from '../../src/light/light';
 import { reminderTime } from '../../src/reminder/reminder';
 import { usePreferences } from '../../src/settings/PreferencesProvider';
 import { stores } from '../../src/storage';
-import { colors, radius, spacing, touchTarget } from '../../src/theme';
+import { colors, fonts, radius, shadows, spacing, touchTarget } from '../../src/theme';
 
 const PLAN_LABEL = { morning: 'Your morning practice', midday: 'Your midday practice', evening: 'Your evening practice' } as const;
 
@@ -40,7 +46,12 @@ const PLAN_LABEL = { morning: 'Your morning practice', midday: 'Your midday prac
 export default function Breathe() {
   const { preferences, update } = usePreferences();
   const [cuesOpen, setCuesOpen] = useState(false);
+  const [durationOpen, setDurationOpen] = useState(false);
   const glass = useGlass();
+  const wash = useWash() ?? 'day';
+  const { fontScale } = useWindowDimensions();
+  // Smaller at large text sizes, so the words keep their room.
+  const orb = fontScale > 1.3 ? { size: 104, halo: 170 } : { size: 136, halo: 222 };
   const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
   useFocusEffect(useCallback(() => setEnrollment(stores().programs.active()), []));
 
@@ -53,7 +64,6 @@ export default function Breathe() {
   const run = enrollment && session ? sessionRun(enrollment.definition, session) : null;
   const practice = run ? run.parts[0] : readyPractice(preferences, stores());
   const technique = techniqueOf(practice);
-  const guidance = [MODE_LABEL[preferences.cueMode], preferences.haptics ? 'Haptics' : null].filter(Boolean).join(' · ');
   const away = enrollment ? welcomeBack(enrollment, Date.now()) : null;
   const plan = enrollment?.plan;
   const eyebrow = !plan ? 'Ready when you are' : plan.time === 'custom' ? `Your practice at ${reminderTime(plan)}` : PLAN_LABEL[plan.time];
@@ -71,7 +81,9 @@ export default function Breathe() {
         <AppText variant="bodyStrong" style={styles.wordmark}>
           Viram
         </AppText>
-        <AppText variant="label">{eyebrow}</AppText>
+        <AppText variant="label" style={styles.eyebrow}>
+          {eyebrow}
+        </AppText>
       </View>
     </View>
   );
@@ -110,6 +122,16 @@ export default function Breathe() {
     );
   }
 
+  const total = run ? programLength(run.parts) : null;
+  const duration = durationRow(practice);
+  const opensGuide = !!run || practice.source.kind === 'technique';
+  const subtitle = subtitleOf(practice);
+  const nameLabel = `${practice.name}${subtitle ? `, ${subtitle.charAt(0).toLowerCase()}${subtitle.slice(1)}` : ''}. ${opensGuide ? 'Opens the guide.' : 'Opens Adjust rhythm.'}`;
+  const openName = () => {
+    if (opensGuide && practice.techniqueId) router.push({ pathname: '/technique/[id]', params: { id: practice.techniqueId } });
+    else router.push('/adjust');
+  };
+
   return (
     <Screen footer={<Button title={run && session ? `Begin session ${session}` : 'Begin'} onPress={begin} accessibilityHint={`Starts ${run?.name ?? practice.name}`} />}>
       {header}
@@ -117,59 +139,122 @@ export default function Breathe() {
         A little space{'\n'}to breathe.
       </AppText>
       {enrollment && run && session ? (
-        <Card muted>
-          <AppText variant="bodyStrong">{enrollment.definition.name}</AppText>
-          <AppText variant="label">
-            Session {session} of {totalSessions(enrollment)}
-            {run.parts.length > 1 ? ` · ${sessionTitle(enrollment.definition.sessions[session - 1])}` : ''}
-          </AppText>
-          <SessionDots
-            total={totalSessions(enrollment)}
-            done={enrollment.completedSessions}
-            label={`${enrollment.completedSessions} of ${totalSessions(enrollment)} sessions complete. Session ${session} is next.`}
-          />
-        </Card>
+        <Pressable
+          onPress={() => router.push({ pathname: '/program/[id]', params: { id: enrollment.programId } })}
+          accessibilityRole="button"
+          accessibilityLabel={`${enrollment.definition.name}, session ${session} of ${totalSessions(enrollment)}. View the program.`}
+          style={({ pressed }) => [styles.programLine, { backgroundColor: glass.fill, borderColor: glass.rim }, pressed && styles.pressed]}
+        >
+          <Frosted>
+            <View style={styles.flex}>
+              <AppText style={styles.programName}>{enrollment.definition.name}</AppText>
+              <AppText variant="label">
+                Session {session} of {totalSessions(enrollment)}
+              </AppText>
+            </View>
+          </Frosted>
+          <AppText style={styles.view}>View</AppText>
+          <Chevron />
+        </Pressable>
       ) : null}
-      <RhythmFeature
-        name={practice.name}
-        subtitle={subtitleOf(practice)}
-        steps={practice.steps}
-        target={practice.target}
-        slowing={practice.slowing}
-        nameHint={technique?.pronunciation?.respelling}
-      />
-      {run && run.parts.length > 1 ? <AppText variant="label">Then {run.parts.slice(1).map((p) => p.name).join(', then ')}.</AppText> : null}
-      <ButtonRow>
-        {enrollment ? (
-          <Button
-            title="View program"
-            variant="secondary"
-            style={styles.flex}
-            onPress={() => router.push({ pathname: '/program/[id]', params: { id: enrollment.programId } })}
-          />
-        ) : null}
-        <Button title="Change practice" variant="secondary" style={styles.flex} onPress={() => router.navigate('/practices')} />
-        {enrollment ? null : <Button title="Adjust" variant="secondary" style={styles.flex} onPress={() => router.push('/adjust')} />}
-      </ButtonRow>
+      <View style={[styles.stage, { height: orb.size + 14 }]}>
+        <Halo stops={HALO[wash]} size={orb.halo} style={[styles.halo, { marginLeft: -orb.halo / 2, marginTop: -orb.halo / 2 }]} />
+        <RhythmOrb steps={practice.steps} size={orb.size} />
+      </View>
       <Pressable
-        onPress={() => setCuesOpen(true)}
-        accessibilityRole="button"
-        accessibilityLabel={`Guidance: ${guidance}`}
-        accessibilityHint="Change voice, tones, haptics, and motion"
-        style={({ pressed }) => [styles.chip, { backgroundColor: glass.fill, borderColor: glass.rim }, pressed && styles.chipPressed]}
+        onPress={openName}
+        accessibilityRole="link"
+        accessibilityLabel={nameLabel}
+        accessibilityHint={technique?.pronunciation?.respelling}
+        style={({ pressed }) => [styles.nameLink, pressed && styles.pressed]}
       >
-        <AppText variant="control" style={styles.chipText}>
-          Guidance: {guidance}
-        </AppText>
-        <AppText variant="control" style={styles.chipText} importantForAccessibility="no">
-          ›
-        </AppText>
+        <View style={styles.nameRow}>
+          <AppText style={styles.name}>{practice.name}</AppText>
+          <Chevron />
+        </View>
+        {subtitle ? <AppText style={styles.subtitle}>{subtitle}</AppText> : null}
+        <AppText style={styles.rhythm}>{rhythmLine(practice.steps)}</AppText>
+        {practice.slowing ? <AppText style={styles.subtitle}>{slowingLine(practice.steps, practice.slowing)}</AppText> : null}
       </Pressable>
+      {run && run.parts.length > 1 ? (
+        <AppText variant="label" style={styles.center}>
+          Then {run.parts.slice(1).map((p) => p.name).join(', then ')}.
+        </AppText>
+      ) : null}
+      <View style={[styles.group, { backgroundColor: glass.fill, borderColor: glass.rim }]}>
+        <Frosted>
+          {total ? (
+            <View style={[styles.row, styles.divider]} accessible accessibilityLabel={`Duration, ${total}. Set by the program.`}>
+              <View style={styles.flex}>
+                <AppText variant="bodyStrong">Duration</AppText>
+                <AppText variant="label">Set by the program</AppText>
+              </View>
+              <AppText variant="bodyStrong">{total}</AppText>
+            </View>
+          ) : (
+            <GroupRow
+              title="Duration"
+              detail={duration.detail}
+              value={duration.value}
+              hint="Choose how long to practise"
+              onPress={() => setDurationOpen(true)}
+              divider
+            />
+          )}
+          <GroupRow
+            title="Guidance"
+            detail={guidanceLine(preferences.cueMode, preferences.haptics)}
+            hint="Change voice, tones, haptics, and motion"
+            onPress={() => setCuesOpen(true)}
+          />
+        </Frosted>
+      </View>
       <Sheet visible={cuesOpen} title="Guidance" onClose={() => setCuesOpen(false)}>
         <CueControls />
       </Sheet>
+      {run ? null : (
+        <DurationSheet
+          visible={durationOpen}
+          practice={practice}
+          onClose={() => setDurationOpen(false)}
+          onChoose={(target) => {
+            update({ lastPractice: { ...practice, target } });
+            setDurationOpen(false);
+          }}
+          onAdjust={() => {
+            setDurationOpen(false);
+            router.push('/adjust');
+          }}
+        />
+      )}
     </Screen>
   );
+}
+
+/** One row of Breathe's settings card: a label, a detail line, and what it opens. */
+function GroupRow({ title, detail, value, hint, onPress, divider }: { title: string; detail: string | null; value?: string; hint: string; onPress: () => void; divider?: boolean }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={[title, value, detail].filter(Boolean).join(', ')}
+      accessibilityHint={hint}
+      style={({ pressed }) => [styles.row, divider && styles.divider, pressed && styles.pressed]}
+    >
+      <View style={styles.flex}>
+        <AppText variant="bodyStrong">{title}</AppText>
+        {detail ? <AppText variant="label">{detail}</AppText> : null}
+      </View>
+      {value ? <AppText variant="bodyStrong" style={styles.value}>{value}</AppText> : null}
+      <Chevron color={colors.inkFaint} />
+    </Pressable>
+  );
+}
+
+/** A program session's length: “8 min” when every part is in minutes, otherwise its planned time. */
+function programLength(parts: readonly Practice[]): string {
+  if (parts.every((p) => 'minutes' in p.target)) return `${parts.reduce((sum, p) => sum + ('minutes' in p.target ? p.target.minutes : 0), 0)} min`;
+  return formatClock(parts.reduce((sum, p) => sum + planFor(p.steps, p.target, p.slowing ?? null).durationMs, 0));
 }
 
 function Choice({ title, detail, onPress }: { title: string; detail: string; onPress: () => void }) {
@@ -190,20 +275,35 @@ function Choice({ title, detail, onPress }: { title: string; detail: string; onP
 const styles = StyleSheet.create({
   brand: { flexDirection: 'row', alignItems: 'center', gap: spacing.ms },
   wordmark: { color: colors.pine },
+  eyebrow: { fontSize: 14, lineHeight: 18 },
   muted: { color: colors.inkSoft },
-  flex: { flexGrow: 1, flexBasis: 140 },
-  chip: {
-    minHeight: touchTarget,
+  flex: { flex: 1 },
+  center: { textAlign: 'center' },
+  pressed: { opacity: 0.8 },
+  programLine: {
+    minHeight: 56,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing.sm,
+    gap: spacing.ms,
+    paddingVertical: 10,
     paddingHorizontal: spacing.md,
-    borderRadius: radius.pill,
+    borderRadius: 18,
     borderWidth: 1,
   },
+  programName: { fontFamily: fonts.sansSemibold, fontSize: 15, lineHeight: 20 },
+  view: { fontFamily: fonts.sansSemibold, fontSize: 15, color: colors.pine },
+  stage: { alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center' },
+  halo: { position: 'absolute', left: '50%', top: '50%' },
+  nameLink: { alignSelf: 'center', alignItems: 'center', gap: 2, minHeight: touchTarget },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  name: { fontFamily: fonts.sansSemibold, fontSize: 22, lineHeight: 28 },
+  subtitle: { fontSize: 15, lineHeight: 20, color: colors.inkSoftOnWash, textAlign: 'center' },
+  rhythm: { marginTop: spacing.xs, fontSize: 15, lineHeight: 20, textAlign: 'center' },
+  group: { borderRadius: radius.card, borderWidth: 1, boxShadow: shadows.card, overflow: 'hidden' },
+  row: { minHeight: 64, flexDirection: 'row', alignItems: 'center', gap: spacing.ms, paddingVertical: spacing.ms, paddingHorizontal: spacing.md },
+  divider: { borderBottomWidth: 1, borderBottomColor: 'rgba(18, 55, 47, 0.08)' },
+  value: { color: colors.pine },
   chipPressed: { opacity: 0.8 },
-  chipText: { color: colors.pine, flexShrink: 1 },
   choice: {
     minHeight: touchTarget,
     borderWidth: 1,

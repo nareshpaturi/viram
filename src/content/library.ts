@@ -486,9 +486,15 @@ export const LIBRARY: Technique[] = [
       increment: 1,
       // Andrew Weil teaches four breaths at a time to start.
       target: { rounds: 4 },
+      // Weil: no more than four breaths at a time for the first month, then up to eight.
+      roundOptions: [
+        { rounds: 4, note: 'as taught' },
+        { rounds: 8, note: 'after a month of regular practice' },
+      ],
       posture: 'seated-or-lying',
     },
     guidance: {
+      roundsNote: '4-7-8 is taught in rounds. Start with 4, and build to 8 only when the hold feels easy.',
       lead: 'Breathe in for 4, hold for 7, and breathe out through your mouth for 8. The counts are a ratio, not a test: keep them comfortable.',
       takeCareShort: 'Start with 4 rounds. If the hold feels hard, shorten all three counts.',
       howTo: [

@@ -65,3 +65,10 @@ export const PAUSE_TITLE: Record<PauseReason, string> = {
   lockScreen: 'Paused from the lock screen.',
   locked: 'Paused when your phone locked.',
 };
+
+/** Breathe's Guidance row: “Voice and haptic taps”, “Tones, no haptics”, “Haptic taps only”. */
+export function guidanceLine(mode: CueMode, haptics: boolean): string {
+  if (mode === 'silent') return haptics ? 'Haptic taps only' : 'Silent, no haptics';
+  const name = mode === 'voice' ? 'Voice' : 'Tones';
+  return haptics ? `${name} and haptic taps` : `${name}, no haptics`;
+}
