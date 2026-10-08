@@ -41,6 +41,8 @@ export interface Preferences {
   /** “Not now”: per technique, only sessions after this time count toward the next offer. */
   progressionSnoozed: Record<string, number>;
   reminder: Reminder;
+  /** The completion screen has offered the reminder once (src/reminder/offer.ts). */
+  reminderOffered: boolean;
   /** FR-23: Off, 9 PM–6 AM, or Always. */
   nightPractice: NightSetting;
   /** FR-19: count each second within a step (Voice mode). */
@@ -73,6 +75,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   progressionStopped: [],
   progressionSnoozed: {},
   reminder: { enabled: false, hour: 7, minute: 30 },
+  reminderOffered: false,
   nightPractice: 'off',
   healthConnected: false,
   healthDismissed: false,
@@ -113,6 +116,7 @@ const VALIDATORS: { [K in keyof Preferences]: (v: unknown) => Preferences[K] | u
   voiceCounting: (v) => (isBoolean(v) ? v : undefined),
   introLength: (v) => (oneOf('short', 'long')(v) ? v : undefined),
   healthDismissed: (v) => (isBoolean(v) ? v : undefined),
+  reminderOffered: (v) => (isBoolean(v) ? v : undefined),
   reminder: (v) => {
     const r = v as Reminder;
     return typeof v === 'object' && v !== null && isBoolean(r.enabled) && isInt(r.hour, 0, 23) && isInt(r.minute, 0, 59)

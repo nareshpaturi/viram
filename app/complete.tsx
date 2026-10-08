@@ -29,6 +29,8 @@ import {
 import { SessionDots } from '../src/components/SessionDots';
 import { HEALTH_NAME, HEALTH_RESULT, healthAvailable, healthEligible, writeToHealth } from '../src/health/health';
 import type { HealthState } from '../src/history/repository';
+import { offerTime, shouldOfferReminder } from '../src/reminder/offer';
+import { askForReminderPermission, reminderTime } from '../src/reminder/reminder';
 import { refreshReminder } from '../src/reminder/ReminderBridge';
 import { practiceFromRecord } from '../src/quickstart/quickActions';
 import { refreshQuickActions } from '../src/quickstart/QuickActionsBridge';
@@ -44,6 +46,8 @@ import { colors, spacing } from '../src/theme';
 type SaveState = 'saving' | 'saved' | 'failed' | 'leaving';
 /** What the practitioner chose for next time, if anything (FR-15). */
 type NextTime = { kind: 'next' | 'easier'; practice: Practice } | { kind: 'notNow' | 'stopped' } | null;
+/** The one-time reminder offer and its answer (FR-17). */
+type ReminderOffer = { hour: number; minute: number; answer: 'on' | 'denied' | 'declined' | null };
 /** A program session's effect on its program (FR-20). */
 type ProgramResult =
   | { kind: 'session'; enrollment: Enrollment; repeating?: number }
@@ -111,6 +115,7 @@ function CompleteScreen() {
   const [nextTime, setNextTime] = useState<NextTime>(null);
   const [programResult, setProgramResult] = useState<ProgramResult | null>(null);
   const [health, setHealth] = useState<HealthState>('none');
+  const [reminderOffer, setReminderOffer] = useState<ReminderOffer | null>(null);
   const easier = useMemo(() => (record ? easierPractice(record) : null), [record]);
 
   useEffect(() => {
@@ -133,7 +138,13 @@ function CompleteScreen() {
       // Worked out once, so answering it doesn't make it disappear mid-sentence.
       const now = Date.now();
       try {
-        setOffer(progressionOffer(record, stores().history.between(now - OFFER_WINDOW_MS, now + 1), preferences, now));
+        const progression = progressionOffer(record, stores().history.between(now - OFFER_WINDOW_MS, now + 1), preferences, now);
+        setOffer(progression);
+        // One offer at a time; the reminder is offered once, when nothing else is.
+        if (!progression && shouldOfferReminder(record, stores().history.count(), preferences)) {
+          setReminderOffer({ ...offerTime(record.startedAt), answer: null });
+          update({ reminderOffered: true });
+        }
       } catch {
         // No offer is better than an interrupted completion screen.
       }
@@ -179,6 +190,13 @@ function CompleteScreen() {
     if (choice.kind === 'stopped' && offer) update({ progressionStopped: [...preferences.progressionStopped, offer.techniqueId] });
     setNextTime(choice);
     AccessibilityInfo.announceForAccessibility(nextTimeMessage(choice, offer) ?? 'Not now');
+  };
+
+  const acceptReminder = async (time: ReminderOffer) => {
+    const granted = await askForReminderPermission().catch(() => false);
+    if (granted) update({ reminder: { enabled: true, hour: time.hour, minute: time.minute } });
+    setReminderOffer({ ...time, answer: granted ? 'on' : 'denied' });
+    AccessibilityInfo.announceForAccessibility(granted ? `Daily reminder on at ${reminderTime(time)}` : 'Notifications are off for Viram');
   };
 
   const failed = state === 'failed';
@@ -278,6 +296,24 @@ function CompleteScreen() {
       {message ? (
         <AppText variant="label" style={styles.nextTime}>
           {message}
+        </AppText>
+      ) : null}
+      {saved && reminderOffer && !reminderOffer.answer ? (
+        <Card>
+          <AppText variant="overline" accessibilityRole="header">
+            A DAILY REMINDER?
+          </AppText>
+          <AppText>Practicing at about the same time each day makes it easier to come back. Viram can send one quiet reminder a day.</AppText>
+          <ButtonRow>
+            <Button title={`Remind me at ${reminderTime(reminderOffer)}`} style={styles.flex} onPress={() => acceptReminder(reminderOffer)} />
+            <Button title="No thanks" variant="secondary" style={styles.flex} onPress={() => setReminderOffer({ ...reminderOffer, answer: 'declined' })} />
+          </ButtonRow>
+          <Button title="Choose another time" variant="quiet" onPress={() => router.push('/settings/reminder')} />
+        </Card>
+      ) : null}
+      {reminderOffer?.answer ? (
+        <AppText variant="label" style={styles.nextTime} accessibilityLiveRegion="polite">
+          {REMINDER_ANSWER[reminderOffer.answer](reminderOffer)}
         </AppText>
       ) : null}
       {saved && health === 'none' && !preferences.healthConnected && !preferences.healthDismissed && healthEligible(record) && healthAvailable() ? (
@@ -417,6 +453,12 @@ function CheckMark({ night }: { night: boolean }) {
     </View>
   );
 }
+
+const REMINDER_ANSWER: Record<NonNullable<ReminderOffer['answer']>, (time: ReminderOffer) => string> = {
+  on: (time) => `✓ Viram will remind you each day at ${reminderTime(time)}. Change it anytime in Settings.`,
+  denied: () => 'Notifications are off for Viram, so there’s no reminder. Allow them in your device settings, then turn it on in Settings.',
+  declined: () => 'Viram won’t ask again. The reminder is in Settings whenever you want it.',
+};
 
 const TIMES = ['', 'once', 'twice', 'three times', 'four times', 'five times', 'six times', 'seven times', 'eight times', 'nine times', 'ten times'];
 const timesWord = (count: number) => TIMES[count] ?? `${count} times`;
