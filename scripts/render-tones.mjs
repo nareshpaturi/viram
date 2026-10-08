@@ -50,4 +50,4 @@ for (const [name, set] of Object.entries(SETS)) {
   mkdirSync(`assets/tones/${name}`, { recursive: true });
   for (const [kind, samples] of Object.entries(sounds)) writeWav(`assets/tones/${name}/${kind}.wav`, scale(samples, gain));
 }
-console.log('Rendered the Soft bells, Wood, and Chimes tone sets.');
+console.log('Rendered the Soft bells, Wood, and Chimes tone sets. Next: npm run audio:samples, then npm run audio:manifest');
