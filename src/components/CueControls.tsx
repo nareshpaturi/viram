@@ -1,13 +1,14 @@
 import { StyleSheet, View } from 'react-native';
 import { playOnce } from '../audio/guide';
+import { voiceSound } from '../audio/voices';
 import type { CueMode } from '../breathing/timeline';
 import { usePreferences } from '../settings/PreferencesProvider';
 import { colors, spacing } from '../theme';
 import { AppText } from './AppText';
 import { Button } from './Button';
 import { Segmented } from './Segmented';
-import { Stepper } from './Stepper';
 import { SwitchRow } from './SwitchRow';
+import { VolumeStepper } from './VolumeStepper';
 
 const MODE_HELP: Record<CueMode, string> = {
   voice: 'Voice says each step, like “Inhale left.” With Voice or Tones, guidance continues when you lock your phone.',
@@ -20,10 +21,9 @@ export const MODE_LABEL: Record<CueMode, string> = { voice: 'Voice', tones: 'Ton
 /** Cue mode, volume, haptics, and motion: the cue chip sheet and Settings share these. */
 export function CueControls() {
   const { preferences, update } = usePreferences();
-  const volume = Math.round(preferences.cueVolume * 10);
 
   const sample = () => {
-    const sound = preferences.cueMode === 'voice' ? 'voice.inhale' : `tone.${preferences.toneSet}.inhale`;
+    const sound = preferences.cueMode === 'voice' ? voiceSound(preferences.voice, 'inhale') : `tone.${preferences.toneSet}.inhale`;
     if (preferences.cueMode !== 'silent') void playOnce(sound, preferences.cueVolume);
   };
 
@@ -40,16 +40,7 @@ export function CueControls() {
       />
       <AppText variant="label">{MODE_HELP[preferences.cueMode]}</AppText>
       {preferences.cueMode !== 'silent' ? (
-        <Stepper
-          label="Cue volume"
-          display={`${volume * 10}%`}
-          spoken={`${volume * 10} percent`}
-          hint="Separate from your media volume"
-          canDecrement={volume > 1}
-          canIncrement={volume < 10}
-          onDecrement={() => update({ cueVolume: (volume - 1) / 10 })}
-          onIncrement={() => update({ cueVolume: (volume + 1) / 10 })}
-        />
+        <VolumeStepper label="Cue volume" value={preferences.cueVolume} onChange={(cueVolume) => update({ cueVolume })} />
       ) : null}
       <SwitchRow label="Haptic taps" description="At each step change" value={preferences.haptics} onChange={(haptics) => update({ haptics })} />
       <AppText variant="overline" accessibilityRole="header" style={styles.section}>

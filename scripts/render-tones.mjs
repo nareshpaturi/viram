@@ -1,48 +1,53 @@
-// Renders the Wood and Chimes tone sets (Soft bells are the prototype's
-// tones). Each set has distinct inhale, hold, exhale, and rest sounds plus a
-// completion sound. Placeholders until the sound-design lane delivers.
-// Run with `npm run audio:tones`.
+// Renders the three tone sets. Each has distinct inhale, hold, exhale, and
+// rest sounds plus a completion sound, all in Sa = C♯ like the music beds, so
+// a cue always sits in tune with the music. Inhale rises to Pa, exhale settles
+// on Sa, and hold and rest are softer touches. Run with `npm run audio:tones`.
 import { mkdirSync } from 'node:fs';
-import { SAMPLE_RATE, writeWav } from './lib/wav.mjs';
+import { addPartial, fade, hall, lowpass, note, peak, scale, seconds } from './lib/synth.mjs';
+import { writeWav } from './lib/wav.mjs';
 
-function render(seconds, voice) {
-  const samples = new Float32Array(Math.round(seconds * SAMPLE_RATE));
-  for (let i = 0; i < samples.length; i++) samples[i] = voice(i / SAMPLE_RATE);
-  // Gentle 5 ms fade-in and 20 ms fade-out so no sound clicks.
-  const fadeIn = 0.005 * SAMPLE_RATE;
-  const fadeOut = 0.02 * SAMPLE_RATE;
-  for (let i = 0; i < samples.length; i++) {
-    samples[i] *= Math.min(1, i / fadeIn, (samples.length - i) / fadeOut);
-  }
-  return samples;
+// Pitches in semitones from Sa (C♯3).
+const PITCH = { inhale: 19, hold: 24, exhale: 12, rest: 7 };
+const SOFT = { inhale: 1, hold: 0.55, exhale: 1, rest: 0.45 };
+
+/** An instrument from its partials: [ratio, gain, decay seconds, beat hertz]. */
+function strike(partials) {
+  return (out, at, freq, gain) => {
+    for (const [ratio, partGain, decay, beat = 0] of partials) {
+      // Paired partials a few hertz apart beat slowly, like a real bowl or bar.
+      for (const offset of beat ? [-beat / 2, beat / 2] : [0]) {
+        addPartial(out, at, { freq: freq * ratio + offset, gain: (gain * partGain) / (beat ? 2 : 1), decay, attack: 0.006 });
+      }
+    }
+  };
 }
 
-const partials = (f, list) => (t) =>
-  list.reduce((sum, [ratio, gain, decay]) => sum + gain * Math.exp(-t / decay) * Math.sin(2 * Math.PI * f * ratio * t), 0);
+// Soft bells: a singing bowl struck gently, with its slow shimmer.
+const bowl = strike([[1, 1, 2.8, 0.9], [2.71, 0.45, 1.4, 2.2], [5.03, 0.18, 0.7, 3.5], [7.9, 0.07, 0.35, 5]]);
+// Wood: a soft rosewood marimba bar.
+const marimba = strike([[1, 1, 0.55], [3.99, 0.22, 0.14], [9.9, 0.05, 0.05]]);
+// Chimes: a tubular chime, struck lightly.
+const chime = strike([[1, 1, 1.6, 0.6], [2.76, 0.4, 0.8, 1.4], [5.4, 0.16, 0.4], [8.93, 0.06, 0.2]]);
 
-// Wood: short, dry block strikes; hold and rest are softer double taps.
-const block = (f, gain = 0.55) => partials(f, [[1, gain, 0.05], [2.76, gain * 0.35, 0.025], [5.4, gain * 0.15, 0.012]]);
-const double = (f) => (t) => block(f, 0.4)(t) + (t > 0.14 ? block(f, 0.3)(t - 0.14) : 0);
-const WOOD = {
-  inhale: render(0.45, block(1046)),
-  hold: render(0.5, double(880)),
-  exhale: render(0.45, block(698)),
-  rest: render(0.5, double(587)),
-  complete: render(1.2, (t) => block(698, 0.4)(t) + (t > 0.18 ? block(880, 0.4)(t - 0.18) : 0) + (t > 0.36 ? block(1046, 0.45)(t - 0.36) : 0)),
+const SETS = {
+  'soft-bells': { voice: bowl, octave: 0, length: 3.2, complete: 6, cutoff: 7000, space: { wet: 0.22, feedback: 0.88, damping: 0.4 } },
+  wood: { voice: marimba, octave: 0, length: 1.4, complete: 3, cutoff: 5000, space: { wet: 0.2, feedback: 0.84, damping: 0.45 } },
+  chimes: { voice: chime, octave: 12, length: 2.4, complete: 5, cutoff: 6000, space: { wet: 0.28, feedback: 0.9, damping: 0.45 } },
 };
 
-// Chimes: bright, inharmonic tubular partials with a longer ring.
-const tube = (f, gain = 0.32) => partials(f, [[1, gain, 0.5], [2.76, gain * 0.45, 0.28], [5.4, gain * 0.2, 0.14], [8.93, gain * 0.08, 0.07]]);
-const CHIMES = {
-  inhale: render(1.1, tube(784)),
-  hold: render(1.0, tube(659, 0.26)),
-  exhale: render(1.1, tube(523)),
-  rest: render(1.0, tube(440, 0.24)),
-  complete: render(1.8, (t) => tube(523, 0.22)(t) + (t > 0.25 ? tube(659, 0.22)(t - 0.25) : 0) + (t > 0.5 ? tube(784, 0.24)(t - 0.5) : 0)),
-};
+function render(set, length, strikes) {
+  const out = new Float32Array(seconds(length));
+  for (const [at, semitones, gain] of strikes) set.voice(out, seconds(at), note(semitones + set.octave), gain);
+  return fade(hall(lowpass(out, set.cutoff), set.space), 0.002, Math.min(0.8, length / 3));
+}
 
-for (const [name, set] of Object.entries({ wood: WOOD, chimes: CHIMES })) {
+for (const [name, set] of Object.entries(SETS)) {
+  const sounds = Object.fromEntries(Object.keys(PITCH).map((kind) => [kind, render(set, set.length, [[0, PITCH[kind], SOFT[kind]]])]));
+  // Completion: Sa, Pa, upper Sa, unhurried.
+  sounds.complete = render(set, set.complete, [[0, 12, 0.8], [0.55, 19, 0.75], [1.1, 24, 0.7]]);
+  // One gain per set keeps hold and rest softer than inhale and exhale, and tones level with the voice.
+  const gain = 0.35 / Math.max(...Object.values(sounds).map(peak));
   mkdirSync(`assets/tones/${name}`, { recursive: true });
-  for (const [kind, samples] of Object.entries(set)) writeWav(`assets/tones/${name}/${kind}.wav`, samples);
+  for (const [kind, samples] of Object.entries(sounds)) writeWav(`assets/tones/${name}/${kind}.wav`, scale(samples, gain));
 }
-console.log('Rendered Wood and Chimes tone sets.');
+console.log('Rendered the Soft bells, Wood, and Chimes tone sets.');

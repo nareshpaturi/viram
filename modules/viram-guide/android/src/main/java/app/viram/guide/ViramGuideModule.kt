@@ -21,6 +21,9 @@ class SegmentOptions : Record {
   @Field val mixWithOthers: Boolean = true
   @Field val title: String = ""
   @Field val subtitle: String = ""
+  /** Music bed looped under the segment. */
+  @Field val bed: String? = null
+  @Field val bedVolume: Double = 0.0
 }
 
 /** JS surface of the guide. All timing lives in GuideEngine on the audio clock. */
@@ -51,6 +54,8 @@ class ViramGuideModule : Module() {
         options.mixWithOthers,
         options.title,
         options.subtitle,
+        options.bed,
+        options.bedVolume.toFloat(),
       )
     }
 
@@ -68,6 +73,6 @@ class ViramGuideModule : Module() {
 
     Function("setTimingLog") { enabled: Boolean -> GuideEngine.timingLog = enabled }
 
-    Function("playOnce") { sound: String, volume: Double -> GuideEngine.playOnce(sound, volume.toFloat()) }
+    Function("playOnce") { sound: String, volume: Double, maxMs: Double? -> GuideEngine.playOnce(sound, volume.toFloat(), maxMs) }
   }
 }

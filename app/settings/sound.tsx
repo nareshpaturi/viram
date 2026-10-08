@@ -1,12 +1,15 @@
 import { StyleSheet } from 'react-native';
 import { playOnce } from '../../src/audio/guide';
+import { MUSIC_CHOICES, MUSIC_LABEL, MUSIC_PREVIEW_MS, musicSound } from '../../src/audio/music';
 import { TONE_SETS, TONE_SET_LABEL } from '../../src/audio/toneSets';
+import { VOICES, VOICE_IDS, VOICE_PREVIEW_MS, voiceSound } from '../../src/audio/voices';
 import { AppText } from '../../src/components/AppText';
 import { Button } from '../../src/components/Button';
 import { CueControls } from '../../src/components/CueControls';
 import { Screen } from '../../src/components/Screen';
 import { Segmented } from '../../src/components/Segmented';
 import { SwitchRow } from '../../src/components/SwitchRow';
+import { VolumeStepper } from '../../src/components/VolumeStepper';
 import { usePreferences } from '../../src/settings/PreferencesProvider';
 import { colors, spacing } from '../../src/theme';
 
@@ -17,6 +20,34 @@ export default function CuesAndSound() {
   return (
     <Screen edges={['left', 'right']}>
       <CueControls />
+
+      <Section title="VOICE" help="Speaks every cue, count, name, and introduction. Choosing one plays a short sample.">
+        <Segmented
+          label="Voice"
+          wrap
+          value={preferences.voice}
+          onChange={(voice) => {
+            update({ voice });
+            void playOnce(voiceSound(voice, 'intro.sama-vritti'), preferences.cueVolume, VOICE_PREVIEW_MS);
+          }}
+          options={VOICE_IDS.map((value) => ({ value, label: VOICES[value].label, accessibilityLabel: VOICES[value].spoken }))}
+        />
+      </Section>
+
+      <Section title="MUSIC" help="Plays softly under Voice and Tones, in tune with the tones. Silent stays silent, and with Play along it stays quiet while your own music plays.">
+        <Segmented
+          label="Music"
+          value={preferences.music}
+          onChange={(music) => {
+            update({ music });
+            if (music !== 'off') void playOnce(musicSound(music), preferences.musicVolume, MUSIC_PREVIEW_MS);
+          }}
+          options={MUSIC_CHOICES.map((value) => ({ value, label: MUSIC_LABEL[value] }))}
+        />
+        {preferences.music !== 'off' ? (
+          <VolumeStepper label="Music volume" value={preferences.musicVolume} onChange={(musicVolume) => update({ musicVolume })} />
+        ) : null}
+      </Section>
 
       <Section title="TONE SET" help="A different sound for each step.">
         <Segmented
@@ -87,7 +118,7 @@ export default function CuesAndSound() {
         <Button
           title="Hear a sample"
           variant="secondary"
-          onPress={() => void playOnce(preferences.introLength === 'long' ? 'voice.intro-long.sama-vritti' : 'voice.intro.sama-vritti', preferences.cueVolume)}
+          onPress={() => void playOnce(voiceSound(preferences.voice, preferences.introLength === 'long' ? 'intro-long.sama-vritti' : 'intro.sama-vritti'), preferences.cueVolume)}
         />
       </Section>
 

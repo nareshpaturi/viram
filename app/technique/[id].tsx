@@ -3,6 +3,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { playOnce } from '../../src/audio/guide';
 import { PLACEHOLDER_VOICE } from '../../src/audio/manifest.generated';
+import { voiceSound } from '../../src/audio/voices';
 import { describeTarget } from '../../src/breathing/describe';
 import { AppText } from '../../src/components/AppText';
 import { Button, ButtonRow } from '../../src/components/Button';
@@ -71,7 +72,7 @@ export default function TechniqueGuide() {
                   title="▶ Hear it"
                   variant="secondary"
                   accessibilityLabel={`Hear how to say ${technique.name}`}
-                  onPress={() => void playOnce(`voice.${pronunciation.clip}`, preferences.cueVolume)}
+                  onPress={() => void playOnce(voiceSound(preferences.voice, pronunciation.clip), preferences.cueVolume)}
                 />
               ) : null}
               <AppText variant="bodyStrong" style={styles.respelling} accessibilityLabel={`Said ${pronunciation.respelling}`}>

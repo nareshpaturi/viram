@@ -1,7 +1,7 @@
 import { LIBRARY } from '../../content/library';
 import type { CueId } from '../../content/voice';
 import { LEAD_MS, sessionPlan } from '../session';
-import { buildSchedule, type CueSettings } from '../timeline';
+import { buildSchedule, guideCount, type CueSettings } from '../timeline';
 
 const practice = (id: string) => LIBRARY.find((t) => t.id === id)!.practice;
 const clips: Partial<Record<CueId, number>> = {
@@ -128,5 +128,19 @@ describe('counting within steps (FR-19)', () => {
     // “Inhale left” runs 1.3 s, so the count starts at three.
     expect(cues[1]).toMatchObject({ atMs: LEAD_MS + 2000, sound: 'voice.count-3' });
     expect(buildSchedule(inOut(4, 6), 0, counting, withCounts(900)).cues).toHaveLength(3);
+  });
+});
+
+describe('guideCount', () => {
+  const shown = (countingAloud: boolean) => [0, 999, 1000, 2500, 3999].map((ms) => guideCount(4000, ms, countingAloud));
+
+  it('shows the seconds left in the step', () => {
+    expect(shown(false)).toEqual([4, 4, 3, 2, 1]);
+  });
+
+  it('shows the number being spoken while the voice counts, so screen and voice agree', () => {
+    // “Inhale” with 1, then “Two”, “Three”, “Four” on each whole second (countCues).
+    expect(shown(true)).toEqual([1, 1, 2, 3, 4]);
+    expect(guideCount(4000, 4000, true)).toBe(4);
   });
 });

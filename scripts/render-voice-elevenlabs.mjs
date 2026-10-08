@@ -3,7 +3,9 @@
 //
 //   npm run audio:voice-design                      Designs candidate voices from BRIEFS into voice-design/.
 //   npm run audio:voice-design -- --save <id>       Adds a chosen preview to your ElevenLabs voices; prints its voice ID.
-//   ELEVENLABS_VOICE_ID=<id> npm run audio:voice    Renders every clip into assets/voice/ with the lexicon.
+//   ELEVENLABS_VOICE_ID=<id> npm run audio:voice    Renders every clip into assets/voice/viram/ with the lexicon.
+//
+// To offer it in the app, add `viram` (or the folder named by VIRAM_VOICE) to src/audio/voices.ts.
 //
 // Add `-- --missing` to the render to generate only clips that don't exist yet.
 // Masters stay in voice-masters/ and the settings in docs/content/voice-generation.json:
@@ -22,7 +24,7 @@ const VOICE_ID = process.env.ELEVENLABS_VOICE_ID;
 const MODEL = process.env.ELEVENLABS_MODEL ?? 'eleven_multilingual_v2';
 const LEXICON = 'docs/content/viram-lexicon.pls';
 const SETTINGS = 'docs/content/voice-generation.json';
-const OUT = 'assets/voice';
+const OUT = join('assets/voice', process.env.VIRAM_VOICE ?? 'viram');
 const MASTERS = 'voice-masters';
 const DESIGNS = 'voice-design';
 
@@ -91,6 +93,7 @@ async function save(generatedId) {
 async function render() {
   if (!VOICE_ID) throw new Error('Set ELEVENLABS_VOICE_ID (from --save, or any voice in your ElevenLabs library).');
   mkdirSync(MASTERS, { recursive: true });
+  mkdirSync(OUT, { recursive: true });
   const lexicon = readFileSync(LEXICON);
   const form = new FormData();
   form.append('name', 'Viram lexicon');
@@ -99,7 +102,9 @@ async function render() {
   const locator = { pronunciation_dictionary_id: dictionary.id, version_id: dictionary.version_id };
 
   async function speak(id, text, kind) {
-    if (onlyMissing && existsSync(join(OUT, `${id}.wav`))) return;
+    // Introductions are long, so they are stored compressed.
+    const file = join(OUT, `${id}.${kind === 'intro' ? 'm4a' : 'wav'}`);
+    if (onlyMissing && existsSync(file)) return;
     const body = {
       text,
       model_id: MODEL,
@@ -111,7 +116,7 @@ async function render() {
     const res = await post(`/text-to-speech/${VOICE_ID}?output_format=${OUTPUT_FORMAT}`, body);
     const master = join(MASTERS, `${id}.wav`);
     writeFileSync(master, Buffer.from(await res.arrayBuffer()));
-    writeVoiceClip(master, join(OUT, `${id}.wav`));
+    writeVoiceClip(master, file);
     console.log(`${id}`);
   }
 

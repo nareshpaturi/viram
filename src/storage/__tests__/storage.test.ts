@@ -159,6 +159,24 @@ describe('preferences', () => {
     preferences.write({ cueMode: 'loud' as never, cueVolume: 7 });
     expect(preferences.read()).toMatchObject({ cueMode: 'voice', cueVolume: DEFAULT_PREFERENCES.cueVolume });
   });
+
+  it('speaks with the default voice, and keeps a valid voice choice', () => {
+    const { preferences } = freshStores();
+    expect(preferences.read().voice).toBe('af_heart');
+    preferences.write({ voice: 'hm_psi' });
+    expect(preferences.read().voice).toBe('hm_psi');
+    preferences.write({ voice: 'af_nicole' as never });
+    expect(preferences.read().voice).toBe('af_heart');
+  });
+
+  it('plays the tanpura softly by default, and keeps a valid music choice', () => {
+    const { preferences } = freshStores();
+    expect(preferences.read()).toMatchObject({ music: 'tanpura', musicVolume: 0.5 });
+    preferences.write({ music: 'pad', musicVolume: 0.3 });
+    expect(preferences.read()).toMatchObject({ music: 'pad', musicVolume: 0.3 });
+    preferences.write({ music: 'drums' as never, musicVolume: -1 });
+    expect(preferences.read()).toMatchObject({ music: 'tanpura', musicVolume: 0.5 });
+  });
 });
 
 describe('export and import', () => {

@@ -9,10 +9,11 @@ locked. It also has My rhythms, share links for teachers, app-icon quick
 actions, local history with export and import, and a published free-core
 promise. There is no account, no ads, and no analytics.
 
-> **Voice clips are placeholders.** `assets/voice/` holds text-to-speech clips
-> generated on a Mac so the voice path can be built and tested. They are not
-> for release: delivery plan D23 replaces them with the approved Viram voice.
-> “Hear it” on technique guides stays hidden until then.
+> **The voice still needs its listener gate.** `assets/voice/` holds clips
+> generated locally with Kokoro, an open-source voice model
+> (`npm run audio:voice-kokoro`). They stay marked as placeholders until the
+> listener panel approves them (delivery plan D23); “Hear it” on technique
+> guides stays hidden until then.
 
 The product docs live in [`docs/`](docs/README.md). Start with the
 [delivery plan](docs/delivery-plan.md) and its [implementation status](docs/delivery-plan.md#implementation-status--2026-09-27).
@@ -60,9 +61,11 @@ Jest suites. CI runs the same, plus Android and iOS simulator builds
 | Script | What it does |
 |---|---|
 | `npm test` | Unit tests: step engine, session state machine, cue timeline, share-link codec (with fuzzing), storage and migrations, export/import, quick actions, web decoder parity |
-| `npm run audio:manifest` | Measures `assets/tones` and `assets/voice` and regenerates `src/audio/manifest.generated.ts` |
-| `npm run audio:tones` | Renders the Wood and Chimes tone sets (placeholders for the sound-design lane) |
-| `npm run audio:voice-placeholders` | Regenerates the placeholder voice clips with macOS `say` |
+| `npm run audio:manifest` | Measures `assets/tones`, `assets/music`, and `assets/voice` and regenerates `src/audio/manifest.generated.ts` |
+| `npm run audio:tones` | Renders the Soft bells, Wood, and Chimes tone sets, in tune with the music |
+| `npm run audio:music` | Renders the Tanpura and Soft pad music beds (seamless 48 s loops) |
+| `npm run audio:voice-kokoro` | Renders every clip for each voice in `src/audio/voices.ts` locally with Kokoro; setup is at the top of the script |
+| `npm run audio:voice` | Renders one voice with ElevenLabs into `assets/voice/viram/` (needs a paid plan and key) |
 | `npm run site:data` | Regenerates `site/r/library.js` from the technique library |
 | `npm run content:preview` | Renders `docs/content/library-preview.html` |
 | `npm run brand:assets` | Renders the app icon, adaptive icons, favicon, and splash |
@@ -123,7 +126,8 @@ src/
   theme.ts                   brand tokens and text styles
 modules/viram-guide/         native guide: Swift (AVAudioEngine) and Kotlin (AudioTrack + mediaPlayback service)
 site/                        static viram.app: link fallback page, privacy, support, link-verification files
-assets/tones, assets/voice   tone sets and (placeholder) voice clips
+assets/tones, assets/music  tone sets and music beds, all in Sa = C♯
+assets/voice/<voice>         each voice's clips: cues as WAV, introductions as AAC (Kokoro, pending the listener gate)
 ```
 
 ## 4. Architecture notes

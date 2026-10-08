@@ -1,0 +1,47 @@
+{
+  "generatedAt": "2026-10-08T03:38:13.953Z",
+  "generator": "Kokoro-82M v1.0 (kokoro-onnx), scripts/render-voice-kokoro.mjs",
+  "voices": {
+    "af_heart": {
+      "lang": "en-us"
+    },
+    "af_bella": {
+      "lang": "en-us"
+    },
+    "bf_emma": {
+      "lang": "en-gb"
+    },
+    "hf_alpha": {
+      "lang": "en-us"
+    },
+    "hf_beta": {
+      "lang": "en-us"
+    },
+    "hm_psi": {
+      "lang": "en-us"
+    }
+  },
+  "introFormat": "AAC, 64 kbps, mono, 44.1 kHz (.m4a)",
+  "speed": {
+    "cue": 0.9,
+    "count": 1,
+    "name": 0.85,
+    "intro": 0.88
+  },
+  "speedStepWhenOverLimit": 1.08,
+  "introPauseMs": 700,
+  "names": {
+    "Viram": "viːɾˈɑːm",
+    "Sama Vritti": "sˈʌmə vɾˈɪtiː",
+    "Visama Vritti": "vˈɪʃəmə vɾˈɪtiː",
+    "Nadi Shodhana": "nˈɑːdi ʃˈoʊdənə",
+    "Bhramari": "bɾˈɑːməɾi",
+    "Ujjayi": "ʊdʒˈɑːjiː",
+    "Sheetali": "ʃˈiːtəli",
+    "Dirgha": "dˈiːɾɡə",
+    "Udgeeth": "ʊdɡˈiːt",
+    "Chandra Bhedana": "tʃˈʌndɾə bˈeɪdənə",
+    "Om": "ˈoʊm",
+    "pranayama": "pɾɑːnɑːjˈɑːmə"
+  }
+}

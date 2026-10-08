@@ -82,6 +82,16 @@ export function countCues(step: Parameters<typeof stepMs>[0], atMs: number, step
   return cues;
 }
 
+/**
+ * The number inside the guide during a whole-second step: the seconds left,
+ * or, while the voice counts within steps, the count being spoken (1 with
+ * the step cue, then 2, 3, 4), so what is heard and what is shown agree.
+ */
+export function guideCount(durationMs: number, elapsedMs: number, countingAloud: boolean): number {
+  if (countingAloud) return Math.min(Math.ceil(durationMs / 1000), Math.floor(elapsedMs / 1000) + 1);
+  return Math.ceil((durationMs - elapsedMs) / 1000);
+}
+
 export interface SegmentSchedule {
   cues: Cue[];
   /** Segment clock time when the plan ends. */

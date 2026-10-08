@@ -27,8 +27,10 @@ enum GuideError: LocalizedError {
 /// Every cue is scheduled on an AVAudioPlayerNode at an absolute host time,
 /// so guidance keeps its timing with the screen locked and never depends on
 /// JavaScript timers. A looping silent buffer keeps the audio session (and so
-/// the app) alive in the background between cues. Position is host time since
-/// the segment started, the same clock the cues are scheduled on.
+/// the app) alive in the background between cues, and an optional music bed
+/// loops under them. Cues are scheduled on host time since the segment
+/// started; the position JS reads is that clock less the output's latency, so
+/// the screen changes step when the cue is heard.
 final class GuideEngine {
   var emit: ((String, [String: Any]) -> Void)?
 
@@ -50,6 +52,7 @@ final class GuideEngine {
   private var voices = [AVAudioPlayerNode(), AVAudioPlayerNode()]
   private var once = AVAudioPlayerNode()
   private var keepAlive = AVAudioPlayerNode()
+  private var bed = AVAudioPlayerNode()
   private var graphReady = false
   private var buffers: [String: AVAudioPCMBuffer] = [:]
 
@@ -61,6 +64,13 @@ final class GuideEngine {
   private var cues: [GuideCue] = []
   private var nextCue = 0
   private var volume: Float = 1
+  /// How far behind the scheduling clock the sound is heard: about 5–20 ms on
+  /// the speaker, 150–250 ms over Bluetooth. Read under clockLock.
+  private var outputLatencyMs = 0.0
+  /// The looping music bed, and the level it is heading to.
+  private var bedSound: String?
+  private var bedLevel: Float = 0
+  private var bedFade: DispatchSourceTimer?
   /// Bumped whenever scheduled work must be abandoned (pause, stop, restart).
   /// Written on `queue` under clockLock, so the main thread can read it without waiting on `queue`.
   private var generation = 0
@@ -97,13 +107,29 @@ final class GuideEngine {
     return read()
   }
 
-  func positionMs() -> Double {
+  /// The scheduling clock: host time since the segment started, or the frozen position.
+  private func clockMs() -> Double {
     clockLock.lock()
     defer { clockLock.unlock() }
     guard active else { return -1 }
     if let frozenMs { return frozenMs }
     let now = mach_absolute_time()
     return now <= startHost ? 0 : Self.ms(ticks: now - startHost)
+  }
+
+  /// What has been heard so far: the clock less the output's presentation
+  /// latency, as Apple's HelloMetronome sample times its visual beat.
+  /// A paused position is already what was heard.
+  func positionMs() -> Double {
+    let clock = clockMs()
+    return locked { clock > 0 && frozenMs == nil ? max(0, clock - outputLatencyMs) : clock }
+  }
+
+  private func measureOutputLatency() {
+    let latency = engine.outputNode.presentationLatency * 1000
+    clockLock.lock()
+    outputLatencyMs = latency.isFinite ? max(0, latency) : 0
+    clockLock.unlock()
   }
 
   // MARK: Loading
@@ -151,7 +177,9 @@ final class GuideEngine {
 
   // MARK: Segment lifecycle
 
-  func start(cues: [GuideCue], endMs: Double, volume: Float, mixWithOthers: Bool, title: String, subtitle: String) throws {
+  func start(
+    cues: [GuideCue], endMs: Double, volume: Float, mixWithOthers: Bool, title: String, subtitle: String, bed: String?, bedVolume: Float
+  ) throws {
     try queue.sync {
       for cue in cues where cue.sound != nil && buffers[cue.sound!] == nil {
         throw GuideError.unknownSound(cue.sound!)
@@ -160,6 +188,7 @@ final class GuideEngine {
       bumpGeneration()
       finishing = false
       try startEngine()
+      measureOutputLatency()
       self.cues = cues.sorted { $0.atMs < $1.atMs }
       self.nextCue = 0
       self.endMs = endMs
@@ -172,6 +201,9 @@ final class GuideEngine {
       active = true
       clockLock.unlock()
       scheduleWindow()
+      // With Play along, the bed stays quiet while another app's music plays.
+      let othersPlaying = mixWithOthers && AVAudioSession.sharedInstance().isOtherAudioPlaying
+      startBed(othersPlaying ? nil : bed, volume: bedVolume)
       startTimer()
       observeSession()
       enableRemoteCommands()
@@ -193,6 +225,8 @@ final class GuideEngine {
     generation += 1
     clockLock.unlock()
     resetVoices()
+    bedLevel = 0
+    fadeBed(to: 0, seconds: 1.2)
     publishNowPlaying()
     return position
   }
@@ -200,7 +234,7 @@ final class GuideEngine {
   /// Lets already-scheduled audio (the completion cue) play, then releases.
   func finish() {
     queue.sync {
-      let position = positionMs()
+      let position = clockMs()
       guard position >= 0 else { return }
       endMs = min(endMs, position)
       finishing = true
@@ -223,6 +257,11 @@ final class GuideEngine {
     voices.forEach { $0.stop() }
     once.stop()
     keepAlive.stop()
+    bedFade?.cancel()
+    bedFade = nil
+    bed.stop()
+    bedSound = nil
+    bedLevel = 0
     engine.stop()
     observers.forEach(NotificationCenter.default.removeObserver)
     observers = []
@@ -245,10 +284,12 @@ final class GuideEngine {
     }
   }
 
-  /// A single sound outside a practice: “Hear it” and “Hear a sample”.
-  func playOnce(_ sound: String, volume: Float) throws {
+  /// A single sound outside a practice: “Hear it” and “Hear a sample”. With
+  /// `maxMs`, only the start plays, fading in and out: a music bed's preview.
+  func playOnce(_ sound: String, volume: Float, maxMs: Double?) throws {
     try queue.sync {
-      guard let buffer = buffers[sound] else { throw GuideError.unknownSound(sound) }
+      guard let full = buffers[sound] else { throw GuideError.unknownSound(sound) }
+      let buffer = maxMs.flatMap { excerpt(full, ms: $0) } ?? full
       if !active { try activateSession(mixWithOthers: true) }
       try startEngine()
       once.stop()
@@ -265,6 +306,65 @@ final class GuideEngine {
     }
   }
 
+  private func excerpt(_ buffer: AVAudioPCMBuffer, ms: Double) -> AVAudioPCMBuffer? {
+    let frames = Int(min(Double(buffer.frameLength), ms / 1000 * Self.sampleRate))
+    guard frames > 0, frames < Int(buffer.frameLength),
+      let out = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(frames))
+    else { return nil }
+    out.frameLength = AVAudioFrameCount(frames)
+    let fadeIn = Int(Self.sampleRate * 0.3)
+    let fadeOut = min(frames, Int(Self.sampleRate * 1.5))
+    let source = buffer.floatChannelData![0]
+    let target = out.floatChannelData![0]
+    for i in 0..<frames {
+      target[i] = source[i] * min(1, Float(i) / Float(fadeIn), Float(frames - i) / Float(fadeOut))
+    }
+    return out
+  }
+
+  // MARK: Music bed
+
+  /// Loops the bed under the segment and fades it in. The same bed carries on
+  /// across segments (introduction, settle, resume) without restarting.
+  private func startBed(_ sound: String?, volume: Float) {
+    guard let sound, let buffer = buffers[sound] else {
+      bedLevel = 0
+      fadeBed(to: 0, seconds: 1.2)
+      return
+    }
+    if bedSound != sound || !bed.isPlaying {
+      bed.stop()
+      bed.volume = 0
+      bed.scheduleBuffer(buffer, at: nil, options: .loops)
+      bed.play()
+      bedSound = sound
+    }
+    bedLevel = volume
+    fadeBed(to: volume, seconds: 3)
+  }
+
+  /// Ramps the bed's volume in small steps on the guide's queue.
+  private func fadeBed(to target: Float, seconds: Double) {
+    bedFade?.cancel()
+    let start = bed.volume
+    let steps = max(1, Int(seconds / 0.03))
+    var step = 0
+    let fade = DispatchSource.makeTimerSource(queue: queue)
+    fade.schedule(deadline: .now(), repeating: .milliseconds(30))
+    // A newer fade cancels this one first, so bedFade is always this fade here.
+    fade.setEventHandler { [weak self] in
+      guard let self else { return }
+      step += 1
+      self.bed.volume = start + (target - start) * min(1, Float(step) / Float(steps))
+      if step >= steps {
+        self.bedFade?.cancel()
+        self.bedFade = nil
+      }
+    }
+    fade.resume()
+    bedFade = fade
+  }
+
   // MARK: Engine
 
   private func activateSession(mixWithOthers: Bool) throws {
@@ -277,7 +377,7 @@ final class GuideEngine {
 
   private func startEngine() throws {
     if !graphReady {
-      for node in voices + [once, keepAlive] {
+      for node in voices + [once, keepAlive, bed] {
         engine.attach(node)
         engine.connect(node, to: engine.mainMixerNode, format: format)
       }
@@ -286,6 +386,8 @@ final class GuideEngine {
     if !engine.isRunning {
       engine.prepare()
       try engine.start()
+      // A stopped engine (an interruption, a route change) drops the bed's loop.
+      bed.stop()
     }
     if !keepAlive.isPlaying {
       let frames = AVAudioFrameCount(Self.sampleRate / 10)
@@ -306,6 +408,8 @@ final class GuideEngine {
     voices = [AVAudioPlayerNode(), AVAudioPlayerNode()]
     once = AVAudioPlayerNode()
     keepAlive = AVAudioPlayerNode()
+    bed = AVAudioPlayerNode()
+    bedSound = nil
     graphReady = false
   }
 
@@ -319,12 +423,12 @@ final class GuideEngine {
   // MARK: Scheduling
 
   private var isRunningSegment: Bool {
-    positionMs() >= 0 && frozenMs == nil
+    clockMs() >= 0 && frozenMs == nil
   }
 
   private func scheduleWindow() {
     guard isRunningSegment else { return }
-    let now = positionMs()
+    let now = clockMs()
     while nextCue < cues.count, cues[nextCue].atMs < now + Self.window {
       let cue = cues[nextCue]
       let host = startHost + Self.ticks(ms: cue.atMs)
@@ -395,7 +499,12 @@ final class GuideEngine {
 
   private func tick() {
     scheduleWindow()
-    if isRunningSegment, positionMs() >= endMs + Self.releaseAfterEndMs {
+    // The bed fades out under the completion cue.
+    if isRunningSegment, bedLevel > 0, clockMs() >= endMs {
+      bedLevel = 0
+      fadeBed(to: 0, seconds: 2.5)
+    }
+    if isRunningSegment, clockMs() >= endMs + Self.releaseAfterEndMs {
       stopOnQueue()
       emit?("onSegmentEnded", [:])
     }
@@ -456,22 +565,26 @@ final class GuideEngine {
   }
 
   /// The output changed (for example headphones connected). Restart and
-  /// re-schedule the cues that haven't played yet on the same clock.
+  /// re-schedule the cues that haven't played yet on the same clock, with the
+  /// new output's latency.
   private func handleConfigurationChange() {
     guard isRunningSegment else { return }
     bumpGeneration()
     // Drop anything still queued so re-scheduling can't play a cue twice.
     voices.forEach { $0.stop() }
     keepAlive.stop()
+    bed.stop()
     do {
       try startEngine()
     } catch {
       interrupt("audio")
       return
     }
-    let now = positionMs()
+    measureOutputLatency()
+    let now = clockMs()
     nextCue = cues.firstIndex { $0.atMs >= now } ?? cues.count
     scheduleWindow()
+    if let sound = bedSound, bedLevel > 0 { startBed(sound, volume: bedLevel) }
   }
 
   // MARK: Lock screen
