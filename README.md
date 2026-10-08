@@ -64,6 +64,7 @@ Jest suites. CI runs the same, plus Android and iOS simulator builds
 | `npm run audio:manifest` | Measures `assets/tones`, `assets/music`, and `assets/voice` and regenerates `src/audio/manifest.generated.ts` |
 | `npm run audio:tones` | Renders the Soft bells, Wood, and Chimes tone sets, in tune with the music |
 | `npm run audio:music` | Renders the Tanpura and Soft pad music beds (seamless 48 s loops) |
+| `npm run audio:samples` | Builds first use's Voice and Bells samples from the bundled clips; run it after the voices or tones change |
 | `npm run audio:voice-kokoro` | Renders every clip for each voice in `src/audio/voices.ts` locally with Kokoro; setup is at the top of the script |
 | `npm run audio:voice` | Renders one voice with ElevenLabs into `assets/voice/viram/` (needs a paid plan and key) |
 | `npm run site:data` | Regenerates `site/r/library.js` from the technique library |

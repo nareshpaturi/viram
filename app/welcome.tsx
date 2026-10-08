@@ -1,10 +1,15 @@
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import { router, useLocalSearchParams, type Href } from 'expo-router';
+import { stopPreview } from '../src/audio/guide';
+import { usePreview } from '../src/audio/usePreview';
+import { voiceSound } from '../src/audio/voices';
 import { AppText } from '../src/components/AppText';
 import { BrandMark } from '../src/components/BrandMark';
 import { Button } from '../src/components/Button';
 import { Card } from '../src/components/Card';
+import { PlayButton } from '../src/components/PlayButton';
 import { Screen } from '../src/components/Screen';
+import { Segmented } from '../src/components/Segmented';
 import { WelcomeAura } from '../src/components/WelcomeAura';
 import { COMFORT_LINE, WELLNESS_LINE } from '../src/content/safety';
 import { LightProvider, useEverydayWash } from '../src/light/light';
@@ -18,6 +23,13 @@ const AURA = 270;
 /** At large text sizes it shrinks and moves below the brand row. */
 const AURA_LARGE = 180;
 
+/** First use's one choice: a voice or a bell at each step. Bells is the Tones mode, with the default Soft bells. */
+const GUIDES = [
+  { value: 'voice', label: 'Voice', accessibilityLabel: 'Voice, spoken cues' },
+  { value: 'tones', label: 'Bells', accessibilityLabel: 'Bells, a soft bell for each step' },
+] as const;
+const PREVIEW = 'welcome';
+
 /** Only a quick action or a shared link may continue past first use. */
 function safeNext(next: string | undefined): Href {
   if (next && (next.startsWith('/practice?') || next.startsWith('/r/'))) return next as Href;
@@ -25,10 +37,11 @@ function safeNext(next: string | undefined): Href {
 }
 
 /**
- * First use (FR-13): one screen with the comfort guidance and wellness
- * disclaimer. No permission prompt, cue setup, or account. Soft Light: the
- * hour's wash with the breath aura at the top; at large text sizes the
- * aura shrinks and everything scrolls.
+ * First use (FR-13): one screen with the comfort guidance, the wellness
+ * disclaimer, and one choice, Voice or Bells, with a play button that
+ * previews the current choice. Voice is chosen until changed. No permission
+ * prompt or account. Soft Light: the hour's wash with the breath aura at the
+ * top; at large text sizes the aura shrinks and everything scrolls.
  */
 export default function Welcome() {
   const wash = useEverydayWash();
@@ -40,7 +53,8 @@ export default function Welcome() {
 }
 
 function WelcomeScreen({ wash }: { wash: ReturnType<typeof useEverydayWash> }) {
-  const { update } = usePreferences();
+  const { preferences, update } = usePreferences();
+  const { playing, toggle } = usePreview();
   const { next } = useLocalSearchParams<{ next?: string }>();
   const { fontScale } = useWindowDimensions();
   const large = fontScale > 1.3;
@@ -50,14 +64,33 @@ function WelcomeScreen({ wash }: { wash: ReturnType<typeof useEverydayWash> }) {
     router.replace(safeNext(next));
   };
 
+  // The play button previews the current choice; choosing never plays (UX10) and stops a sample that is playing.
+  const bells = preferences.cueMode === 'tones';
+  const sample = bells ? `tone.${preferences.toneSet}.sample` : voiceSound(preferences.voice, 'sample');
+
   return (
     <Screen
       background={<Wash wash={WASHES[wash]} />}
       footer={
         <>
-          <AppText variant="label" style={styles.cueNote}>
-            Voice guidance and haptics are on. Change them anytime.
-          </AppText>
+          <View style={styles.guidance}>
+            <View style={styles.segments}>
+              <Segmented
+                label="Guidance: voice or bells"
+                value={preferences.cueMode === 'silent' ? null : preferences.cueMode}
+                onChange={(cueMode) => {
+                  stopPreview();
+                  update({ cueMode });
+                }}
+                options={GUIDES}
+              />
+            </View>
+            <PlayButton
+              label={bells ? 'the bells' : 'the voice'}
+              playing={playing === PREVIEW}
+              onPress={() => toggle(PREVIEW, sample, preferences.cueVolume)}
+            />
+          </View>
           <Button title="Continue" onPress={onContinue} />
         </>
       }
@@ -97,5 +130,7 @@ const styles = StyleSheet.create({
   hero: { fontSize: 40, lineHeight: 46, letterSpacing: -0.6 },
   lead: { marginTop: 14, fontSize: 17, lineHeight: 25, color: colors.inkSoftOnWash },
   card: { marginTop: 22, padding: 18 },
-  cueNote: { textAlign: 'center', color: colors.inkSoftOnWash, marginBottom: 6 },
+  // 12 above Continue: the footer's 8 plus 4.
+  guidance: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: 4 },
+  segments: { flex: 1 },
 });
