@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
-import { AccessibilityInfo, AppState, Pressable, StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, AppState, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import Svg, { Path, Rect } from 'react-native-svg';
@@ -74,6 +74,13 @@ function VisualGuideChooser() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.practice]);
   const total = cycleMs(practice.steps);
+  // At large text the cards stack, and the note scrolls with them so Use keeps its room.
+  const large = useWindowDimensions().fontScale > 1.3;
+  const footnote = (
+    <AppText variant="label" style={styles.footnote}>
+      Remembered for every practice. You can switch while paused.
+    </AppText>
+  );
 
   // One preview at a time, on its own clock; it stops after one cycle.
   const [preview, dispatch] = useReducer(previewReducer, null);
@@ -122,9 +129,7 @@ function VisualGuideChooser() {
       background={<Wash wash={WASHES[wash]} />}
       footer={
         <>
-          <AppText variant="label" style={styles.footnote}>
-            Remembered for every practice. You can switch while paused.
-          </AppText>
+          {large ? null : footnote}
           {saveFailed ? (
             <AppText variant="label" style={styles.error} accessibilityLiveRegion="polite">
               Couldn’t save your choice. Try again.
@@ -164,9 +169,11 @@ function VisualGuideChooser() {
             onPreview={() => togglePreview(guide)}
             practice={practice}
             reducedMotion={reducedMotion}
+            stacked={large}
           />
         ))}
       </View>
+      {large ? footnote : null}
     </Screen>
   );
 }
@@ -180,18 +187,21 @@ interface CardProps {
   onPreview: () => void;
   practice: PreviewPractice;
   reducedMotion: boolean;
+  /** Large text: the picture and indicator above the words, which take the full width. */
+  stacked: boolean;
 }
 
 /**
  * One style: the picture, name, and description are one radio choice; the
  * Preview button beside them is its own control, never nested.
  */
-function GuideCard({ guide, selected, onSelect, frame, onPreview, practice, reducedMotion }: CardProps) {
+function GuideCard({ guide, selected, onSelect, frame, onPreview, practice, reducedMotion, stacked }: CardProps) {
   const glass = useGlass();
   const name = VISUAL_GUIDE_NAME[guide];
   const note = guide === 'illustrated' ? keepsCircleNote(practice.name, practice.steps) : null;
   const playing = frame !== null;
   const seconds = Math.round(cycleMs(practice.steps) / 1000);
+  const ring = <View style={[styles.ring, { borderColor: selected ? colors.pine : colors.inkFaint }]}>{selected ? <View style={styles.dot} /> : null}</View>;
   return (
     <View
       style={[
@@ -206,10 +216,17 @@ function GuideCard({ guide, selected, onSelect, frame, onPreview, practice, redu
         accessibilityRole="radio"
         accessibilityState={{ checked: selected, selected }}
         accessibilityLabel={[`${name}. ${VISUAL_GUIDE_DESCRIPTION[guide]}`, note].filter(Boolean).join(' ')}
-        style={({ pressed }) => [styles.choice, pressed && styles.pressed]}
+        style={({ pressed }) => [styles.choice, stacked && styles.stacked, pressed && styles.pressed]}
       >
-        <GuideThumbnail guide={guide} />
-        <View style={styles.words}>
+        {stacked ? (
+          <View style={styles.stackedTop}>
+            <GuideThumbnail guide={guide} />
+            {ring}
+          </View>
+        ) : (
+          <GuideThumbnail guide={guide} />
+        )}
+        <View style={[styles.words, stacked && styles.stackedWords]}>
           <AppText variant="bodyStrong" style={styles.name}>
             {name}
           </AppText>
@@ -220,9 +237,9 @@ function GuideCard({ guide, selected, onSelect, frame, onPreview, practice, redu
             </AppText>
           ) : null}
         </View>
-        <View style={[styles.ring, { borderColor: selected ? colors.pine : colors.inkFaint }]}>{selected ? <View style={styles.dot} /> : null}</View>
+        {stacked ? null : ring}
       </Pressable>
-      <View style={styles.footer}>
+      <View style={[styles.footer, stacked && styles.stackedFooter]}>
         <Pressable
           onPress={onPreview}
           accessibilityRole="button"
@@ -257,6 +274,9 @@ const styles = StyleSheet.create({
   card: { borderRadius: 20, borderWidth: 1.5, overflow: 'hidden', boxShadow: '0px 8px 24px rgba(18, 55, 47, 0.07)' },
   choice: { minHeight: 112, flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 14, paddingHorizontal: spacing.md },
   words: { flex: 1, gap: 2 },
+  stacked: { flexDirection: 'column', alignItems: 'stretch' },
+  stackedTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  stackedWords: { flex: 0 },
   name: { fontSize: 17, lineHeight: 23 },
   note: { color: colors.pine },
   ring: { alignSelf: 'flex-start', width: 22, height: 22, borderRadius: 11, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
@@ -264,7 +284,9 @@ const styles = StyleSheet.create({
   footer: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', columnGap: spacing.sm, paddingLeft: spacing.sm, paddingRight: spacing.md, borderTopWidth: 1, borderTopColor: 'rgba(18, 55, 47, 0.08)' },
   preview: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.sm },
   previewText: { color: colors.pine, fontSize: 15 },
-  meta: { fontVariant: ['tabular-nums'] },
+  // Lines up under the Preview icon when it wraps at large text.
+  meta: { fontVariant: ['tabular-nums'], paddingLeft: spacing.sm },
+  stackedFooter: { paddingBottom: spacing.ms },
   footnote: { textAlign: 'center', color: colors.inkSoft },
   error: { textAlign: 'center', color: colors.danger },
   pressed: { opacity: 0.8 },
