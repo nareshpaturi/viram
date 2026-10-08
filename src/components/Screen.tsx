@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View, type ScrollViewProps } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets, type Edge } from 'react-native-safe-area-context';
 import { useWash } from '../light/light';
 import { NIGHT, useSurface } from '../night/surface';
@@ -13,13 +13,15 @@ interface Props {
   edges?: Edge[];
   /** Drawn full-bleed behind everything, e.g. a Soft Light wash. */
   background?: ReactNode;
+  /** Scroll position, for headers that change as the page scrolls. */
+  onScroll?: ScrollViewProps['onScroll'];
 }
 
 /**
  * Paper, or a Soft Light wash, with a 24 px inset; scrollable so nothing
  * clips at 200% text. On a wash the pinned actions float in the light.
  */
-export function Screen({ children, footer, edges = ['top', 'left', 'right'], background }: Props) {
+export function Screen({ children, footer, edges = ['top', 'left', 'right'], background, onScroll }: Props) {
   const { night } = useSurface();
   const lit = (useWash() !== null || background !== undefined) && !night;
   // In the light the pinned actions float; above a home indicator they sit
@@ -28,7 +30,7 @@ export function Screen({ children, footer, edges = ['top', 'left', 'right'], bac
   return (
     <SafeAreaView style={[styles.safe, night && styles.night, lit && styles.lit]} edges={footer ? [...edges, 'bottom'] : edges}>
       {background}
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" onScroll={onScroll} scrollEventThrottle={onScroll ? 16 : undefined}>
         {children}
       </ScrollView>
       {footer ? (

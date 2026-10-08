@@ -16,22 +16,27 @@ const PLATE_HALO = [
 /** Space for the floating back button above the title. */
 export const PLATE_TOP = 66;
 
+/** The orb's size, and how far it bleeds off the right edge (UX08). */
+const ORB = 140;
+const BLEED = 12;
+
 /**
  * The technique guide's header in Soft Light: day light, the practice's
  * rhythm orb bleeding off the right edge, and a soft curved edge into
- * paper. The text column keeps clear of the orb and grows at large text.
+ * paper. 270 tall on a 47 pt status bar; the text column keeps clear of the
+ * orb and grows at large text.
  */
 export function TechniquePlate({ steps, children }: { steps: readonly RhythmStep[]; children: ReactNode }) {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   return (
-    <View style={[styles.plate, { paddingTop: insets.top + PLATE_TOP }]}>
+    <View style={[styles.plate, { paddingTop: insets.top + PLATE_TOP, minHeight: insets.top + 223 }]}>
       <Wash wash={PLATE} />
-      <View style={[styles.orb, { top: insets.top + 40 }]} pointerEvents="none">
-        <Halo stops={PLATE_HALO} size={300} style={styles.halo} />
-        <RhythmOrb steps={steps} size={236} />
+      <View style={[styles.orb, { top: insets.top + 23 }]} pointerEvents="none">
+        <Halo stops={PLATE_HALO} size={ORB + 40} style={styles.halo} />
+        <RhythmOrb steps={steps} size={ORB} />
       </View>
-      <View style={styles.text}>{children}</View>
+      <View style={[styles.text, { width: width - spacing.lg - (ORB - BLEED) - 2 }]}>{children}</View>
       <Svg width={width} height={40} viewBox="0 0 390 40" preserveAspectRatio="none" style={styles.edge} pointerEvents="none">
         <Path d="M0 22C70 6 140 0 205 10s125 26 185 8V40H0z" fill={colors.paper} />
       </Svg>
@@ -47,11 +52,10 @@ const styles = StyleSheet.create({
     marginBottom: -spacing.sm,
     paddingHorizontal: spacing.lg,
     paddingBottom: 48,
-    minHeight: 340,
     overflow: 'hidden',
   },
-  orb: { position: 'absolute', right: -74, width: 236, height: 236 },
-  halo: { position: 'absolute', left: -32, top: -32 },
-  text: { width: '62%', gap: 4 },
+  orb: { position: 'absolute', right: -BLEED, width: ORB, height: ORB },
+  halo: { position: 'absolute', left: -20, top: -20 },
+  text: { gap: 4 },
   edge: { position: 'absolute', left: 0, bottom: -1 },
 });

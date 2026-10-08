@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
-import { ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
-import { describeRhythm, describeTarget } from '../../src/breathing/describe';
+import { describeTarget } from '../../src/breathing/describe';
 import { practiceFromRhythm, rhythmSubtitle } from '../../src/rhythms/describe';
 import { routineChain, routineSummary } from '../../src/routines/describe';
 import { resolveSegment, routineRun, type Routine } from '../../src/routines/repository';
@@ -22,17 +22,24 @@ import { useGlass, useWash } from '../../src/light/light';
 import { Wash } from '../../src/light/Wash';
 import { WASHES } from '../../src/light/washes';
 import { usePreferences } from '../../src/settings/PreferencesProvider';
+import type { PracticesSection } from '../../src/settings/preferences';
 import { stores } from '../../src/storage';
-import { colors, radius, spacing, textStyles, touchTarget } from '../../src/theme';
+import { colors, fonts, radius, spacing, textStyles, touchTarget } from '../../src/theme';
 
 const FAMILIES: { family: Technique['family']; title: string }[] = [
   { family: 'classical', title: 'Classical pranayama' },
   { family: 'modern', title: 'Modern patterns' },
 ];
 
-/** Practices (FR-08, FR-14, FR-20): programs and routines first, the library in two groups, then My rhythms. */
+/**
+ * Practices (FR-08, FR-14, FR-20; UX02): search over everything, then one
+ * section at a time: Techniques (the library in two groups), Programs, or
+ * Saved (My rhythms and Routines). The last section stays open.
+ */
 export default function Practices() {
-  const { update } = usePreferences();
+  const { preferences, update } = usePreferences();
+  const section = preferences.practicesSection;
+  const { fontScale } = useWindowDimensions();
   const [rhythms, setRhythms] = useState<SavedRhythm[]>([]);
   const [routines, setRoutines] = useState<Routine[]>([]);
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
@@ -65,128 +72,181 @@ export default function Practices() {
       <AppText variant="title" accessibilityRole="header">
         Practices
       </AppText>
-      <AppText style={styles.muted}>Traditional techniques, explained simply. Each shows how to practice, when to take care, and its sources.</AppText>
       <View style={[styles.search, { backgroundColor: glass.fill, borderColor: glass.outline }]}>
         <Icon name="search" color={colors.inkSoftOnWash} size={18} strokeWidth={1.8} />
         <TextInput
           value={query}
           onChangeText={setQuery}
-          placeholder="Search, e.g. Anulom Vilom"
+          placeholder="Search by name, like Anulom Vilom"
           placeholderTextColor={colors.inkSoftOnWash}
           accessibilityLabel="Search practices"
           autoCorrect={false}
           clearButtonMode="while-editing"
           returnKeyType="search"
-          style={styles.searchInput}
+          // Scaled like AppText, up to 200%: maxFontSizeMultiplier measures
+          // the field at the uncapped size and pushes its text off center.
+          allowFontScaling={false}
+          style={[styles.searchInput, { fontSize: textStyles.body.fontSize * Math.min(fontScale, 2) }]}
         />
       </View>
       {searching ? (
         <SearchResults query={query} rhythms={rhythms} routines={routines} onRhythm={makeReady} />
       ) : (
         <>
-          <AppText variant="overline" accessibilityRole="header">
-            PROGRAMS
-          </AppText>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.programs} contentContainerStyle={styles.programRow}>
-            {PROGRAMS.map((program) => {
-              const enrolled = enrollments.find((e) => e.programId === program.id);
-              const total = program.sessions.length;
-              return (
-                <ProgramCard
-                  key={program.id}
-                  programId={program.id}
-                  eyebrow={progress(program.id) ?? program.eyebrow}
-                  name={program.name}
-                  summary={program.summary}
-                  minutes={programTotals(program).minutes}
-                  sessions={total <= 10 ? { total, done: enrolled?.completedSessions ?? 0 } : null}
-                  onPress={() => router.push({ pathname: '/program/[id]', params: { id: program.id } })}
-                />
-              );
-            })}
-          </ScrollView>
-          <RowGroup title="Routines">
-            {routines.map((routine) => {
-              const resolved = routineRun(routine, stores().rhythms);
-              const names = routine.segments.map(
-                (s) =>
-                  resolveSegment(s, stores().rhythms) ?? {
-                    name: 'A deleted rhythm',
-                  },
-              );
-              return (
-                <ListRow
-                  key={routine.id}
-                  leading={<RhythmOrb steps={names.flatMap((p) => ('steps' in p ? p.steps : []))} size={44} />}
-                  title={routine.name}
-                  subtitle={routineChain(names)}
-                  trailing={'run' in resolved ? routineSummary(resolved.run.parts).split(' · ')[1] : 'Needs a change'}
-                  onPress={() =>
-                    router.push({
-                      pathname: '/routine/[id]',
-                      params: { id: routine.id },
-                    })
-                  }
-                />
-              );
-            })}
-            <ListRow leading={<PlusMark />} title="Build a routine" subtitle="Chain 2–6 practices" onPress={() => router.push('/routine/edit')} />
-          </RowGroup>
-          {FAMILIES.map(({ family, title }) => (
-            <RowGroup key={family} title={title}>
-              {LIBRARY.filter((t) => t.family === family).map((technique) => (
-                <ListRow
-                  key={technique.id}
-                  leading={<RhythmOrb steps={technique.practice.steps} size={44} />}
-                  title={technique.name}
-                  subtitle={technique.aliases?.length ? `${technique.subtitle} · also ${technique.aliases.join(', ')}` : technique.subtitle}
-                  detail={describeRhythm(technique.practice.steps)}
-                  trailing={describeTarget(technique.practice.target)}
-                  accessibilityHint={technique.pronunciation ? `Said ${technique.pronunciation.respelling}. Opens the guide.` : 'Opens the guide.'}
-                  onPress={() =>
-                    router.push({
-                      pathname: '/technique/[id]',
-                      params: { id: technique.id },
-                    })
-                  }
-                />
-              ))}
-            </RowGroup>
-          ))}
-          <RowGroup title="My rhythms">
-            {rhythms.length === 0 ? (
-              <ListRow title="Your breath. Your rhythm." subtitle="Save a rhythm from Adjust rhythm, or open a shared link, and it appears here." />
-            ) : (
-              rhythms
-                .slice(0, 3)
-                .map((rhythm) => (
-                  <ListRow
-                    key={rhythm.id}
-                    leading={<RhythmOrb steps={rhythm.steps} size={44} />}
-                    title={rhythm.name}
-                    subtitle={rhythmSubtitle(rhythm)}
-                    accessibilityHint="Makes this the ready practice on Breathe"
-                    onPress={() => makeReady(rhythm)}
+          <SectionTabs value={section} onChange={(practicesSection) => update({ practicesSection })} />
+          {section === 'techniques'
+            ? FAMILIES.map(({ family, title }) => (
+                <RowGroup key={family} title={title} tone="white">
+                  {LIBRARY.filter((t) => t.family === family).map((technique) => (
+                    <TechniqueRow key={technique.id} technique={technique} />
+                  ))}
+                </RowGroup>
+              ))
+            : null}
+          {section === 'programs' ? (
+            <View style={styles.programs}>
+              {PROGRAMS.map((program) => {
+                const enrolled = enrollments.find((e) => e.programId === program.id);
+                const total = program.sessions.length;
+                return (
+                  <ProgramCard
+                    key={program.id}
+                    fullWidth
+                    programId={program.id}
+                    eyebrow={progress(program.id) ?? program.eyebrow}
+                    name={program.name}
+                    summary={program.summary}
+                    minutes={programTotals(program).minutes}
+                    sessions={total <= 10 ? { total, done: enrolled?.completedSessions ?? 0 } : null}
+                    onPress={() => router.push({ pathname: '/program/[id]', params: { id: program.id } })}
                   />
-                ))
-            )}
-            <ListRow
-              leading={<PlusMark />}
-              title="Build a custom rhythm"
-              subtitle="Four steps, in whole seconds"
-              onPress={() => router.push({ pathname: '/adjust', params: { custom: '1' } })}
-            />
-            {rhythms.length > 0 ? (
-              <ListRow
-                title={`All my rhythms (${rhythms.length})`}
-                subtitle={`${rhythms.length} of ${MAX_RHYTHMS} saved. Rename, share, or delete.`}
-                onPress={() => router.push('/rhythms')}
-              />
-            ) : null}
-          </RowGroup>
+                );
+              })}
+            </View>
+          ) : null}
+          {section === 'saved' ? (
+            <>
+              <RowGroup title="My rhythms" tone="white">
+                {rhythms.length === 0 ? (
+                  <ListRow title="Your breath. Your rhythm." subtitle="Save a rhythm from Adjust rhythm, or open a shared link, and it appears here." />
+                ) : (
+                  rhythms
+                    .slice(0, 3)
+                    .map((rhythm) => (
+                      <ListRow
+                        key={rhythm.id}
+                        leading={<RhythmOrb steps={rhythm.steps} size={40} />}
+                        title={rhythm.name}
+                        subtitle={rhythmSubtitle(rhythm)}
+                        accessibilityHint="Makes this the ready practice on Breathe"
+                        onPress={() => makeReady(rhythm)}
+                      />
+                    ))
+                )}
+                <ListRow
+                  leading={<PlusMark />}
+                  title="Build a custom rhythm"
+                  subtitle="Four steps, in whole seconds"
+                  onPress={() => router.push({ pathname: '/adjust', params: { custom: '1' } })}
+                />
+                {rhythms.length > 0 ? (
+                  <ListRow
+                    title={`All my rhythms (${rhythms.length})`}
+                    subtitle={`${rhythms.length} of ${MAX_RHYTHMS} saved. Rename, share, or delete.`}
+                    onPress={() => router.push('/rhythms')}
+                  />
+                ) : null}
+              </RowGroup>
+              <RowGroup title="Routines" tone="white">
+                {routines.map((routine) => {
+                  const resolved = routineRun(routine, stores().rhythms);
+                  const names = routine.segments.map(
+                    (s) =>
+                      resolveSegment(s, stores().rhythms) ?? {
+                        name: 'A deleted rhythm',
+                      },
+                  );
+                  return (
+                    <ListRow
+                      key={routine.id}
+                      leading={<RhythmOrb steps={names.flatMap((p) => ('steps' in p ? p.steps : []))} size={40} />}
+                      title={routine.name}
+                      subtitle={routineChain(names)}
+                      trailing={'run' in resolved ? routineSummary(resolved.run.parts).split(' · ')[1] : 'Needs a change'}
+                      onPress={() =>
+                        router.push({
+                          pathname: '/routine/[id]',
+                          params: { id: routine.id },
+                        })
+                      }
+                    />
+                  );
+                })}
+                <ListRow leading={<PlusMark />} title="Build a routine" subtitle="Chain 2–6 practices" onPress={() => router.push('/routine/edit')} />
+              </RowGroup>
+            </>
+          ) : null}
         </>
       )}
     </Screen>
+  );
+}
+
+const SECTIONS: { value: PracticesSection; label: string }[] = [
+  { value: 'techniques', label: 'Techniques' },
+  { value: 'programs', label: 'Programs' },
+  { value: 'saved', label: 'Saved' },
+];
+
+/** Techniques, Programs, or Saved: pill segments announced as tabs. */
+function SectionTabs({ value, onChange }: { value: PracticesSection; onChange: (section: PracticesSection) => void }) {
+  const glass = useGlass();
+  // Equal thirds, until large text needs the room: then each tab takes its
+  // label's width and they wrap.
+  const wrap = useWindowDimensions().fontScale > 1.3;
+  return (
+    <View accessibilityRole="tablist" accessibilityLabel="Practice sections" style={styles.tabs}>
+      {SECTIONS.map((section) => {
+        const selected = section.value === value;
+        return (
+          <Pressable
+            key={section.value}
+            onPress={() => onChange(section.value)}
+            accessibilityRole="tab"
+            accessibilityState={{ selected }}
+            style={({ pressed }) => [
+              styles.tab,
+              wrap ? styles.tabWrapped : styles.tabThird,
+              selected ? styles.tabSelected : { backgroundColor: glass.fill, borderColor: glass.outline },
+              pressed && styles.pressed,
+            ]}
+          >
+            <AppText variant="control" style={[styles.tabText, selected && styles.tabTextSelected]}>
+              {section.label}
+            </AppText>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+/** A library row: orb, name, English name, and how long it runs. Other names stay searchable. */
+function TechniqueRow({ technique, alias }: { technique: Technique; alias?: string | null }) {
+  return (
+    <ListRow
+      leading={<RhythmOrb steps={technique.practice.steps} size={40} />}
+      title={technique.name}
+      subtitle={alias ? `${technique.subtitle} · also ${alias}` : technique.subtitle}
+      trailing={describeTarget(technique.practice.target)}
+      accessibilityHint={technique.pronunciation ? `Said ${technique.pronunciation.respelling}. Opens the guide.` : 'Opens the guide.'}
+      onPress={() =>
+        router.push({
+          pathname: '/technique/[id]',
+          params: { id: technique.id },
+        })
+      }
+    />
   );
 }
 
@@ -206,23 +266,10 @@ function SearchResults({
   const myRoutines = routines.filter((r) => matches(query, [r.name]));
   const count = techniques.length + myRhythms.length + myRoutines.length;
   return (
-    <RowGroup title={count ? `${count} ${count === 1 ? 'result' : 'results'}` : 'No results'}>
+    <RowGroup title={count ? `${count} ${count === 1 ? 'result' : 'results'}` : 'No results'} tone="white">
       {count === 0 ? <ListRow title="Nothing matches that yet." subtitle="Try an English name, like “humming” or “box”." /> : null}
       {techniques.map((technique) => (
-        <ListRow
-          key={technique.id}
-          leading={<RhythmOrb steps={technique.practice.steps} size={44} />}
-          title={technique.name}
-          subtitle={technique.aliases?.length ? `${technique.subtitle} · also ${technique.aliases.join(', ')}` : technique.subtitle}
-          detail={describeRhythm(technique.practice.steps)}
-          trailing={describeTarget(technique.practice.target)}
-          onPress={() =>
-            router.push({
-              pathname: '/technique/[id]',
-              params: { id: technique.id },
-            })
-          }
-        />
+        <TechniqueRow key={technique.id} technique={technique} alias={matchedAlias(technique, query)} />
       ))}
       {myRoutines.map((routine) => (
         <ListRow
@@ -244,6 +291,12 @@ function SearchResults({
   );
 }
 
+/** The other name a search found, when the name itself didn't match: “also Anulom Vilom”. */
+function matchedAlias(technique: Technique, query: string): string | null {
+  if (matches(query, [technique.name, technique.subtitle])) return null;
+  return technique.aliases?.find((alias) => matches(query, [alias])) ?? null;
+}
+
 /** The leading mark for “Build …” rows: a plus in a mist circle. */
 function PlusMark() {
   return (
@@ -254,9 +307,8 @@ function PlusMark() {
 }
 
 const styles = StyleSheet.create({
-  muted: { color: colors.inkSoft },
   search: {
-    minHeight: touchTarget,
+    minHeight: 48,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
@@ -264,9 +316,15 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     paddingHorizontal: 18,
   },
-  searchInput: { ...textStyles.body, flex: 1, minWidth: 0, paddingVertical: spacing.ms },
-  // Cards run edge to edge, past the screen's 24 px inset.
-  programs: { marginHorizontal: -spacing.lg, overflow: 'visible' },
-  programRow: { gap: spacing.ms, paddingHorizontal: spacing.lg, paddingBottom: spacing.sm },
-  plus: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
+  searchInput: { fontFamily: fonts.sansRegular, color: colors.ink, flex: 1, minWidth: 0, paddingVertical: spacing.ms },
+  tabs: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: -2, marginBottom: spacing.sm },
+  tabThird: { flex: 1 },
+  tabWrapped: { flexGrow: 1, flexBasis: 'auto', paddingHorizontal: spacing.md },
+  tab: { minHeight: touchTarget, borderRadius: radius.pill, borderWidth: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.sm },
+  tabSelected: { backgroundColor: colors.pine, borderColor: colors.pine },
+  tabText: { fontSize: 15 },
+  tabTextSelected: { color: colors.surface },
+  pressed: { opacity: 0.85 },
+  programs: { gap: spacing.ms },
+  plus: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
 });

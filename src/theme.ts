@@ -124,8 +124,8 @@ export const textStyles = {
   bodyStrong: { fontFamily: fonts.sansSemibold, fontSize: 16, lineHeight: 24, color: colors.ink },
   /** Controls: 16/20, weight 600. */
   control: { fontFamily: fonts.sansSemibold, fontSize: 16, lineHeight: 20, color: colors.ink },
-  /** Supporting labels: 13/18. */
-  label: { fontFamily: fonts.sansMedium, fontSize: 13, lineHeight: 18, color: colors.inkSoft },
+  /** Supporting labels: 14/20 (UX11; overlines stay 13/18). */
+  label: { fontFamily: fonts.sansMedium, fontSize: 14, lineHeight: 20, color: colors.inkSoft },
   overline: { fontFamily: fonts.sansSemibold, fontSize: 13, lineHeight: 18, letterSpacing: 0.8, color: colors.inkSoft },
   /** Countdown: 64/72, weight 500, tabular numerals. */
   countdown: { fontFamily: fonts.sansMedium, fontSize: 64, lineHeight: 72, fontVariant: ['tabular-nums'], color: colors.pine },

@@ -1,38 +1,23 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AccessibilityInfo, StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { describePace, describePlan, describeRhythm, describeTarget, formatClock, guidedPace } from '../src/breathing/describe';
-import { formatPace, planFor } from '../src/breathing/rhythm';
+import { describeRhythm, describeTarget, rhythmLine } from '../src/breathing/describe';
 import { AppText } from '../src/components/AppText';
-import { Button, ButtonRow } from '../src/components/Button';
+import { Button } from '../src/components/Button';
 import { Card } from '../src/components/Card';
 import { ConfirmPanel } from '../src/components/ConfirmPanel';
-import { RoutineParts } from '../src/components/RoutineParts';
-import { Stat, StatRow } from '../src/components/Stat';
 import { Screen } from '../src/components/Screen';
+import { timeWithBreath } from '../src/history/format';
 import { parseRecord, type SessionRecord } from '../src/history/repository';
-import { practiceHref } from '../src/practice/launch';
-import { subtitleOf, type Practice } from '../src/practice/practice';
+import type { Practice } from '../src/practice/practice';
 import { easierPractice, OFFER_WINDOW_MS, progressionOffer, type Offer } from '../src/progression/progression';
 import { findProgram } from '../src/programs/definitions';
-import {
-  phaseEndingAt,
-  programTotals,
-  recordSession,
-  repeatPhase,
-  sessionLine,
-  sessionRun,
-  totalSessions,
-  type Enrollment,
-} from '../src/programs/engine';
-import { SessionDots } from '../src/components/SessionDots';
-import { HEALTH_NAME, HEALTH_RESULT, healthAvailable, healthEligible, writeToHealth } from '../src/health/health';
-import type { HealthState } from '../src/history/repository';
+import { phaseEndingAt, recordSession, repeatPhase, sessionRun, type Enrollment } from '../src/programs/engine';
+import { healthEligible, writeToHealth } from '../src/health/health';
 import { offerTime, shouldOfferReminder } from '../src/reminder/offer';
 import { askForReminderPermission, reminderTime } from '../src/reminder/reminder';
 import { refreshReminder } from '../src/reminder/ReminderBridge';
-import { practiceFromRecord } from '../src/quickstart/quickActions';
 import { refreshQuickActions } from '../src/quickstart/QuickActionsBridge';
 import { refreshWidget } from '../src/widget/WidgetBridge';
 import { LightProvider, useEverydayWash, useGlass, useWash } from '../src/light/light';
@@ -42,7 +27,7 @@ import { NIGHT, SurfaceProvider, useSurface } from '../src/night/surface';
 import Svg, { Path } from 'react-native-svg';
 import { usePreferences } from '../src/settings/PreferencesProvider';
 import { stores } from '../src/storage';
-import { colors, spacing } from '../src/theme';
+import { colors, fonts, spacing, touchTarget } from '../src/theme';
 
 type SaveState = 'saving' | 'saved' | 'failed' | 'leaving';
 /** What the practitioner chose for next time, if anything (FR-15). */
@@ -79,10 +64,11 @@ function save(record: SessionRecord): SaveState {
 }
 
 /**
- * Completion (duration contract): actual practice time, complete rounds,
- * rhythm, and guided pace. “Saved on this device” only after the write
- * succeeds; a failed save keeps the result for retry. Nothing else
- * interrupts this screen, and there is never a rating prompt.
+ * Completion (UX03): the check, a hero, how long you breathed, and “Saved on
+ * this device” only after the write succeeds; a failed save keeps the result
+ * for retry. At most one compact offer, and one filled button, Done. The
+ * numbers, rhythm, program progress, and Health status are in View practice.
+ * Nothing else interrupts this screen, and there is never a rating prompt.
  */
 export default function Complete() {
   const { night } = useLocalSearchParams<{ night?: string }>();
@@ -115,9 +101,11 @@ function CompleteScreen() {
   const [offer, setOffer] = useState<Offer | null>(null);
   const [nextTime, setNextTime] = useState<NextTime>(null);
   const [programResult, setProgramResult] = useState<ProgramResult | null>(null);
-  const [health, setHealth] = useState<HealthState>('none');
+  const [phaseAnswer, setPhaseAnswer] = useState<string | null>(null);
   const [reminderOffer, setReminderOffer] = useState<ReminderOffer | null>(null);
   const easier = useMemo(() => (record ? easierPractice(record) : null), [record]);
+  // The saved check grows with its label, up to 200%.
+  const checkSize = 14 * Math.min(useWindowDimensions().fontScale, 2);
 
   useEffect(() => {
     if (!record) return;
@@ -127,23 +115,26 @@ function CompleteScreen() {
       refreshQuickActions(preferences);
       refreshWidget(preferences);
       // Health writing follows the local save, never replaces it (FR-18).
-      if (preferences.healthConnected && healthEligible(record)) {
-        setHealth('pending');
-        writeToHealth(stores(), record).then(setHealth, () => setHealth('failed'));
-      }
+      // Its result shows in the practice's details.
+      if (preferences.healthConnected && healthEligible(record)) writeToHealth(stores(), record).catch(() => undefined);
+      let program: ProgramResult | null = null;
       try {
-        setProgramResult(applyToProgram(record));
+        program = applyToProgram(record);
+        setProgramResult(program);
         refreshReminder(preferences);
       } catch {
         // The practice is saved; the program catches up next time it's opened.
       }
       // Worked out once, so answering it doesn't make it disappear mid-sentence.
+      // One offer at most: a phase decision, then progression, then the next
+      // program, then the reminder, which is offered once, when nothing else is.
       const now = Date.now();
       try {
-        const progression = progressionOffer(record, stores().history.between(now - OFFER_WINDOW_MS, now + 1), preferences, now);
+        const progression =
+          program?.kind === 'phase' ? null : progressionOffer(record, stores().history.between(now - OFFER_WINDOW_MS, now + 1), preferences, now);
         setOffer(progression);
-        // One offer at a time; the reminder is offered once, when nothing else is.
-        if (!progression && shouldOfferReminder(record, stores().history.count(), preferences)) {
+        const nextProgram = program?.kind === 'complete' && program.enrollment.definition.next;
+        if (program?.kind !== 'phase' && !progression && !nextProgram && shouldOfferReminder(record, stores().history.count(), preferences)) {
           setReminderOffer({ ...offerTime(record.startedAt), answer: null });
           update({ reminderOffered: true });
         }
@@ -158,15 +149,8 @@ function CompleteScreen() {
 
   if (!record) return <Redirect href="/" />;
 
-  const practice = practiceFromRecord(record);
   const completed = record.outcome === 'completed';
   const done = () => router.replace('/');
-  const routine = record.source.kind === 'routine' && record.parts ? stores().routines.get(record.source.id) : null;
-  const again = practice
-    ? () => router.replace(practiceHref(practice))
-    : routine
-      ? () => router.replace({ pathname: '/routine/[id]', params: { id: routine.id } })
-      : undefined;
 
   if (state === 'leaving') {
     return (
@@ -201,18 +185,35 @@ function CompleteScreen() {
     AccessibilityInfo.announceForAccessibility(granted ? `Daily reminder on at ${reminderTime(time)}` : 'Notifications are off for Viram');
   };
 
+  const answerPhase = (result: Extract<ProgramResult, { kind: 'phase' }>, repeat: boolean) => {
+    const next = result.phase.number + 1;
+    if (repeat) {
+      const repeated = repeatPhase(result.enrollment, result.phase.done, Date.now());
+      stores().programs.save(repeated);
+      setProgramResult({ kind: 'session', enrollment: repeated, repeating: result.phase.number });
+    } else {
+      setProgramResult({ kind: 'session', enrollment: result.enrollment });
+    }
+    const line = repeat ? `Phase ${result.phase.number} again, from session ${result.phase.done.first}. There’s no rush.` : `Phase ${next} is next.`;
+    setPhaseAnswer(line);
+    AccessibilityInfo.announceForAccessibility(line);
+  };
+
   const failed = state === 'failed';
   const saved = state === 'saved';
-  const message = nextTimeMessage(nextTime, offer);
-  const viewProgram = record.program
-    ? () => router.replace({ pathname: '/program/[id]', params: { id: record.program!.id } })
-    : undefined;
   const hero =
     saved && programResult?.kind === 'complete'
       ? `${programResult.enrollment.definition.shortName},\ncomplete.`
       : saved && programResult?.kind === 'phase'
         ? `Phase ${programResult.phase.number},\ncomplete.`
         : null;
+  const nextProgram = programResult?.kind === 'complete' && programResult.enrollment.definition.next ? findProgram(programResult.enrollment.definition.next) : undefined;
+  // Answers collapse their card to one line.
+  const confirmations = [
+    phaseAnswer,
+    nextTimeMessage(nextTime, offer),
+    reminderOffer?.answer ? REMINDER_ANSWER[reminderOffer.answer](reminderOffer) : null,
+  ].filter((line): line is string => !!line);
   return (
     <Screen
       edges={['top', 'left', 'right']}
@@ -225,215 +226,130 @@ function CompleteScreen() {
           </>
         ) : (
           <>
-            <Button title="Done" onPress={done} />
-            {viewProgram ? (
-              programResult?.kind === 'complete' ? null : <Button title="View program" variant="secondary" onPress={viewProgram} />
-            ) : again ? (
-              <Button title={routine ? 'Back to routine' : 'Breathe again'} variant="secondary" onPress={again} />
+            {saved ? (
+              <View style={styles.links}>
+                <Button
+                  title="View practice"
+                  variant="quiet"
+                  style={styles.link}
+                  onPress={() => router.push({ pathname: '/session/[id]', params: { id: record.id, from: 'complete' } })}
+                />
+                {easier && !nextTime ? (
+                  <>
+                    <AppText variant="control" style={styles.dot} importantForAccessibility="no" accessibilityElementsHidden>
+                      ·
+                    </AppText>
+                    <Button title="Make it easier next time" variant="quiet" style={styles.link} onPress={() => chooseNext({ kind: 'easier', practice: easier })} />
+                  </>
+                ) : null}
+              </View>
             ) : null}
+            <Button title="Done" onPress={done} />
           </>
         )
       }
     >
       <CheckMark night={surface.night} />
-      <AppText variant="hero" accessibilityRole="header">
+      <AppText variant="hero" accessibilityRole="header" style={styles.hero}>
         {failed ? 'Your practice finished.' : (hero ?? (completed ? 'A little space,\nmade.' : 'A pause still counts.'))}
       </AppText>
-      <AppText style={styles.muted}>
-        {failed
-          ? 'We couldn’t save it to History yet.'
-          : completed
-            ? 'Take a moment before moving on.'
-            : 'Your practice is saved as ended early.'}
+      <AppText style={styles.line}>
+        {failed ? 'We couldn’t save it to History yet.' : completed ? timeWithBreath(record.activeMs) : 'Your practice is saved as ended early.'}
       </AppText>
-      {/* A phase boundary asks its question first (FR-20). */}
-      {saved && programResult?.kind === 'phase' ? <ProgramCard result={programResult} record={record} onChange={setProgramResult} /> : null}
-      <StatRow>
-        <Stat value={formatClock(record.activeMs)} label="Practice time" />
-        {record.parts ? (
-          <Stat value={String(record.parts.length)} label={record.parts.length === 1 ? 'Practice' : 'Practices'} />
-        ) : (
-          <Stat value={String(record.completedRounds)} label="Complete rounds" />
-        )}
-      </StatRow>
-      {record.parts ? <RoutineParts parts={record.parts} /> : null}
-      {record.parts ? null : (
-        <Card>
-          <AppText variant="bodyStrong">{[record.name, practice && subtitleOf(practice)].filter(Boolean).join(' · ')}</AppText>
-          <AppText variant="label">
-            {describeRhythm(record.steps)} ·{' '}
-            {guidedPace(record.slowing ? describePace(planFor(record.steps, record.target, record.slowing)) : formatPace(record.breathsPerMinute))}
-          </AppText>
-        </Card>
-      )}
-      <AppText variant="label" style={failed ? styles.warning : undefined}>
-        {failed ? 'Try saving again before leaving this screen.' : saved ? '✓ Saved on this device' : 'Saving…'}
-      </AppText>
-      {saved && health !== 'none' ? (
-        <AppText variant="label" accessibilityLiveRegion="polite">
-          {health === 'pending' ? `Adding to ${HEALTH_NAME}…` : `${HEALTH_RESULT[health].title}${health === 'failed' ? ' You can retry from Settings.' : ''}`}
+      {failed ? (
+        <AppText variant="label" style={styles.warning}>
+          Try saving again before leaving this screen.
         </AppText>
-      ) : null}
-      {saved && programResult && programResult.kind !== 'phase' ? <ProgramCard result={programResult} record={record} onChange={setProgramResult} /> : null}
-      {saved && offer && !nextTime ? (
-        <Card>
-          <AppText variant="overline" accessibilityRole="header">
-            WHEN YOU’RE READY
+      ) : saved ? (
+        <View style={styles.saved} accessible accessibilityLabel="Saved on this device">
+          <Svg width={checkSize} height={checkSize} viewBox="0 0 24 24" fill="none" stroke={surface.night ? NIGHT.accent : colors.pine} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
+            <Path d="M5 12.5l4.5 4.5L19 7.5" />
+          </Svg>
+          <AppText variant="label" style={styles.savedText}>
+            Saved on this device
           </AppText>
-          <AppText>
-            You’ve completed {offer.current.name} at {describeRhythm(offer.current.steps)} {timesWord(offer.count)} in the last two weeks. {offer.prompt}
-          </AppText>
-          <Card muted>
-            <AppText variant="bodyStrong">
-              {describeRhythm(offer.next.steps)} · {describePlan(offer.next.steps, offer.next.target)}
-            </AppText>
-          </Card>
-          <ButtonRow>
-            <Button title="Try next time" style={styles.flex} onPress={() => chooseNext({ kind: 'next', practice: offer.next })} />
-            <Button title="Not now" variant="secondary" style={styles.flex} onPress={() => chooseNext({ kind: 'notNow' })} />
-          </ButtonRow>
-          <Button title="Stop suggesting for this practice" variant="quiet" onPress={() => chooseNext({ kind: 'stopped' })} />
-        </Card>
+        </View>
       ) : null}
-      {message ? (
-        <AppText variant="label" style={styles.nextTime}>
-          {message}
-        </AppText>
-      ) : null}
-      {saved && reminderOffer && !reminderOffer.answer ? (
-        <Card>
-          <AppText variant="overline" accessibilityRole="header">
-            A DAILY REMINDER?
-          </AppText>
-          <AppText>Practicing at about the same time each day makes it easier to come back. Viram can send one quiet reminder a day.</AppText>
-          <ButtonRow>
-            <Button title={`Remind me at ${reminderTime(reminderOffer)}`} style={styles.flex} onPress={() => acceptReminder(reminderOffer)} />
-            <Button title="No thanks" variant="secondary" style={styles.flex} onPress={() => setReminderOffer({ ...reminderOffer, answer: 'declined' })} />
-          </ButtonRow>
-          <Button title="Choose another time" variant="quiet" onPress={() => router.push('/settings/reminder')} />
-        </Card>
-      ) : null}
-      {reminderOffer?.answer ? (
-        <AppText variant="label" style={styles.nextTime} accessibilityLiveRegion="polite">
-          {REMINDER_ANSWER[reminderOffer.answer](reminderOffer)}
-        </AppText>
-      ) : null}
-      {saved && health === 'none' && !preferences.healthConnected && !preferences.healthDismissed && healthEligible(record) && healthAvailable() ? (
-        <Button
-          title={`Add sessions to ${HEALTH_NAME}`}
-          variant="quiet"
-          onPress={() => router.push({ pathname: '/health', params: { record: record.id } })}
+      {saved && programResult?.kind === 'phase' ? (
+        <OfferCard
+          title={`${programResult.enrollment.definition.name.toUpperCase()} · PHASE ${programResult.phase.number + 1}`}
+          body={`${programResult.phase.next.intro} If the longer exhale feels like a strain, repeat this phase.`}
+          detail={phaseDetail(programResult)}
+          yes={{ title: `Move on to phase ${programResult.phase.number + 1}`, onPress: () => answerPhase(programResult, false) }}
+          no={{ title: 'Repeat this phase', onPress: () => answerPhase(programResult, true) }}
+        />
+      ) : saved && offer && !nextTime ? (
+        <OfferCard
+          title="NEXT TIME, IF YOU LIKE"
+          body={`You’ve completed ${offer.current.name} at ${describeRhythm(offer.current.steps)} ${timesWord(offer.count)} in the last two weeks. ${offer.prompt}`}
+          detail={`${rhythmLine(offer.next.steps)} · ${describeTarget(offer.next.target)}`}
+          yes={{ title: 'Try next time', onPress: () => chooseNext({ kind: 'next', practice: offer.next }) }}
+          no={{ title: 'Not now', onPress: () => chooseNext({ kind: 'notNow' }) }}
+          more={{ title: 'Stop suggesting for this practice', onPress: () => chooseNext({ kind: 'stopped' }) }}
+        />
+      ) : saved && nextProgram ? (
+        <OfferCard
+          title="A NEXT STEP, IF YOU LIKE"
+          body={`${nextProgram.name}. ${nextProgram.summary}`}
+          detail={nextProgram.eyebrow}
+          yes={{ title: 'Preview program', onPress: () => router.replace({ pathname: '/program/[id]', params: { id: nextProgram.id } }) }}
+        />
+      ) : saved && reminderOffer && !reminderOffer.answer ? (
+        <OfferCard
+          title="A DAILY REMINDER?"
+          body="Practicing at about the same time each day makes it easier to come back."
+          yes={{ title: `Remind me at ${reminderTime(reminderOffer)}`, onPress: () => acceptReminder(reminderOffer) }}
+          no={{ title: 'No thanks', onPress: () => setReminderOffer({ ...reminderOffer, answer: 'declined' }) }}
+          more={{ title: 'Choose another time', onPress: () => router.push('/settings/reminder') }}
         />
       ) : null}
-      {saved && easier && !nextTime ? (
-        <Button title="Make it easier next time" variant="quiet" onPress={() => chooseNext({ kind: 'easier', practice: easier })} />
-      ) : null}
+      {confirmations.map((line) => (
+        <AppText key={line} variant="label" style={styles.confirmation} accessibilityLiveRegion="polite">
+          {line}
+        </AppText>
+      ))}
     </Screen>
   );
 }
 
-/** Session progress, a phase decision, or the program's completion (FR-20). */
-function ProgramCard({ result, record, onChange }: { result: ProgramResult; record: SessionRecord; onChange: (r: ProgramResult) => void }) {
-  const { enrollment } = result;
-  const program = enrollment.definition;
-  const total = totalSessions(enrollment);
-  const session = record.program!.session;
+interface OfferAction {
+  title: string;
+  onPress: () => void;
+}
 
-  if (result.kind === 'complete') {
-    const minutes = Math.round(
-      stores()
-        .history.list()
-        .filter((r) => r.program?.id === program.id && r.startedAt >= enrollment.startedAt)
-        .reduce((sum, r) => sum + r.activeMs, 0) / 60_000,
-    );
-    const next = program.next ? findProgram(program.next) : undefined;
-    return (
-      <>
-        <StatRow>
-          <Stat value={String(total)} label="Sessions" />
-          <Stat value={String(minutes)} label="Minutes" />
-        </StatRow>
-        <AppText>{total} sessions, made at your own pace.</AppText>
-        <AppText variant="label">Practiced: {programTotals(program).techniques.join(', ')}</AppText>
-        {next ? (
-          <Card>
-            <AppText variant="overline" accessibilityRole="header">
-              A NEXT STEP, IF YOU LIKE
-            </AppText>
-            <AppText variant="bodyStrong">{next.name}</AppText>
-            <AppText variant="label">
-              {next.eyebrow}. {next.summary}
-            </AppText>
-            <Button title="Preview program" variant="secondary" onPress={() => router.replace({ pathname: '/program/[id]', params: { id: next.id } })} />
-          </Card>
-        ) : null}
-      </>
-    );
-  }
-
-  if (result.kind === 'phase') {
-    const nextRun = sessionRun(program, result.phase.next.first);
-    const part = nextRun?.parts[0];
-    return (
-      <Card>
-        <AppText>{result.phase.done.summary}</AppText>
-        <AppText variant="overline" accessibilityRole="header">
-          {program.name.toUpperCase()} · PHASE {result.phase.number + 1}
-        </AppText>
-        <AppText>{result.phase.next.intro}</AppText>
-        {part ? (
-          <Card muted>
-            <AppText variant="bodyStrong">
-              {describeRhythm(part.steps)} · {describePlan(part.steps, part.target)}
-            </AppText>
-          </Card>
-        ) : null}
-        <AppText variant="label">If the longer exhale feels like a strain, repeat this phase. There’s no rush.</AppText>
-        <ButtonRow>
-          <Button
-            title={`Move on to phase ${result.phase.number + 1}`}
-            style={styles.flex}
-            onPress={() => {
-              onChange({ kind: 'session', enrollment });
-              AccessibilityInfo.announceForAccessibility(`Phase ${result.phase.number + 1} is next.`);
-            }}
-          />
-          <Button
-            title="Repeat this phase"
-            variant="secondary"
-            style={styles.flex}
-            onPress={() => {
-              const repeated = repeatPhase(enrollment, result.phase.done, Date.now());
-              stores().programs.save(repeated);
-              onChange({ kind: 'session', enrollment: repeated, repeating: result.phase.number });
-              AccessibilityInfo.announceForAccessibility(`Phase ${result.phase.number} again, from session ${result.phase.done.first}.`);
-            }}
-          />
-        </ButtonRow>
-      </Card>
-    );
-  }
-
-  const nextNumber = enrollment.completedSessions + 1;
-  const next = program.sessions[nextNumber - 1];
+/**
+ * The one offer completion makes (FR-15, FR-17, FR-20), kept compact: no
+ * filled buttons, so Done stays the screen's one filled action.
+ */
+function OfferCard({ title, body, detail, yes, no, more }: { title: string; body: string; detail?: string | null; yes: OfferAction; no?: OfferAction; more?: OfferAction }) {
   return (
-    <Card>
-      <AppText variant="bodyStrong">{program.name}</AppText>
-      <AppText>
-        {result.repeating
-          ? `Phase ${result.repeating} again, from session ${nextNumber}. There’s no rush.`
-          : record.outcome === 'completed'
-            ? `Session ${session} of ${total} complete.`
-            : `Ended early, so session ${nextNumber} stays next. Nothing is lost.`}
+    <Card style={styles.offer}>
+      <AppText variant="overline" accessibilityRole="header">
+        {title}
       </AppText>
-      <SessionDots total={total} done={enrollment.completedSessions} label={`${enrollment.completedSessions} of ${total} sessions complete.`} />
-      {next ? (
-        <AppText variant="label">
-          Next: {sessionLine(next)}.{next.introduces ? ` ${next.introduces}` : ''}
+      <AppText style={styles.offerBody}>{body}</AppText>
+      {detail ? (
+        <AppText variant="bodyStrong" style={styles.offerDetail}>
+          {detail}
         </AppText>
+      ) : null}
+      <View style={styles.offerActions}>
+        <Button title={yes.title} variant="secondary" style={styles.offerYes} onPress={yes.onPress} />
+        {no ? <Button title={no.title} variant="quiet" style={styles.link} onPress={no.onPress} /> : null}
+      </View>
+      {more ? (
+        <Pressable onPress={more.onPress} accessibilityRole="button" hitSlop={4} style={({ pressed }) => [styles.more, pressed && styles.pressed]}>
+          <AppText variant="label">{more.title}</AppText>
+        </Pressable>
       ) : null}
     </Card>
   );
+}
+
+/** The next phase's first session: “In 4 · Out 7, each side · 7 min”. */
+function phaseDetail(result: Extract<ProgramResult, { kind: 'phase' }>): string | null {
+  const part = sessionRun(result.enrollment.definition, result.phase.next.first)?.parts[0];
+  return part ? `${rhythmLine(part.steps)} · ${describeTarget(part.target)}` : null;
 }
 
 const CHECK_HALO = [
@@ -446,9 +362,9 @@ function CheckMark({ night }: { night: boolean }) {
   const glass = useGlass();
   return (
     <View style={styles.mark} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
-      {night ? null : <Halo stops={CHECK_HALO} size={120} style={styles.markHalo} />}
+      {night ? null : <Halo stops={CHECK_HALO} size={108} style={styles.markHalo} />}
       <View style={[styles.markDisc, night ? styles.nightMark : { backgroundColor: glass.solid ? colors.surface : 'rgba(255, 255, 255, 0.8)', borderColor: colors.glassRim }]}>
-        <Svg width={30} height={30} viewBox="0 0 24 24" fill="none" stroke={night ? NIGHT.accent : colors.pine} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+        <Svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke={night ? NIGHT.accent : colors.pine} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
           <Path d="M5 12.5l4.5 4.5L19 7.5" />
         </Svg>
       </View>
@@ -476,12 +392,24 @@ function nextTimeMessage(choice: NextTime, offer: Offer | null): string | null {
 }
 
 const styles = StyleSheet.create({
-  mark: { width: 72, height: 72, marginTop: spacing.md },
-  markHalo: { position: 'absolute', left: -24, top: -24 },
-  markDisc: { width: 72, height: 72, borderRadius: 36, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  mark: { width: 64, height: 64, marginTop: spacing.md },
+  markHalo: { position: 'absolute', left: -22, top: -22 },
+  markDisc: { width: 64, height: 64, borderRadius: 32, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   nightMark: { backgroundColor: NIGHT.cardMuted, borderColor: NIGHT.cardMuted },
-  muted: { color: colors.inkSoft },
+  hero: { fontSize: 38, lineHeight: 44, marginTop: spacing.sm },
+  line: { fontSize: 17, lineHeight: 24, color: colors.inkSoftOnWash, marginTop: -6 },
+  saved: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: -4 },
+  savedText: { fontFamily: fonts.sansSemibold, color: colors.pine },
   warning: { color: colors.danger },
-  nextTime: { color: colors.pine },
-  flex: { flexGrow: 1, flexBasis: 140 },
+  offer: { marginTop: spacing.sm },
+  offerBody: { lineHeight: 23 },
+  offerDetail: { fontSize: 15, lineHeight: 20, color: colors.pine },
+  offerActions: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: spacing.sm, marginTop: 4 },
+  offerYes: { paddingHorizontal: 18, paddingVertical: 10 },
+  more: { alignSelf: 'flex-start', minHeight: touchTarget, justifyContent: 'center' },
+  pressed: { opacity: 0.7 },
+  confirmation: { color: colors.pine },
+  links: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center' },
+  link: { paddingHorizontal: spacing.ms },
+  dot: { color: colors.inkFaint },
 });
