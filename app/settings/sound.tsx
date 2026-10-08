@@ -2,7 +2,7 @@ import { Platform, StyleSheet } from 'react-native';
 import { playOnce } from '../../src/audio/guide';
 import { MUSIC_CHOICES, MUSIC_LABEL, MUSIC_PREVIEW_MS, musicSound } from '../../src/audio/music';
 import { TONE_SETS, TONE_SET_LABEL } from '../../src/audio/toneSets';
-import { VOICES, VOICE_IDS, VOICE_PREVIEW_MS, voiceSound } from '../../src/audio/voices';
+import { VOICES, VOICE_IDS, VOICE_PREVIEW_MS, voiceLanguage, voiceSound } from '../../src/audio/voices';
 import { AppText } from '../../src/components/AppText';
 import { Button } from '../../src/components/Button';
 import { CueControls } from '../../src/components/CueControls';
@@ -33,9 +33,12 @@ export default function CuesAndSound() {
           }}
           options={VOICE_IDS.map((value) => ({ value, label: VOICES[value].label, accessibilityLabel: VOICES[value].spoken }))}
         />
+        {voiceLanguage(preferences.voice) === 'hi' ? (
+          <AppText variant="label">Cues, counts, and introductions are spoken in Hindi, with Hindi captions. The screens stay in English.</AppText>
+        ) : null}
       </Section>
 
-      <Section title="MUSIC" help="Plays softly under Voice and Tones, in tune with the tones. Silent stays silent, and with Play along it stays quiet while your own music plays.">
+      <Section title="MUSIC" help="Plays softly under Voice and Tones, in tune with the tones. Silent stays silent, and it stays quiet whenever Viram is playing along with your own music.">
         <Segmented
           label="Music"
           value={preferences.music}

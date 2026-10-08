@@ -588,6 +588,6 @@ From the pranayama app feature research (`reports/Pranayama app feature preferen
 | R08 | Viram for Apple Watch (`targets/watch`) and Wear OS (`wear/`), linked by `modules/viram-companion` | Code done; Wear OS and phone build; watch app not built here (needs the watchOS platform; CI's macOS image has it) | Build in CI; wrist-down run on a real watch, both platforms; App Group and watch signing in EAS |
 | R09 | Breathe widget, home and lock screen (iOS WidgetKit, Android app widget) | Done; iOS widget checked in the simulator | Android widget on a device |
 | R10 | Longer holds up to 60 s, behind its own Take care | Built; shown in development builds only | Named instructor review recorded in `src/content/longHolds.ts` |
-| R11 | Hindi voice scripts for every cue and introduction (`src/content/hindi.ts`) | Scripts done | Render with the Kokoro pipeline (`claude/soothing-audio`), a voice-language setting, and the Hindi listener gate |
+| R11 | Hindi voice: two voices in the picker (`hf_alpha-hi`, `hm_psi-hi`) speaking `src/content/hindi.ts`, with Hindi captions for introductions | Rendered with Kokoro (lang `hi`); every clip within its limit | Hindi listener gate: Kokoro's Hindi voices are rated C, so listen before shipping, and re-render or drop them if they fall short |
 | — | Full Hindi localization of the screens | Not started | Translators and a review plan; the PRD keeps it a later concept |
 | — | Nadi Shodhana hand illustration | Not started | Brand decision: the line-diagram rule allows no bodies |

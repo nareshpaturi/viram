@@ -13,7 +13,8 @@ import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import * as guide from '../audio/guide';
 import { CLIP_MS } from '../audio/manifest.generated';
 import { musicSound } from '../audio/music';
-import { voiceSound } from '../audio/voices';
+import { voiceLanguage, voiceSound } from '../audio/voices';
+import { HINDI_INTROS } from '../content/hindi';
 import { beginTimingLog, markSegment, markTiming } from '../audio/timingLog';
 import { formatClock, stepLabel } from '../breathing/describe';
 import { planStepAt } from '../breathing/rhythm';
@@ -183,8 +184,11 @@ export function usePracticeSession({ run, preferences, quickStart, night, onIntr
         (preferences.introductions === 'first' && !preferences.introductionsHeard.includes(technique.id)));
     if (!wanted) return null;
     const { introduction } = technique.guidance;
-    const chosen = preferences.introLength === 'long' && introduction.long ? introduction.long : introduction;
-    return { id: technique.id, clip: chosen.clip, lines: chosen.lines };
+    const long = preferences.introLength === 'long' && introduction.long;
+    const chosen = long ? introduction.long! : introduction;
+    // Captions are in the language the voice speaks (src/content/hindi.ts for Hindi voices).
+    const hindi = voiceLanguage(preferences.voice) === 'hi' ? HINDI_INTROS[technique.id] : undefined;
+    return { id: technique.id, clip: chosen.clip, lines: hindi ? (long ? hindi.long : hindi.lines) : chosen.lines };
   });
   const introMs = intro ? (CLIP_MS[settings.voice]?.[intro.clip] ?? 0) : 0;
 

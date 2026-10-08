@@ -9,7 +9,7 @@
  * gate): no clip ships until a Hindi listener has approved it.
  *
  * Cue words keep to everyday yoga-class Hindi, in the polite imperative:
- * साँस लें (breathe in), रोकें (hold), साँस छोड़ें (breathe out), ठहरें (rest).
+ * साँस लें (breathe in), रोकें (hold), छोड़ें (release, breathe out), ठहरें (rest).
  * Hold and rest use different words so they can't be confused by ear.
  */
 import type { CueId } from './voice';
@@ -17,11 +17,13 @@ import type { CueId } from './voice';
 export const HINDI_CUES: Record<CueId, string> = {
   inhale: 'साँस लें',
   hold: 'रोकें',
-  exhale: 'साँस छोड़ें',
+  // “साँस छोड़ें” runs past the 0.8 s cue limit; after “साँस लें”, “छोड़ें” (release) is clear.
+  exhale: 'छोड़ें',
   rest: 'ठहरें',
   hum: 'गुंजन',
   om: 'ओम्',
-  'top-up': 'थोड़ा और',
+  // “थोड़ा और” (a little more) runs past 0.8 s; the second sip is a short “fill”.
+  'top-up': 'भरें',
   'inhale-left': 'बाएँ से साँस लें',
   'inhale-right': 'दाएँ से साँस लें',
   'exhale-left': 'बाएँ से छोड़ें',
