@@ -36,7 +36,7 @@ public class ViramGuideModule: Module {
   public func definition() -> ModuleDefinition {
     Name("ViramGuide")
 
-    Events("onRemoteCommand", "onInterruption", "onSegmentEnded", "onCueTiming")
+    Events("onRemoteCommand", "onInterruption", "onSegmentEnded", "onCueTiming", "onPreviewEnded")
 
     OnCreate {
       self.engine.emit = { [weak self] name, body in
@@ -97,6 +97,10 @@ public class ViramGuideModule: Module {
 
     Function("playOnce") { (sound: String, volume: Double, maxMs: Double?) in
       try self.engine.playOnce(sound, volume: Float(volume), maxMs: maxMs)
+    }
+
+    Function("stopOnce") {
+      self.engine.stopOnce()
     }
   }
 }

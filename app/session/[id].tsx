@@ -59,7 +59,7 @@ export default function SessionDetail() {
         )}
         <AppText variant="label">
           {CUE_LABEL[record.cueMode]}
-          {record.haptics ? ' · haptic taps' : ''}
+          {record.haptics ? ' · haptics' : ''}
         </AppText>
         <AppText variant="label">Saved on this device</AppText>
       </Card>

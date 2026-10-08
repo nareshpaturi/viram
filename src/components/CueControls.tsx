@@ -1,7 +1,8 @@
 import { Platform, StyleSheet, View } from 'react-native';
-import { playOnce } from '../audio/guide';
+import { usePreview } from '../audio/usePreview';
 import { voiceSound } from '../audio/voices';
 import type { CueMode } from '../breathing/timeline';
+import { lockBehavior, MODE_HELP } from '../practice/guidanceRules';
 import { usePreferences } from '../settings/PreferencesProvider';
 import { colors, spacing } from '../theme';
 import { AppText } from './AppText';
@@ -10,24 +11,16 @@ import { Segmented } from './Segmented';
 import { SwitchRow } from './SwitchRow';
 import { VolumeStepper } from './VolumeStepper';
 
-const MODE_HELP: Record<CueMode, string> = {
-  voice: 'Voice says each step, like “Inhale left.” With Voice or Tones, guidance continues when you lock your phone.',
-  tones: 'A different sound marks each step. Guidance continues when you lock your phone.',
-  silent:
-    Platform.OS === 'ios'
-      ? 'No sound. The screen stays on during practice. iPhone can’t tap while it’s locked, so choose what happens if you lock it.'
-      : 'No sound. The screen stays on during practice. With haptics on, guidance continues when you lock your phone.',
-};
-
 export const MODE_LABEL: Record<CueMode, string> = { voice: 'Voice', tones: 'Tones', silent: 'Silent' };
 
 /** Cue mode, volume, haptics, and motion: the cue chip sheet and Settings share these. */
 export function CueControls() {
   const { preferences, update } = usePreferences();
 
+  const { playing, toggle } = usePreview();
   const sample = () => {
     const sound = preferences.cueMode === 'voice' ? voiceSound(preferences.voice, 'inhale') : `tone.${preferences.toneSet}.inhale`;
-    if (preferences.cueMode !== 'silent') void playOnce(sound, preferences.cueVolume);
+    if (preferences.cueMode !== 'silent') toggle('cue', sound, preferences.cueVolume);
   };
 
   return (
@@ -41,7 +34,9 @@ export function CueControls() {
         onChange={(cueMode) => update({ cueMode })}
         options={(['voice', 'tones', 'silent'] as const).map((value) => ({ value, label: MODE_LABEL[value] }))}
       />
-      <AppText variant="label">{MODE_HELP[preferences.cueMode]}</AppText>
+      <AppText variant="label">
+        {MODE_HELP[lockBehavior({ mode: preferences.cueMode, haptics: preferences.haptics, silentLocked: preferences.silentLocked, platform: Platform.OS })]}
+      </AppText>
       {Platform.OS === 'ios' && preferences.cueMode === 'silent' ? (
         <Segmented
           label="When the screen locks"
@@ -70,7 +65,7 @@ export function CueControls() {
           { value: 'reduced', label: 'Reduced' },
         ]}
       />
-      {preferences.cueMode !== 'silent' ? <Button title="Hear a sample" variant="secondary" onPress={sample} /> : null}
+      {preferences.cueMode !== 'silent' ? <Button title={playing === 'cue' ? 'Stop sample' : 'Hear a sample'} variant="secondary" onPress={sample} /> : null}
     </View>
   );
 }

@@ -228,6 +228,62 @@ export async function playOnce(id: string, volume: number, maxMs?: number): Prom
   }
 }
 
+// ——— Previews (UX10): one at a time, stoppable, never started by choosing ———
+
+let previewKey: string | null = null;
+let previewToken = 0;
+const previewListeners = new Set<() => void>();
+const notifyPreview = () => previewListeners.forEach((listener) => listener());
+
+function endPreview() {
+  previewToken++;
+  previewKey = null;
+  notifyPreview();
+}
+
+// A sample that plays to its end resets its button.
+NativeGuide?.addListener('onPreviewEnded', () => {
+  if (previewKey !== null) endPreview();
+});
+
+/** What's playing as a preview (the key it was started with), or null. */
+export const currentPreview = () => previewKey;
+
+export function subscribePreview(listener: () => void): () => void {
+  previewListeners.add(listener);
+  return () => previewListeners.delete(listener);
+}
+
+/**
+ * Plays a sample under `key`, stopping any other first. A stop that comes
+ * while the sound is still loading wins: the sample never starts.
+ */
+export async function startPreview(key: string, sound: string, volume: number, maxMs?: number): Promise<void> {
+  if (previewKey !== null) stopPreview();
+  const token = ++previewToken;
+  previewKey = key;
+  notifyPreview();
+  await prepareSounds([sound]);
+  if (token !== previewToken) return;
+  if (!audioAvailable() || !loaded.has(sound)) return endPreview();
+  try {
+    NativeGuide!.playOnce(sound, volume, maxMs);
+  } catch {
+    endPreview();
+  }
+}
+
+export function stopPreview(): void {
+  if (previewKey === null) return;
+  endPreview();
+  if (!audioAvailable()) return;
+  try {
+    NativeGuide!.stopOnce();
+  } catch {
+    // Nothing to stop.
+  }
+}
+
 export function subscribe(handlers: GuideHandlers): () => void {
   if (!NativeGuide) return () => undefined;
   const subscriptions = [

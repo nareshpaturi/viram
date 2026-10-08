@@ -66,6 +66,28 @@ export function describeRhythm(steps: readonly RhythmStep[]): string {
     .join(' · ');
 }
 
+const LINE_WORD = { inhale: 'In', hold: 'Hold', exhale: 'Out', rest: 'Rest' } as const;
+const LINE_CUE = { hum: 'Hum', om: 'Om', 'top-up': 'Top up' } as const;
+
+/**
+ * Breathe's plain rhythm line (UX01): “In 4 · Hold 4 · Out 4 · Rest 4”,
+ * “In 4 · Out 6, each side”, “In 4 · Hum 8”, “In 3 · Top up 1 · Out 6”.
+ * Steps set to Off are left out.
+ */
+export function rhythmLine(steps: readonly RhythmStep[]): string {
+  const s = formatSeconds;
+  if (isAlternateNostril(steps)) return `In ${s(steps[0].seconds)} · Out ${s(steps[1].seconds)}, each side`;
+  return steps
+    .filter((step) => step.seconds > 0)
+    .map((step) => `${step.cue ? LINE_CUE[step.cue] : LINE_WORD[step.kind]} ${s(step.seconds)}${step.side ? ` ${step.side}` : ''}`)
+    .join(' · ');
+}
+
+/** “Slows to In 6.5 · Out 6.5, a little each round”, under the rhythm line. */
+export function slowingLine(steps: readonly RhythmStep[], slowing: Slowing): string {
+  return `Slows to ${rhythmLine(slowedSteps(steps, slowing, 1, 2))}, a little each round`;
+}
+
 /** Screen-reader version: “Inhale left 4 seconds, Exhale right 6 seconds …”. Off steps say Off. */
 export function speakRhythm(steps: readonly RhythmStep[]): string {
   return steps

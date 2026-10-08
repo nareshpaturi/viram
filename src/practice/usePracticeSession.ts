@@ -42,6 +42,8 @@ import { buildRunSchedule, roundLine, type CueSettings } from '../breathing/time
 import type { PartRecord, RecordSource, SessionRecord } from '../history/repository';
 import type { OtherAudio, Preferences } from '../settings/preferences';
 import { newId } from '../storage/db';
+import { useScreenReader } from '../accessibility/useScreenReader';
+import { lockBehavior, PAUSE_TITLE, speechOwner } from './guidanceRules';
 import { techniqueOf } from './practice';
 import type { PracticeRun } from './run';
 
@@ -168,10 +170,14 @@ export function usePracticeSession({ run, preferences, quickStart, night, onIntr
       preferences.cueMode !== 'silent' && preferences.music !== 'off'
         ? { sound: musicSound(preferences.music), volume: preferences.musicVolume }
         : null,
-    // iPhone can't play haptics locked, so Silent can carry soft tones, heard only while locked.
-    silentTones: Platform.OS === 'ios' && preferences.cueMode === 'silent' && preferences.silentLocked === 'tones',
+    // What keeps guiding once the phone locks (src/practice/guidanceRules.ts); Cues & sound says the same.
+    lock: lockBehavior({ mode: preferences.cueMode, haptics: preferences.haptics, silentLocked: preferences.silentLocked, platform: Platform.OS }),
     lockedVolume: Math.min(preferences.cueVolume, SILENT_LOCKED_VOLUME),
   }));
+  // iPhone can't play haptics locked, so Silent can carry soft tones, heard only while locked.
+  const silentTones = settings.lock === 'softTones';
+  const screenReader = useScreenReader();
+  const speech = speechOwner({ screenReader, mode: settings.cues.mode });
   const [plans] = useState(() => run.parts.map((p) => sessionPlan(p.steps, p.target, p.slowing ?? null)));
   const names = run.parts.map((p) => p.name);
   // Decided once per run, like the settings. Only the first practice is introduced.
@@ -281,11 +287,11 @@ export function usePracticeSession({ run, preferences, quickStart, night, onIntr
     (state: SessionState) => {
       if (state.status !== 'active') return;
       const { segment } = state;
-      const cues: CueSettings = settings.silentTones ? { ...settings.cues, mode: 'tones' } : settings.cues;
+      const cues: CueSettings = silentTones ? { ...settings.cues, mode: 'tones' } : settings.cues;
       const schedule = buildRunSchedule(plans, segment, cues, (id) => guide.clipLength(settings.voice, id), names);
       markSegment(segment.purpose === 'settle' ? 'Guidance started' : `Resumed ${names[segment.part]} from plan ${formatClock(segment.startPlanMs)}`);
       guide.startSegment(schedule, {
-        volume: settings.silentTones ? (AppState.currentState === 'active' ? 0 : settings.lockedVolume) : settings.volume,
+        volume: silentTones ? (AppState.currentState === 'active' ? 0 : settings.lockedVolume) : settings.volume,
         ...settings.audio,
         title: run.name,
         subtitle: 'Getting ready',
@@ -482,18 +488,16 @@ export function usePracticeSession({ run, preferences, quickStart, night, onIntr
   );
 
   useEffect(() => {
-    // Silent keeps going locked only where a haptic can still guide: Android with haptics on.
-    // On iPhone, Silent can instead carry quiet tones that are heard only while locked.
-    const pausesOnLock = settings.cues.mode === 'silent' && !settings.silentTones && (Platform.OS === 'ios' || settings.cues.haptics === null);
+    const pausesOnLock = settings.lock === 'pauses';
     const subscription = AppState.addEventListener('change', (status) => {
       if (status === 'background') markTiming('App in background (locked or switched away)');
       if (status === 'active') markTiming('App in foreground');
       if (status === 'background' && pausesOnLock) pauseFor('locked');
-      if (settings.silentTones && (status === 'background' || status === 'active')) guide.setVolume(status === 'active' ? 0 : settings.lockedVolume);
+      if (silentTones && (status === 'background' || status === 'active')) guide.setVolume(status === 'active' ? 0 : settings.lockedVolume);
       if (status === 'active') render();
     });
     return () => subscription.remove();
-  }, [pauseFor, render, settings]);
+  }, [pauseFor, render, settings, silentTones]);
 
   // The screen stays on in Silent, or when the person asked for it.
   useEffect(() => {
@@ -513,7 +517,8 @@ export function usePracticeSession({ run, preferences, quickStart, night, onIntr
     [],
   );
 
-  // Screen readers hear each step once, at its boundary: “Inhale left, 4 seconds”.
+  // Screen readers hear each step once, at its boundary: “Inhale left, 4 seconds”, unless the
+  // Viram voice is speaking it (speechOwner). Pauses, countdowns, and the finish are always announced.
   useEffect(() => {
     let message = '';
     if (view.kind === 'running') {
@@ -521,11 +526,11 @@ export function usePracticeSession({ run, preferences, quickStart, night, onIntr
       message = `${stepLabel(step)}, ${step.seconds} seconds`;
       if (announced.current !== view.stepKey) {
         announced.current = view.stepKey;
-        AccessibilityInfo.announceForAccessibility(message);
+        if (speech === 'screenReader') AccessibilityInfo.announceForAccessibility(message);
       }
     } else if (view.kind === 'paused' && !view.confirmingEnd && announced.current !== 'paused') {
       announced.current = 'paused';
-      AccessibilityInfo.announceForAccessibility('Practice paused');
+      AccessibilityInfo.announceForAccessibility(view.reason === 'user' ? 'Practice paused' : PAUSE_TITLE[view.reason]);
     } else if (view.kind === 'countdown' && announced.current !== `countdown-${view.part}-${view.purpose}`) {
       announced.current = `countdown-${view.part}-${view.purpose}`;
       const message = {
@@ -537,7 +542,7 @@ export function usePracticeSession({ run, preferences, quickStart, night, onIntr
     }
     // names derive from run, which is fixed for the screen.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [plans, view]);
+  }, [plans, speech, view]);
 
   // Keep the lock screen's round line current while the app is open.
   useEffect(() => {
@@ -551,6 +556,8 @@ export function usePracticeSession({ run, preferences, quickStart, night, onIntr
     view,
     hasIntro: intro !== null,
     countingAloud: settings.cues.mode === 'voice' && !!settings.cues.counting,
+    lock: settings.lock,
+    speech,
     actions: { pause: () => pauseFor('user'), resume: resumePractice, askToEnd, keepBreathing, endSession, skipIntro, cancel, cancelResume, dismissEnd: () => {
       const state = stateRef.current;
       if (state?.status === 'paused') transition(dismissEnd(state));

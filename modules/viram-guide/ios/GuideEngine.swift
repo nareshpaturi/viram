@@ -302,13 +302,30 @@ final class GuideEngine {
       once.volume = volume
       onceToken += 1
       let token = onceToken
-      once.scheduleBuffer(buffer, at: nil, options: []) { [weak self] in
-        self?.queue.asyncAfter(deadline: .now() + 0.2) {
-          guard let self, !self.active, self.onceToken == token else { return }
-          self.stopOnQueue()
+      // Played back, not just consumed, so “ended” is when it stops being heard. A stop or a newer
+      // sound bumps the token first, so this never reports the end of a sound that was cut short.
+      once.scheduleBuffer(buffer, at: nil, options: [], completionCallbackType: .dataPlayedBack) { [weak self] _ in
+        guard let self else { return }
+        self.queue.async {
+          guard self.onceToken == token else { return }
+          self.emit?("onPreviewEnded", [:])
+          self.queue.asyncAfter(deadline: .now() + 0.2) {
+            guard !self.active, self.onceToken == token else { return }
+            self.stopOnQueue()
+          }
         }
       }
       once.play()
+    }
+  }
+
+  /// Stops a preview (UX10). During a practice only the one-shot node stops; otherwise the
+  /// engine and the audio session are released too.
+  func stopOnce() {
+    queue.async {
+      self.onceToken += 1
+      self.once.stop()
+      if !self.active { self.stopOnQueue() }
     }
   }
 

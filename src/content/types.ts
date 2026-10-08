@@ -46,6 +46,11 @@ export interface Technique {
     target: Target;
     posture: 'seated' | 'seated-or-lying';
     /**
+     * Practices taught in rounds (UX07): the counts Breathe's Duration sheet
+     * offers, each with a short note, e.g. 4 “as taught”.
+     */
+    roundOptions?: { rounds: number; note: string }[];
+    /**
      * v1.1 gentle progression (FR-15): the rhythms after the default, one
      * step at a time. Each lists every step's seconds in order. Offered,
      * never applied automatically.
@@ -57,6 +62,8 @@ export interface Technique {
     };
   };
   guidance: {
+    /** The Duration sheet's footnote for a practice taught in rounds. */
+    roundsNote?: string;
     /** Opening paragraph of the guide, below the rhythm card and Take care. */
     lead: string;
     /** Above the fold, before Begin. */

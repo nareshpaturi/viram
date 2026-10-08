@@ -79,6 +79,16 @@ export function checkLibrary() {
     if ('minutes' in target && !(Number.isInteger(target.minutes) && target.minutes >= 1 && target.minutes <= 60)) fail(at, 'minutes target must be 1–60');
     if ('rounds' in target && !(Number.isInteger(target.rounds) && target.rounds >= 1 && target.rounds <= 108)) fail(at, 'rounds target must be 1–108');
 
+    // Round options (UX07): only for a practice taught in rounds, starting with its default, with a footnote.
+    if (practice.roundOptions) {
+      const counts = practice.roundOptions.map((o) => o.rounds);
+      if (!('rounds' in target)) fail(at, 'round options need a rounds target');
+      else if (counts[0] !== target.rounds) fail(at, 'round options start with the default rounds');
+      if (counts.some((n, i) => !Number.isInteger(n) || n < 1 || n > 108 || (i > 0 && n <= counts[i - 1]))) fail(at, 'round options must rise within 1–108');
+      if (practice.roundOptions.some((o) => !o.note || o.note.length > 60)) fail(at, 'each round option needs a note of 1–60 characters');
+      if (!guidance.roundsNote || guidance.roundsNote.length > 140) fail(at, 'round options need a rounds note of 1–140 characters');
+    } else if (guidance.roundsNote) fail(at, 'a rounds note belongs with round options');
+
     // Gentle progression (FR-15): only where the PRD defines a path; each
     // step stays within bounds and changes the rhythm from the one before.
     if (practice.progression) {
