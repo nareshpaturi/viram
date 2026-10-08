@@ -146,7 +146,7 @@ export function describeSlowing(steps: readonly RhythmStep[], slowing: Slowing):
 }
 
 /** “5 min · 15 rounds · 5:00”, or “21 rounds · 7:42” when the target is rounds. */
-export function describeTargetAndPlan(steps: readonly RhythmStep[], target: Target): string {
-  const plan = describePlan(steps, target);
+export function describeTargetAndPlan(steps: readonly RhythmStep[], target: Target, slowing: Slowing | null = null): string {
+  const plan = describePlan(steps, target, slowing);
   return 'minutes' in target ? `${describeTarget(target)} · ${plan}` : plan;
 }

@@ -1,11 +1,12 @@
-import { useCallback, useEffect, useMemo } from 'react';
-import { BackHandler, Platform, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { BackHandler, Platform, Pressable, ScrollView, StyleSheet, useWindowDimensions, View, type StyleProp, type ViewStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Redirect, router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useReducedMotion } from '../src/accessibility/motion';
 import { describeRhythm, describeTarget, formatClock, progressLine, routeLabel, stepLabel } from '../src/breathing/describe';
 import { guideCount } from '../src/breathing/timeline';
+import { MAX_SPOKEN_COUNT } from '../src/content/voice';
 import { AppText } from '../src/components/AppText';
 import { BreathingGuide } from '../src/components/BreathingGuide';
 import { Button } from '../src/components/Button';
@@ -55,7 +56,7 @@ export default function PracticeRoute() {
 function PracticeScreen({ run, quickStart }: { run: PracticeRun; quickStart: boolean }) {
   const { preferences, update } = usePreferences();
   const reducedMotion = useReducedMotion(preferences.motion);
-  const { width, height } = useWindowDimensions();
+  const { width, height, fontScale } = useWindowDimensions();
   const surface = useSurface();
   const { plans, view, countingAloud, lock, speech, actions } = usePracticeSession({
     run,
@@ -72,7 +73,7 @@ function PracticeScreen({ run, quickStart }: { run: PracticeRun; quickStart: boo
     useCallback(() => {
       const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
         if (view.kind === 'running' || view.kind === 'paused') actions.askToEnd();
-        else if (view.kind === 'intro' || (view.kind === 'countdown' && view.purpose === 'settle')) actions.cancel();
+        else if (view.kind === 'intro' || view.kind === 'prepare' || (view.kind === 'countdown' && view.purpose === 'settle')) actions.cancel();
         return true;
       });
       return () => subscription.remove();
@@ -93,7 +94,8 @@ function PracticeScreen({ run, quickStart }: { run: PracticeRun; quickStart: boo
     if (view.kind === 'running' && showLockTip) update({ lockTipSeen: true });
   }, [showLockTip, update, view.kind]);
 
-  const guideSize = Math.max(180, Math.min(300, width - spacing.xxl * 2, height * 0.36));
+  // Larger text takes room from the guide, so the step and its words fit above Pause (QA F09).
+  const guideSize = Math.max(150, Math.min(300, width - spacing.xxl * 2, height * 0.36 - Math.max(0, fontScale - 1) * 120));
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: surface.background }]} edges={['top', 'left', 'right', 'bottom']}>
@@ -149,11 +151,24 @@ function Body({ view, run, durations, guideSize, reducedMotion, countingAloud, l
         </Centered>
       );
 
+    case 'prepare':
+      return (
+        <PrepareNext
+          practice={practiceOf(view.part)}
+          eyebrow="Before you begin"
+          right="Getting ready"
+          leave={{ label: 'Cancel', onPress: actions.cancel }}
+          beginTitle="Begin"
+          onBegin={actions.skipIntro}
+        />
+      );
+
     case 'intro':
       return (
         <View style={styles.fill}>
           <TopBar left={{ label: 'Cancel', onPress: actions.cancel }} right={`Introduction · ${formatClock(view.remainingMs)} left`} />
-          <View style={styles.introBody}>
+          {/* Captions scroll between the fixed controls, following the newest line, at any text size (QA F09, AQ-06). */}
+          <FollowingScroll contentContainerStyle={styles.introBody}>
             <AppText variant="phase" accessibilityRole="header">
               {run.parts[0].name}
             </AppText>
@@ -162,7 +177,7 @@ function Body({ view, run, durations, guideSize, reducedMotion, countingAloud, l
                 {line}
               </AppText>
             ))}
-          </View>
+          </FollowingScroll>
           <Button title="Skip introduction" variant="onPineQuiet" onPress={actions.skipIntro} />
         </View>
       );
@@ -238,7 +253,8 @@ function Body({ view, run, durations, guideSize, reducedMotion, countingAloud, l
       // Half-second rhythms and gradual slowing show a ring instead of whole-second counts.
       const seconds = position.step.durationMs / 1000;
       const halfSeconds = !!practice.slowing || practice.steps.some((s) => !Number.isInteger(s.seconds));
-      const count = halfSeconds ? null : guideCount(position.step.durationMs, position.step.elapsedMs, countingAloud);
+      // A step too long to count aloud shows the seconds left, as the voice is quiet then (QA F06).
+      const count = halfSeconds ? null : guideCount(position.step.durationMs, position.step.elapsedMs, countingAloud && step.seconds <= MAX_SPOKEN_COUNT);
       const route = routeLabel(step);
       const caption = captionFor(practice, position.step.index) ?? [practice.name, subtitleOf(practice)].filter(Boolean).join(' · ');
       // One signal (V4/V5): time remaining, or the round for a practice set in rounds.
@@ -263,7 +279,7 @@ function Body({ view, run, durations, guideSize, reducedMotion, countingAloud, l
             {note ? <AppText variant="label" style={styles.muted}>{note}</AppText> : null}
           </View>
           {drawA ? (
-            <View style={styles.center}>
+            <Stage>
               <View style={styles.stepA} accessible accessibilityRole="header" accessibilityLabel={stepA11y}>
                 <AppText variant="phase" style={[styles.centerText, styles.phaseA]}>
                   {stepLabel(step)}
@@ -278,9 +294,9 @@ function Body({ view, run, durations, guideSize, reducedMotion, countingAloud, l
               <AppText style={[styles.centerText, styles.muted, styles.captionA]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
                 {halfSeconds ? `${caption} ${seconds} seconds.` : caption}
               </AppText>
-            </View>
+            </Stage>
           ) : (
-            <View style={styles.center}>
+            <Stage>
               {drawB ? (
                 <View style={styles.drawingB}>
                   <NoseDrawing step={step} look="compact" size={120} progress={stepProgress} reducedMotion={reducedMotion} />
@@ -310,7 +326,7 @@ function Body({ view, run, durations, guideSize, reducedMotion, countingAloud, l
                 {route ? <AppText variant="bodyStrong" style={[styles.centerText, styles.route]}>{route}</AppText> : null}
                 <AppText style={[styles.centerText, styles.muted]}>{halfSeconds ? `${caption} ${seconds} seconds.` : caption}</AppText>
               </View>
-            </View>
+            </Stage>
           )}
           <Button title="Pause" variant="onPine" onPress={actions.pause} />
         </View>
@@ -336,7 +352,17 @@ function Body({ view, run, durations, guideSize, reducedMotion, countingAloud, l
         );
       }
       if (view.reason === 'prepare') {
-        return <PrepareNext practice={practiceOf(view.part)} label={partLabel(view.part)} onBegin={actions.resume} onEnd={actions.askToEnd} />;
+        const next = practiceOf(view.part);
+        return (
+          <PrepareNext
+            practice={next}
+            eyebrow="Up next"
+            right={partLabel(view.part) ?? 'Up next'}
+            leave={{ label: 'End', onPress: actions.askToEnd }}
+            beginTitle={`Begin ${next.name}`}
+            onBegin={actions.resume}
+          />
+        );
       }
       return (
         <View style={styles.fill}>
@@ -381,19 +407,29 @@ function Body({ view, run, durations, guideSize, reducedMotion, countingAloud, l
   }
 }
 
+interface PrepareProps {
+  practice: PracticeRun['parts'][number];
+  eyebrow: string;
+  right: string;
+  leave: { label: string; onPress: () => void };
+  beginTitle: string;
+  onBegin: () => void;
+}
+
 /**
- * A routine stops before a practice it hasn't taught (content review F9):
- * how it's done, its caution, and Begin when the person is ready. Paused,
- * so nothing is timed and the hand can move at its own pace.
+ * How a practice is done, its caution, and Begin when the person is ready:
+ * before a routine's practice it hasn't taught (content review F9), and as
+ * Silent's introduction, which never speaks (QA F01). Nothing is timed, so
+ * the hand can move at its own pace.
  */
-function PrepareNext({ practice, label, onBegin, onEnd }: { practice: PracticeRun['parts'][number]; label: string | null; onBegin: () => void; onEnd: () => void }) {
+function PrepareNext({ practice, eyebrow, right, leave, beginTitle, onBegin }: PrepareProps) {
   const technique = techniqueOf(practice);
   return (
     <View style={styles.fill}>
-      <TopBar left={{ label: 'End', onPress: onEnd }} right={label ?? 'Up next'} />
+      <TopBar left={leave} right={right} />
       <ScrollView contentContainerStyle={styles.prepare}>
         <AppText variant="label" style={styles.muted}>
-          Up next
+          {eyebrow}
         </AppText>
         <AppText variant="phase" accessibilityRole="header" style={styles.centerText}>
           {practice.name}
@@ -409,8 +445,27 @@ function PrepareNext({ practice, label, onBegin, onEnd }: { practice: PracticeRu
           {cautionFor(practice)}
         </AppText>
       </ScrollView>
-      <Button title={`Begin ${practice.name}`} variant="onPine" onPress={onBegin} />
+      <Button title={beginTitle} variant="onPine" onPress={onBegin} />
     </View>
+  );
+}
+
+/** The running guide and its words: scrolls rather than slipping behind Pause at large text (QA F09). */
+function Stage({ children }: { children: React.ReactNode }) {
+  return (
+    <ScrollView style={styles.flexFill} contentContainerStyle={styles.stage} showsVerticalScrollIndicator={false}>
+      {children}
+    </ScrollView>
+  );
+}
+
+/** A scroll view that keeps its newest content in view as it grows. */
+function FollowingScroll({ children, contentContainerStyle }: { children: React.ReactNode; contentContainerStyle: StyleProp<ViewStyle> }) {
+  const ref = useRef<ScrollView>(null);
+  return (
+    <ScrollView ref={ref} style={styles.flexFill} contentContainerStyle={contentContainerStyle} onContentSizeChange={() => ref.current?.scrollToEnd({ animated: true })}>
+      {children}
+    </ScrollView>
   );
 }
 
@@ -434,7 +489,11 @@ function TopBar({ left, right }: { left?: { label: string; onPress: () => void }
 }
 
 function Centered({ children }: { children: React.ReactNode }) {
-  return <View style={[styles.center, styles.centerGap]}>{children}</View>;
+  return (
+    <ScrollView style={styles.flexFill} contentContainerStyle={[styles.stage, styles.centerGap]}>
+      {children}
+    </ScrollView>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -453,7 +512,9 @@ const styles = StyleSheet.create({
   route: { color: colors.practiceText },
   bigCount: { color: colors.practiceText },
   pauseMark: { color: colors.practiceTextMuted },
-  introBody: { flex: 1, justifyContent: 'center', gap: spacing.md },
+  introBody: { flexGrow: 1, justifyContent: 'center', gap: spacing.md, paddingVertical: spacing.md },
+  flexFill: { flex: 1 },
+  stage: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.ms, paddingVertical: spacing.sm },
   caption: { color: colors.practiceText, fontSize: 20, lineHeight: 30 },
   captionPast: { color: colors.practiceTextMuted },
   actions: { gap: spacing.ms },

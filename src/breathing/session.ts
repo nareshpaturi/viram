@@ -8,7 +8,9 @@
  *   [lead][part k from startPlanMs][5 s transition][part k+1] … [last part]
  *
  * so a routine plays on one continuous audio timeline and moves between
- * practices without JavaScript, even with the screen locked. The lead is
+ * practices without JavaScript, even with the screen locked. A segment can
+ * stop early, before a part that must be shown before it starts (a practice
+ * the routine hasn't taught); it then pauses there for “Begin”. The lead is
  * three neutral seconds to settle or resume; transitions are five. Neither
  * counts as practice time. Everything the screen shows is derived from
  * (state, clock) by `readPosition`; nothing here owns a timer.
@@ -30,6 +32,12 @@ export interface Segment {
   startPlanMs: number;
   /** That part's practice time accrued before this segment. */
   activeBeforeMs: number;
+  /**
+   * The last part this segment plays; omitted, it plays to the end. Native
+   * audio holds only these parts, so a part waiting for preparation can't
+   * start while JavaScript is suspended (QA 2026-10-08: F04, AQ-03).
+   */
+  lastPart?: number;
 }
 
 export interface PartResult {
@@ -64,9 +72,13 @@ export function sessionPlan(steps: readonly RhythmStep[], target: Target, slowin
 
 export const initialState = (withIntro: boolean): SessionState => (withIntro ? { status: 'intro' } : settle());
 
-export function settle(): SessionState {
-  return { status: 'active', segment: { purpose: 'settle', part: 0, startPlanMs: 0, activeBeforeMs: 0 }, done: [] };
+export function settle(lastPart?: number): SessionState {
+  return { status: 'active', segment: { purpose: 'settle', part: 0, startPlanMs: 0, activeBeforeMs: 0, ...lastOf(lastPart) }, done: [] };
 }
+
+const lastOf = (lastPart: number | undefined) => (lastPart === undefined ? {} : { lastPart });
+/** The last part a segment plays. */
+const lastPartOf = (plans: readonly SessionPlan[], segment: Segment) => Math.min(plans.length - 1, segment.lastPart ?? plans.length - 1);
 
 /** Where part `part` sits on this segment's clock. */
 export interface PartSpan {
@@ -82,7 +94,7 @@ export interface PartSpan {
 export function segmentLayout(plans: readonly SessionPlan[], segment: Segment): PartSpan[] {
   const spans: PartSpan[] = [];
   let offsetMs = 0;
-  for (let part = segment.part; part < plans.length; part++) {
+  for (let part = segment.part; part <= lastPartOf(plans, segment); part++) {
     const first = part === segment.part;
     const span: PartSpan = {
       part,
@@ -146,7 +158,7 @@ export function readPosition(plans: readonly SessionPlan[], segment: Segment, cl
     finishedInSegment: spans
       .filter((s) => s.part < span.part)
       .map((s) => ({ activeMs: s.activeBeforeMs + plans[s.part].durationMs - s.startPlanMs, completedRounds: plans[s.part].rounds, outcome: 'completed' })),
-    done: span.part === plans.length - 1 && span.startPlanMs + guidedMs >= plan.durationMs,
+    done: span.part === lastPartOf(plans, segment) && span.startPlanMs + guidedMs >= plan.durationMs,
   };
 }
 
@@ -171,12 +183,12 @@ export function pause(plans: readonly SessionPlan[], state: SessionState, clockM
   };
 }
 
-/** Restarts the interrupted round after the neutral lead. */
-export function resume(state: SessionState): SessionState {
+/** Restarts the interrupted round after the neutral lead, playing up to `lastPart`. */
+export function resume(state: SessionState, lastPart?: number): SessionState {
   if (state.status !== 'paused') return state;
   return {
     status: 'active',
-    segment: { purpose: 'resume', part: state.part, startPlanMs: state.resumePlanMs, activeBeforeMs: state.activeMs },
+    segment: { purpose: 'resume', part: state.part, startPlanMs: state.resumePlanMs, activeBeforeMs: state.activeMs, ...lastOf(lastPart) },
     done: state.done,
   };
 }
@@ -207,7 +219,11 @@ export function endEarly(plans: readonly SessionPlan[], state: SessionState): Se
   return { status: 'finished', outcome: 'ended', parts: [...state.done, current] };
 }
 
-/** The last part reached its final round: every part completes on a whole round. */
+/**
+ * The segment's last part reached its final round: every part completes on
+ * a whole round. That finishes the practice, or, when the segment stopped
+ * before a part that needs preparation, pauses there for “Begin”.
+ */
 export function complete(plans: readonly SessionPlan[], state: SessionState): SessionState {
   if (state.status !== 'active') return state;
   const spans = segmentLayout(plans, state.segment);
@@ -216,6 +232,10 @@ export function complete(plans: readonly SessionPlan[], state: SessionState): Se
     completedRounds: plans[s.part].rounds,
     outcome: 'completed',
   }));
+  const next = lastPartOf(plans, state.segment) + 1;
+  if (next < plans.length) {
+    return { status: 'paused', reason: 'prepare', part: next, resumePlanMs: 0, activeMs: 0, confirmingEnd: false, done: [...state.done, ...parts] };
+  }
   return { status: 'finished', outcome: 'completed', parts: [...state.done, ...parts] };
 }
 
