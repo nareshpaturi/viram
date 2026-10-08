@@ -8,6 +8,7 @@ import { Button } from '../src/components/Button';
 import { Card } from '../src/components/Card';
 import { ConfirmPanel } from '../src/components/ConfirmPanel';
 import { Screen } from '../src/components/Screen';
+import { timeWithBreath } from '../src/history/format';
 import { parseRecord, type SessionRecord } from '../src/history/repository';
 import type { Practice } from '../src/practice/practice';
 import { easierPractice, OFFER_WINDOW_MS, progressionOffer, type Offer } from '../src/progression/progression';
@@ -347,14 +348,6 @@ function OfferCard({ title, body, detail, yes, no, more }: { title: string; body
 function phaseDetail(result: Extract<ProgramResult, { kind: 'phase' }>): string | null {
   const part = sessionRun(result.enrollment.definition, result.phase.next.first)?.parts[0];
   return part ? `${rhythmLine(part.steps)} · ${describeTarget(part.target)}` : null;
-}
-
-/** “5 minutes with your breath.”, or seconds under a minute. */
-export function timeWithBreath(activeMs: number): string {
-  const seconds = Math.round(activeMs / 1000);
-  if (seconds < 60) return `${seconds} ${seconds === 1 ? 'second' : 'seconds'} with your breath.`;
-  const minutes = Math.round(seconds / 60);
-  return `${minutes} ${minutes === 1 ? 'minute' : 'minutes'} with your breath.`;
 }
 
 const CHECK_HALO = [

@@ -16,6 +16,14 @@ export function dayLabel(epochMs: number, now = new Date()): string {
   return date.getFullYear() === now.getFullYear() ? base : `${base}, ${date.getFullYear()}`;
 }
 
+/** Completion's line: “5 minutes with your breath.”, or seconds under a minute (UX03). */
+export function timeWithBreath(activeMs: number): string {
+  const seconds = Math.round(activeMs / 1000);
+  if (seconds < 60) return `${seconds} ${seconds === 1 ? 'second' : 'seconds'} with your breath.`;
+  const minutes = Math.round(seconds / 60);
+  return `${minutes} ${minutes === 1 ? 'minute' : 'minutes'} with your breath.`;
+}
+
 export function timeLabel(epochMs: number): string {
   const d = new Date(epochMs);
   const hour = d.getHours() % 12 || 12;
