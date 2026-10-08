@@ -97,6 +97,8 @@ const NIGHT_TEXT: Record<string, string> = {
   [colors.danger]: NIGHT.danger,
   [colors.white]: NIGHT.textStrong,
   [colors.practiceTextMuted]: NIGHT.textMuted,
+  // Muted text written for a wash (completion's “5 minutes with your breath.”) is muted at night too.
+  [colors.inkSoftOnWash]: NIGHT.textMuted,
 };
 
 /** A text color for the current surface. */
