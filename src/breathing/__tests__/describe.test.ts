@@ -1,7 +1,18 @@
 import { LIBRARY } from '../../content/library';
-import { rhythmLine, slowingLine } from '../describe';
+import { progressLine, rhythmLine, slowingLine } from '../describe';
 
 const steps = (id: string) => LIBRARY.find((t) => t.id === id)!.practice.steps;
+
+describe('progress line', () => {
+  it('shows time remaining for a practice set in minutes', () => {
+    expect(progressLine({ minutes: 5 }, { roundNumber: 3, roundsLeft: 13, remainingMs: 226_000 })).toBe('3:46 remaining');
+  });
+
+  it('shows the round for a practice set in rounds', () => {
+    expect(progressLine({ rounds: 4 }, { roundNumber: 2, roundsLeft: 3, remainingMs: 57_000 })).toBe('Round 2 of 4');
+    expect(progressLine({ rounds: 4 }, { roundNumber: 4, roundsLeft: 1, remainingMs: 19_000 })).toBe('Round 4 of 4');
+  });
+});
 
 describe('rhythm line', () => {
   it('names each step with a capital, leaving out steps that are off', () => {

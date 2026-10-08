@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Redirect, router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useReducedMotion } from '../src/accessibility/motion';
-import { describeRhythm, describeTarget, formatClock, routeLabel, stepLabel } from '../src/breathing/describe';
+import { describeRhythm, describeTarget, formatClock, progressLine, routeLabel, stepLabel } from '../src/breathing/describe';
 import { guideCount } from '../src/breathing/timeline';
 import { AppText } from '../src/components/AppText';
 import { BreathingGuide } from '../src/components/BreathingGuide';
@@ -231,8 +231,8 @@ function Body({ view, run, durations, guideSize, reducedMotion, countingAloud, l
       const count = halfSeconds ? null : guideCount(position.step.durationMs, position.step.elapsedMs, countingAloud);
       const route = routeLabel(step);
       const caption = captionFor(practice, position.step.index) ?? [practice.name, subtitleOf(practice)].filter(Boolean).join(' · ');
-      // Time remaining only, with no round count (V4/V5).
-      const remaining = `${formatClock(position.remainingMs)} remaining`;
+      // One signal (V4/V5): time remaining, or the round for a practice set in rounds.
+      const remaining = progressLine(practice.target, position);
       // The illustrated guide draws the nose instead of the circle, unless the practice breathes through the mouth or chants.
       const drawA = drawsIllustration(guide, practice.steps);
       // The circle carries a drawing above it only where it can't show the step itself: the open side, or a hum.
