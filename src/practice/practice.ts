@@ -111,7 +111,7 @@ export function parsePractice(value: unknown): Practice | null {
   if (!validSource || !Array.isArray(v.steps) || typeof v.target !== 'object' || v.target === null) return null;
   const techniqueId = typeof v.techniqueId === 'string' ? v.techniqueId : null;
   if (source.kind === 'technique' && source.id !== techniqueId) return null;
-  const rhythm = validateRhythm({ name: String(v.name ?? ''), steps: v.steps, target: v.target, techniqueId });
+  const rhythm = validateRhythm({ name: String(v.name ?? ''), steps: v.steps, target: v.target, techniqueId }, { longHolds: true });
   if (!rhythm) return null;
   const practice: Practice = { source, name: rhythm.name, techniqueId: rhythm.techniqueId, steps: rhythm.steps, target: rhythm.target };
   const slowing = checkSlowing(practice.techniqueId, practice.steps, v.slowing);

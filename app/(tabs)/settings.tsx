@@ -9,6 +9,7 @@ import { TONE_SET_LABEL } from '../../src/audio/toneSets';
 import { TIMING_LOG_ENABLED } from '../../src/audio/timingLog';
 import { reminderTime } from '../../src/reminder/reminder';
 import { HEALTH_NAME, healthAvailable } from '../../src/health/health';
+import { longHoldsOffered } from '../../src/content/longHolds';
 import { usePreferences } from '../../src/settings/PreferencesProvider';
 import { stores } from '../../src/storage';
 
@@ -67,6 +68,9 @@ export default function Settings() {
           onPress={() => router.push('/settings/reminder')}
         />
         <ListRow title="My rhythms" subtitle={`${saved} saved`} onPress={() => router.push('/rhythms')} />
+        {longHoldsOffered() ? (
+          <ListRow title="Longer holds" subtitle={preferences.longHolds ? 'Up to 60 seconds' : 'Off · holds up to 20 seconds'} onPress={() => router.push('/settings/holds')} />
+        ) : null}
       </RowGroup>
       <RowGroup title="Your data">
         {healthAvailable() || preferences.healthConnected ? (

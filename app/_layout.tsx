@@ -90,6 +90,7 @@ export default function RootLayout() {
         <Stack.Screen name="session/[id]" options={{ title: 'Practice details' }} />
         <Stack.Screen name="settings/sound" options={{ title: 'Cues & sound' }} />
         <Stack.Screen name="settings/reminder" options={{ title: 'Daily reminder' }} />
+        <Stack.Screen name="settings/holds" options={{ title: 'Longer holds' }} />
         <Stack.Screen name="health" options={{ title: Platform.OS === 'android' ? 'Health Connect' : 'Apple Health' }} />
         <Stack.Screen name="settings/data" options={{ title: 'Your data' }} />
         <Stack.Screen name="settings/safety" options={{ title: 'Safety & wellbeing' }} />

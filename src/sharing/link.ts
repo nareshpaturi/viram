@@ -131,7 +131,12 @@ export function findTechnique(id: string): Technique | undefined {
  * installed, shareable technique's structure and sides, and its route and
  * cue come from the library.
  */
-export function validateRhythm(input: SharedRhythm): SharedRhythm | null {
+/**
+ * `longHolds` admits holds and rests up to 60 s: for the practitioner's own
+ * data (storage, imports), never for links.
+ */
+export function validateRhythm(input: SharedRhythm, options: { longHolds?: boolean } = {}): SharedRhythm | null {
+  const longHolds = options.longHolds ?? false;
   // Callers pass data from storage and files too, so check shapes first.
   if (typeof input.name !== 'string' || typeof input.target !== 'object' || input.target === null) return null;
   if (!Array.isArray(input.steps) || !input.steps.every(isStepShape)) return null;
@@ -142,7 +147,7 @@ export function validateRhythm(input: SharedRhythm): SharedRhythm | null {
       input.steps.length === 4 &&
       input.steps.every(
         // v1.1: the custom builder offers half seconds (FR-01).
-        (s, i) => s.kind === CUSTOM_KINDS[i] && !s.side && !s.route && !s.cue && isValidSeconds(s.kind, s.seconds, 0.5),
+        (s, i) => s.kind === CUSTOM_KINDS[i] && !s.side && !s.route && !s.cue && isValidSeconds(s.kind, s.seconds, 0.5, longHolds),
       );
     return fits ? { name, steps: input.steps.map(({ kind, seconds }) => ({ kind, seconds })), target: input.target, techniqueId: null } : null;
   }
@@ -154,7 +159,7 @@ export function validateRhythm(input: SharedRhythm): SharedRhythm | null {
   for (const [i, s] of input.steps.entries()) {
     const ref = reference[i];
     if (s.kind !== ref.kind || s.side !== ref.side) return null;
-    if (!isValidSeconds(s.kind, s.seconds, technique.practice.increment)) return null;
+    if (!isValidSeconds(s.kind, s.seconds, technique.practice.increment, longHolds)) return null;
     steps.push({ kind: ref.kind, seconds: s.seconds, side: ref.side, route: ref.route, cue: ref.cue });
   }
   return { name, steps: steps.map(stripUndefined), target: input.target, techniqueId: technique.id };

@@ -10,6 +10,7 @@ import {
   ROUND_SHORTCUTS,
   formatPace,
   isValidSlowing,
+  maxSeconds,
   minSeconds,
   nudgeSeconds,
   planFor,
@@ -31,6 +32,7 @@ import {
   type Practice,
 } from '../src/practice/practice';
 import { readyPractice } from '../src/practice/ready';
+import { longHoldsOffered } from '../src/content/longHolds';
 import { practiceFromRhythm } from '../src/rhythms/describe';
 import { usePreferences } from '../src/settings/PreferencesProvider';
 import { findTechnique } from '../src/sharing/link';
@@ -65,6 +67,7 @@ export default function AdjustRhythm() {
   const custom = draft.techniqueId === null;
   const [halfSteps, setHalfSteps] = useState(() => custom && draft.steps.some((s) => !Number.isInteger(s.seconds)));
   const increment = custom ? (halfSteps ? 0.5 : 1) : incrementOf(draft);
+  const longHolds = longHoldsOffered() && preferences.longHolds;
   const slowing = draft.slowing ?? null;
   const plan = planFor(draft.steps, draft.target, slowing);
   const inhale = draft.steps.find((s) => s.kind === 'inhale');
@@ -75,7 +78,7 @@ export default function AdjustRhythm() {
 
   const setTarget = (target: Target) => setDraft({ ...draft, target });
   const setSeconds = (index: number, direction: 1 | -1) => {
-    const steps = draft.steps.map((step, i) => (i === index ? { ...step, seconds: nudgeSeconds(step.kind, step.seconds, direction, increment) } : step));
+    const steps = draft.steps.map((step, i) => (i === index ? { ...step, seconds: nudgeSeconds(step.kind, step.seconds, direction, increment, longHolds) } : step));
     // The end of a slowing never starts shorter than the breath it slows.
     const floor = (kind: 'inhale' | 'exhale', end: number) => Math.max(end, steps.find((s) => s.kind === kind)?.seconds ?? end);
     setDraft({ ...draft, steps, slowing: slowing && { inhale: floor('inhale', slowing.inhale), exhale: floor('exhale', slowing.exhale) } });
@@ -83,7 +86,7 @@ export default function AdjustRhythm() {
   const toggleHalfSteps = (on: boolean) => {
     setHalfSteps(on);
     // Back to whole seconds rounds each half up, within bounds.
-    if (!on) setDraft({ ...draft, steps: draft.steps.map((s) => ({ ...s, seconds: Math.min(MAX_STEP_SECONDS, Math.ceil(s.seconds)) })) });
+    if (!on) setDraft({ ...draft, steps: draft.steps.map((s) => ({ ...s, seconds: Math.min(maxSeconds(s.kind, true), Math.ceil(s.seconds)) })) });
   };
   const toggleSlowing = (on: boolean) =>
     setDraft({
@@ -182,7 +185,7 @@ export default function AdjustRhythm() {
               display={off ? 'Off' : `${step.seconds}s`}
               spoken={off ? 'Off' : `${step.seconds} seconds`}
               canDecrement={step.seconds > minSeconds(step.kind)}
-              canIncrement={step.seconds < MAX_STEP_SECONDS}
+              canIncrement={step.seconds < maxSeconds(step.kind, longHolds)}
               onDecrement={() => setSeconds(i, -1)}
               onIncrement={() => setSeconds(i, 1)}
             />
@@ -190,7 +193,7 @@ export default function AdjustRhythm() {
         })}
       </View>
       <AppText variant="label">
-        Inhale and exhale: 1–20 s. Holds: Off or 1–20 s.{increment === 0.5 && !custom ? ' This practice moves in half seconds.' : ''}
+        Inhale and exhale: 1–20 s. Holds: Off or 1–{longHolds ? 60 : 20} s.{increment === 0.5 && !custom ? ' This practice moves in half seconds.' : ''}
       </AppText>
       {custom ? <SwitchRow label="Half-second steps" description="Set each step in half seconds" value={halfSteps} onChange={toggleHalfSteps} /> : null}
 

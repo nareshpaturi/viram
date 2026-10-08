@@ -38,19 +38,29 @@ export const MAX_MINUTES = 60;
 export const ROUND_SHORTCUTS = [11, 21, 27] as const;
 export const MAX_ROUNDS = 108;
 export const MAX_STEP_SECONDS = 20;
+/** With Longer holds on (src/content/longHolds.ts), holds and rests may run this long. */
+export const MAX_LONG_HOLD_SECONDS = 60;
 
 export function minSeconds(kind: StepKind): number {
   return kind === 'inhale' || kind === 'exhale' ? 1 : 0;
 }
 
-export function isValidSeconds(kind: StepKind, seconds: number, increment: Increment): boolean {
+/** Inhale and exhale up to 20 s; holds and rests up to 20, or 60 with Longer holds. */
+export function maxSeconds(kind: StepKind, longHolds = false): number {
+  return longHolds && (kind === 'hold' || kind === 'rest') ? MAX_LONG_HOLD_SECONDS : MAX_STEP_SECONDS;
+}
+
+export function isValidSeconds(kind: StepKind, seconds: number, increment: Increment, longHolds = false): boolean {
   return (
     Number.isFinite(seconds) &&
     seconds >= minSeconds(kind) &&
-    seconds <= MAX_STEP_SECONDS &&
+    seconds <= maxSeconds(kind, longHolds) &&
     Number.isInteger(seconds / increment)
   );
 }
+
+/** A hold or rest past the standard 20 s: kept on the device, never in a link. */
+export const hasLongHolds = (steps: readonly RhythmStep[]): boolean => steps.some((s) => s.seconds > MAX_STEP_SECONDS);
 
 /** Any whole number of minutes from 1 to 60, or 1–108 rounds, everywhere a target appears. */
 export function isValidTarget(target: Target): boolean {
@@ -69,9 +79,9 @@ export function isValidRhythm(steps: readonly RhythmStep[], increment: Increment
 }
 
 /** Moves one step by one increment, staying inside its bounds. */
-export function nudgeSeconds(kind: StepKind, seconds: number, direction: 1 | -1, increment: Increment): number {
+export function nudgeSeconds(kind: StepKind, seconds: number, direction: 1 | -1, increment: Increment, longHolds = false): number {
   const next = seconds + direction * increment;
-  return Math.min(MAX_STEP_SECONDS, Math.max(minSeconds(kind), next));
+  return Math.min(Math.max(seconds, maxSeconds(kind, longHolds)), Math.max(minSeconds(kind), next));
 }
 
 export const stepMs = (step: RhythmStep): number => Math.round(step.seconds * 1000);
