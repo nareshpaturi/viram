@@ -12,6 +12,8 @@ import { AccessibilityInfo, AppState, Platform } from 'react-native';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import * as guide from '../audio/guide';
 import { CLIP_MS } from '../audio/manifest.generated';
+import { musicSound } from '../audio/music';
+import { voiceSound } from '../audio/voices';
 import { beginTimingLog, markSegment, markTiming } from '../audio/timingLog';
 import { formatClock, stepLabel } from '../breathing/describe';
 import { planStepAt } from '../breathing/rhythm';
@@ -138,6 +140,12 @@ export function usePracticeSession({ run, preferences, quickStart, night, onIntr
     } satisfies CueSettings,
     volume: preferences.cueVolume,
     mixWithOthers: preferences.otherAudio === 'alongside',
+    voice: preferences.voice,
+    // Music plays under Voice and Tones; Silent stays silent.
+    bed:
+      preferences.cueMode !== 'silent' && preferences.music !== 'off'
+        ? { sound: musicSound(preferences.music), volume: preferences.musicVolume }
+        : null,
   }));
   const [plans] = useState(() => run.parts.map((p) => sessionPlan(p.steps, p.target, p.slowing ?? null)));
   const names = run.parts.map((p) => p.name);
@@ -154,6 +162,7 @@ export function usePracticeSession({ run, preferences, quickStart, night, onIntr
     const chosen = preferences.introLength === 'long' && introduction.long ? introduction.long : introduction;
     return { id: technique.id, clip: chosen.clip, lines: chosen.lines };
   });
+  const introMs = intro ? (CLIP_MS[settings.voice]?.[intro.clip] ?? 0) : 0;
 
   const stateRef = useRef<SessionState | null>(null);
   const recordRef = useRef({ id: newId(), startedAt: 0 });
@@ -179,10 +188,9 @@ export function usePracticeSession({ run, preferences, quickStart, night, onIntr
     let next: SessionView;
     let key: string;
     if (state.status === 'intro' && intro) {
-      const clip = CLIP_MS[intro.clip] ?? 0;
       const clock = Math.max(0, guide.positionMs());
-      const line = introLine(intro.lines, clock / Math.max(1, clip));
-      next = { kind: 'intro', lines: intro.lines, line, remainingMs: Math.max(0, clip - clock) };
+      const line = introLine(intro.lines, clock / Math.max(1, introMs));
+      next = { kind: 'intro', lines: intro.lines, line, remainingMs: Math.max(0, introMs - clock) };
       key = `intro|${line}|${Math.ceil(next.remainingMs / 1000)}`;
     } else if (state.status === 'active') {
       const clock = Math.max(0, guide.positionMs());
@@ -227,7 +235,7 @@ export function usePracticeSession({ run, preferences, quickStart, night, onIntr
       viewKey.current = key;
       setView(next);
     }
-  }, [intro, plans, run, settings, stepLabelAt]);
+  }, [intro, introMs, plans, run, settings, stepLabelAt]);
 
   const transition = useCallback(
     (state: SessionState) => {
@@ -245,13 +253,15 @@ export function usePracticeSession({ run, preferences, quickStart, night, onIntr
     (state: SessionState) => {
       if (state.status !== 'active') return;
       const { segment } = state;
-      const schedule = buildRunSchedule(plans, segment, settings.cues, guide.clipLength, names);
+      const schedule = buildRunSchedule(plans, segment, settings.cues, (id) => guide.clipLength(settings.voice, id), names);
       markSegment(segment.purpose === 'settle' ? 'Guidance started' : `Resumed ${names[segment.part]} from plan ${formatClock(segment.startPlanMs)}`);
       guide.startSegment(schedule, {
         volume: settings.volume,
         mixWithOthers: settings.mixWithOthers,
         title: run.name,
         subtitle: 'Getting ready',
+        bed: settings.bed,
+        voice: settings.voice,
       });
     },
     // names derive from run, which is fixed for the screen.
@@ -274,18 +284,18 @@ export function usePracticeSession({ run, preferences, quickStart, night, onIntr
   // Load sounds, then introduce or settle.
   useEffect(() => {
     let cancelled = false;
-    const sounds = guide.practiceSounds(settings.cues.toneSet);
+    const sounds = guide.practiceSounds(settings.cues.toneSet, settings.bed?.sound ?? null, settings.voice);
     guide
-      .prepareSounds(intro ? [...sounds, `voice.${intro.clip}`] : sounds)
+      .prepareSounds(intro ? [...sounds, voiceSound(settings.voice, intro.clip)] : sounds)
       .catch(() => undefined)
       .finally(() => {
         if (cancelled) return;
-        const introPlayable = intro && guide.clipLength(intro.clip) !== undefined;
+        const introPlayable = intro && guide.clipLength(settings.voice, intro.clip) !== undefined;
         if (introPlayable) {
           transition(initialState(true));
           guide.startSegment(
-            { cues: [{ atMs: 0, sound: `voice.${intro.clip}`, haptic: null, nowPlaying: null }], endMs: CLIP_MS[intro.clip] },
-            { volume: settings.volume, mixWithOthers: settings.mixWithOthers, title: run.name, subtitle: 'Introduction' },
+            { cues: [{ atMs: 0, sound: `voice.${intro.clip}`, haptic: null, nowPlaying: null }], endMs: introMs },
+            { volume: settings.volume, mixWithOthers: settings.mixWithOthers, title: run.name, subtitle: 'Introduction', bed: settings.bed, voice: settings.voice },
           );
         } else {
           beginSettle();
@@ -401,7 +411,7 @@ export function usePracticeSession({ run, preferences, quickStart, night, onIntr
       const state = stateRef.current;
       if (state?.status === 'intro') {
         const clock = guide.positionMs();
-        if (clock < 0 || clock >= (intro ? CLIP_MS[intro.clip] ?? 0 : 0) + 400) beginSettle();
+        if (clock < 0 || clock >= introMs + 400) beginSettle();
       } else if (state?.status === 'active') {
         const clock = guide.positionMs();
         // A released segment (-1) means the guide already played it to the end.
@@ -413,7 +423,7 @@ export function usePracticeSession({ run, preferences, quickStart, night, onIntr
       render();
     }, TICK_MS);
     return () => clearInterval(timer);
-  }, [beginSettle, intro, plans, render, transition]);
+  }, [beginSettle, introMs, plans, render, transition]);
 
   // ——— Interruptions, lock-screen controls, and locking in Silent ———
 
@@ -509,6 +519,7 @@ export function usePracticeSession({ run, preferences, quickStart, night, onIntr
     plans,
     view,
     hasIntro: intro !== null,
+    countingAloud: settings.cues.mode === 'voice' && !!settings.cues.counting,
     actions: { pause: () => pauseFor('user'), resume: resumePractice, askToEnd, keepBreathing, endSession, skipIntro, cancel, cancelResume, dismissEnd: () => {
       const state = stateRef.current;
       if (state?.status === 'paused') transition(dismissEnd(state));

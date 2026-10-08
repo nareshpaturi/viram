@@ -37,6 +37,8 @@ How does Viram keep voice and tone cues within ±250 ms with the screen locked, 
 6. **The silent switch** doesn't mute cues. The `.playback` category keeps the prototype's locked decision: a breathing guide that goes mute is a broken guide.
 7. **Lock-screen text** (round and time left) travels with the cues and updates natively at each round start, because Android pauses JS timers in the background.
 8. A cue already written to the Android buffer (at most one buffer, about 20–80 ms) can still sound right after a pause.
+9. **The screen follows what is heard (iOS, October 7, 2026).** Cues are scheduled on host time, but they reach the ear later by the output's presentation latency: 5–20 ms on the speaker and 150–250 ms over AirPods. So the screen ran ahead of the voice. `positionMs()` now returns the clock less `outputNode.presentationLatency`, measured at each segment start and route change. This follows Apple's HelloMetronome sample, which delays its visual beat by the same amount. Scheduling still uses the raw clock. Android needs no change: its clock is already the frames presented (`AudioTimestamp`).
+10. **Music bed (October 7, 2026).** An optional looping bed (tanpura or soft pad) plays under Voice and Tones on its own player node (iOS) or in the same mix (Android), so it shares the cues' clock and keeps playing when locked. It fades in over a few seconds and carries on across the introduction, settle, and resume segments. It fades out on pause and under the completion cue. With *Play along*, it stays quiet if another app's music is already playing (iOS `isOtherAudioPlaying`; Android `isMusicActive`, checked before the practice's own stream starts).
 
 ## Evidence still required (blocks CP1b)
 
@@ -48,7 +50,8 @@ None of these can come from a simulator. Record the results in this file.
 | 20-min Voice session locked: every cue within ±250 ms (log `positionMs` vs. the planned cue time) | ☐ | ☐ |
 | Same, in Low Power Mode / battery saver and Doze | ☐ | ☐ |
 | Bluetooth headphones connected mid-session: no drift, no pause | ☐ | ☐ |
-| Over AirPods or Bluetooth, each cue lands with its visual step change. iOS positions are raw host time; if cues trail by the output latency (about 150–250 ms), subtract `AVAudioSession.outputLatency` from `positionMs` | ☐ | ☐ |
+| Over AirPods or Bluetooth, each cue lands with its visual step change. iOS now subtracts `outputNode.presentationLatency` from `positionMs` (consequence 9); confirm the step change and the cue coincide | ☐ | ☐ |
+| Music bed: loops without a seam for 20 minutes, carries on locked, fades on pause and at the end, stays quiet when another app's music plays under *Play along* | ☐ | ☐ |
 | Headphones disconnected: pauses with “headphones disconnected” | ☐ | ☐ |
 | Phone call and VoIP call: pause with “Paused for a call”; nothing plays until Resume | ☐ | ☐ |
 | Music playing: *Play alongside* keeps it going (and ducks on Android); *Pause other audio* pauses it | ☐ | ☐ |

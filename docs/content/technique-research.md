@@ -541,7 +541,8 @@ Plus one `name.<id>` clip per Sanskrit name (six) and one `intro.<id>` clip per 
 
 ### Production direction (proposed)
 
-- **One voice** throughout: calm, warm, unhurried, neutral English. No music bed, no whisper, no performance.
+- **One voice** throughout: calm, warm, unhurried, neutral English. No whisper, no performance.
+- **Music bed (changed October 7, 2026, owner):** placeholder testing found the cues robotic and bare, so an optional bed now plays softly under Voice and Tones: a tanpura drone (the default) or a soft ambient pad, chosen in Settings with its own volume. Both are generated in code (`npm run audio:music`), so they carry no licence. They loop seamlessly every 48 seconds and sit about 8 dB under the voice at the default volumes. The tone sets were rebuilt in the same key (Sa = C♯): inhale rises to Pa, exhale settles on Sa, and hold and rest are softer touches. Silent stays silent. With Play along, the bed stays quiet while another app's music plays.
 - **Cue words:** spoken plainly with falling intonation, as instructions rather than questions. Generate 3–5 takes and choose by ear.
 - **Timing:**
   - Trim leading silence to about 30 ms so each cue lands on the step boundary.
@@ -550,6 +551,17 @@ Plus one `name.<id>` clip per Sanskrit name (six) and one `intro.<id>` clip per 
 - **Levels:** normalize every clip to the same loudness (about −16 LUFS integrated for speech on phones) so cues, names, and introductions match the cue-volume setting.
 - **Format:** mono AAC or M4A at 64–96 kbps. Keep the lossless masters with the release evidence.
 - **Keep with the release evidence:** the generation settings (model, voice ID, stability and similarity values), the lexicon version, and the listener approvals.
+
+### Kokoro voice (October 7, 2026)
+
+The `say` placeholders are replaced by clips from **Kokoro-82M** (hexgrad, Apache 2.0, so commercial use is allowed), generated on a Mac with `npm run audio:voice-kokoro`. It needs no account, key, or network. ElevenLabs (`npm run audio:voice`) remains the higher-quality option if a paid plan is bought.
+
+- **Voices (owner's choice, October 7, 2026):** practitioners choose one of six in Settings › Cues & sound. The voice speaks every cue, count, name, and introduction for the whole practice. The six are `af_heart` (American 1, the default and Kokoro's highest-graded voice), `af_bella` (American 2), `bf_emma` (British), `hf_alpha` (Indian 1), `hf_beta` (Indian 2), and `hm_psi` (Indian, male), listed in `src/audio/voices.ts`. Kokoro grades its Indian voices lower, so the listener gate matters most for those three. `af_nicole` and `am_michael` were auditioned and not chosen. Each voice is about 8 MB: cue words, counts, and names as WAV (about 2.6 MB), and introductions as 64 kbps AAC (about 5 MB, 11 times smaller than WAV). All six come to about 49 MB, below the single uncompressed voice before (59 MB). Android decodes the AAC with MediaCodec; iOS reads it with AVAudioFile.
+- **Pace:** cue words at 0.9× speed, counts at 1.0×, names at 0.85×, introductions at 0.88× with 0.7 s between lines. A cue word over its limit is re-rendered about 8% faster until it fits; the British voice needs it most. Each clip ends 50 ms after the last 10 ms of speech within 35 dB of its loudest, so a faint click or breath doesn't stretch a cue past its limit.
+- **Intonation:** each cue word is spoken with a full stop. A pitch track of the clips shows every cue word falling by 10–35% at its end, which reads as an instruction rather than a question.
+- **Names:** Kokoro reads spelled-out aliases with stress on every syllable, and turns “Udgeeth” into “ood-jeet”. Names are therefore given as Kokoro phonemes in the script, taken from the respellings and IPA targets below, with a tapped r. They still need the listener check.
+- **Levels:** every clip (Kokoro or ElevenLabs) and every voice is set to the same speech level (gated RMS −20 dBFS, peaks under −1 dBFS), with 5 ms and 20 ms fades, so switching voices doesn't change loudness.
+- **Settings record:** `docs/content/voice-generation.json`. The listener gate applies to each offered voice, and `PLACEHOLDER_VOICE` stays true until all six pass (or a voice that doesn't is removed from `voices.ts`).
 
 ### Pronunciation
 
