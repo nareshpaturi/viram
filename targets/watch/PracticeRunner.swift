@@ -149,7 +149,8 @@ final class PracticeRunner: NSObject, ObservableObject, Identifiable {
     Haptics.play(Haptics.mark(kind))
     let token = generation
     for offset in Haptics.taps(kind, durationMs: position.durationMs, style: haptics.style) where offset > elapsedInStep {
-      DispatchQueue.main.asyncAfter(deadline: .now() + (offset - elapsedInStep) / 1000) { [weak self] in
+      Task { @MainActor [weak self] in
+        try? await Task.sleep(nanoseconds: UInt64((offset - elapsedInStep) * 1_000_000))
         guard let self, self.generation == token, self.stage == .running else { return }
         Haptics.play(.click)
       }

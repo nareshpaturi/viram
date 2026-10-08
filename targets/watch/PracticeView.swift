@@ -21,7 +21,6 @@ struct PracticeView: View {
         }
       }
     }
-    .toolbar(.hidden, for: .navigationBar)
   }
 
   private var guide: some View {
