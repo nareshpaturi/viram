@@ -349,7 +349,8 @@ export function usePracticeSession({ run, preferences, quickStart, night, onIntr
     const raw = guide.positionMs();
     if (raw >= 0 && raw < timeline.current.offset) return;
     heard.current(intro.id);
-    markSegment('Guidance started');
+    // A marker, not a new segment: the native timeline (and its cue clock) carries on.
+    markTiming('Guidance started');
     recordRef.current.startedAt = timeline.current.startedAt + timeline.current.offset;
     transition(settle(lastPartFrom(0)));
   }, [intro, lastPartFrom, transition]);
