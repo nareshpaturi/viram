@@ -76,6 +76,8 @@ export default function RootLayout() {
         <Stack.Screen name="welcome" options={{ headerShown: false, gestureEnabled: false }} />
         <Stack.Screen name="practice" options={{ headerShown: false, gestureEnabled: false }} />
         <Stack.Screen name="complete" options={{ headerShown: false, gestureEnabled: false }} />
+        {/* Draws its own back button, named for where it was opened. */}
+        <Stack.Screen name="visual-guide" options={{ headerShown: false }} />
         {/* The guide draws its own header plate and back button (Soft Light). */}
         <Stack.Screen name="technique/[id]" options={{ title: '', headerShown: false }} />
         <Stack.Screen name="adjust" options={{ title: 'Adjust rhythm' }} />

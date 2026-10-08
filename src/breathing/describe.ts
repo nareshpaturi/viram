@@ -95,6 +95,15 @@ export function speakRhythm(steps: readonly RhythmStep[]): string {
     .join(', ');
 }
 
+/**
+ * Practice's top line, one signal (V4/V5, UX09): the time remaining, or for
+ * a practice set in rounds, which round it's on.
+ */
+export function progressLine(target: Target, position: { roundNumber: number; roundsLeft: number; remainingMs: number }): string {
+  if ('rounds' in target) return `Round ${position.roundNumber} of ${position.roundNumber - 1 + position.roundsLeft}`;
+  return `${formatClock(position.remainingMs)} remaining`;
+}
+
 export function describeTarget(target: Target): string {
   if ('minutes' in target) return `${target.minutes} min`;
   return `${target.rounds} ${target.rounds === 1 ? 'round' : 'rounds'}`;

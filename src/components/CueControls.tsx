@@ -3,18 +3,23 @@ import { usePreview } from '../audio/usePreview';
 import { voiceSound } from '../audio/voices';
 import type { CueMode } from '../breathing/timeline';
 import { lockBehavior, MODE_HELP } from '../practice/guidanceRules';
+import { VISUAL_GUIDE_NAME, visualGuideOf } from '../practice/visualGuide';
 import { usePreferences } from '../settings/PreferencesProvider';
 import { colors, spacing } from '../theme';
 import { AppText } from './AppText';
 import { Button } from './Button';
 import { Segmented } from './Segmented';
 import { SwitchRow } from './SwitchRow';
+import { VisualGuideRow } from './VisualGuideRow';
 import { VolumeStepper } from './VolumeStepper';
 
 export const MODE_LABEL: Record<CueMode, string> = { voice: 'Voice', tones: 'Tones', silent: 'Silent' };
 
-/** Cue mode, volume, haptics, and motion: the cue chip sheet and Settings share these. */
-export function CueControls() {
+/**
+ * Cue mode, volume, haptics, visual guide, and motion: the Guidance sheet
+ * and Settings share these. The Visual guide row opens its own screen.
+ */
+export function CueControls({ onVisualGuide }: { onVisualGuide?: () => void }) {
   const { preferences, update } = usePreferences();
 
   const { playing, toggle } = usePreview();
@@ -52,6 +57,7 @@ export function CueControls() {
         <VolumeStepper label="Cue volume" value={preferences.cueVolume} onChange={(cueVolume) => update({ cueVolume })} />
       ) : null}
       <SwitchRow label="Haptics" description="A different feel for each step" value={preferences.haptics} onChange={(haptics) => update({ haptics })} />
+      {onVisualGuide ? <VisualGuideRow value={VISUAL_GUIDE_NAME[visualGuideOf(preferences.visualGuide)]} onPress={onVisualGuide} /> : null}
       <AppText variant="overline" accessibilityRole="header" style={styles.section}>
         MOTION
       </AppText>

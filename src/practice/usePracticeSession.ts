@@ -12,7 +12,6 @@ import { AccessibilityInfo, AppState, Platform } from 'react-native';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import * as guide from '../audio/guide';
 import { CLIP_MS } from '../audio/manifest.generated';
-import { musicSound } from '../audio/music';
 import { voiceLanguage, voiceSound } from '../audio/voices';
 import { HINDI_INTROS } from '../content/hindi';
 import { beginTimingLog, markSegment, markTiming } from '../audio/timingLog';
@@ -43,7 +42,8 @@ import type { PartRecord, RecordSource, SessionRecord } from '../history/reposit
 import type { OtherAudio, Preferences } from '../settings/preferences';
 import { newId } from '../storage/db';
 import { useScreenReader } from '../accessibility/useScreenReader';
-import { lockBehavior, PAUSE_TITLE, speechOwner } from './guidanceRules';
+import { PAUSE_TITLE, speechOwner } from './guidanceRules';
+import { practiceSettings } from './practiceSettings';
 import { techniqueOf } from './practice';
 import type { PracticeRun } from './run';
 
@@ -132,17 +132,6 @@ function buildRecord(
 }
 
 /** What the guide is told about other audio (FR-03); Automatic is decided natively as each segment starts. */
-function otherAudioOptions(otherAudio: OtherAudio) {
-  return {
-    mixWithOthers: otherAudio === 'alongside' || otherAudio === 'lower',
-    mixIfOthersPlaying: otherAudio === 'auto',
-    lowerOthers: otherAudio === 'lower',
-  };
-}
-
-/** Silent's soft tones on a locked iPhone are never louder than this. */
-const SILENT_LOCKED_VOLUME = 0.4;
-
 const OTHER_AUDIO_LOG: Record<OtherAudio, string> = {
   auto: 'other audio automatic',
   alongside: 'play along',
@@ -151,29 +140,8 @@ const OTHER_AUDIO_LOG: Record<OtherAudio, string> = {
 };
 
 export function usePracticeSession({ run, preferences, quickStart, night, onIntroHeard }: Options) {
-  // Settings are fixed for the length of a practice.
-  const [settings] = useState(() => ({
-    cues: {
-      mode: preferences.cueMode,
-      toneSet: preferences.toneSet,
-      haptics: preferences.haptics ? preferences.hapticStrength : null,
-      hapticStyle: preferences.hapticStyle,
-      hapticPhases: preferences.hapticPhases,
-      softFinish: night,
-      counting: preferences.voiceCounting,
-    } satisfies CueSettings,
-    volume: preferences.cueVolume,
-    audio: otherAudioOptions(preferences.otherAudio),
-    voice: preferences.voice,
-    // Music plays under Voice and Tones; Silent stays silent.
-    bed:
-      preferences.cueMode !== 'silent' && preferences.music !== 'off'
-        ? { sound: musicSound(preferences.music), volume: preferences.musicVolume }
-        : null,
-    // What keeps guiding once the phone locks (src/practice/guidanceRules.ts); Cues & sound says the same.
-    lock: lockBehavior({ mode: preferences.cueMode, haptics: preferences.haptics, silentLocked: preferences.silentLocked, platform: Platform.OS }),
-    lockedVolume: Math.min(preferences.cueVolume, SILENT_LOCKED_VOLUME),
-  }));
+  // Settings are fixed for the length of a practice (src/practice/practiceSettings.ts).
+  const [settings] = useState(() => practiceSettings(preferences, night, Platform.OS));
   // iPhone can't play haptics locked, so Silent can carry soft tones, heard only while locked.
   const silentTones = settings.lock === 'softTones';
   const screenReader = useScreenReader();
