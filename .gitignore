@@ -51,3 +51,7 @@ modules/*/android/.cxx/
 
 # Local simulator builds (xcodebuild -derivedDataPath build/dd)
 /build
+
+# ElevenLabs voice previews and 48 kHz masters (keep masters with the release evidence)
+voice-design/
+voice-masters/
