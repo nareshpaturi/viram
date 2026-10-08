@@ -64,6 +64,7 @@ export const PAUSE_TITLE: Record<PauseReason, string> = {
   headphones: 'Paused: headphones disconnected.',
   lockScreen: 'Paused from the lock screen.',
   locked: 'Paused when your phone locked.',
+  prepare: 'Get ready for the next practice.',
 };
 
 /** Breathe's Guidance row: “Voice and haptics”, “Tones, no haptics”, “Silent with haptics”. */

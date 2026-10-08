@@ -303,6 +303,9 @@ Also reviewed:
 
 No rigorous trial tests 4-7-8 for falling asleep in the general population.
 
+Added in content version 2 (October 8, 2026, after the practice content review):
+- Doğan &amp; Sungur 2026, *Eur J Integr Med* 82:102620 · doi 10.1016/j.eujim.2026.102620: randomized study of undergraduate nursing students; better self-reported sleep quality and sleep-latency scores after four weeks vs no intervention. **Abstract only**: the participant count (82), duration, and comparison come from the publisher's abstract as read in the review; the full paper hasn't been appraised for risk of bias. The copy says only that sleep research is limited and names this as a small trial of self-reported sleep quality.
+
 **Summary:** thin evidence. It is a structured, easy-to-remember routine with plausible short-term effects, and unproven as a sleep aid.
 
 ---
@@ -607,6 +610,32 @@ Stress follows the usual Sanskrit rule: the second-to-last syllable if it is hea
 5. Record approval (listener, language background, date, lexicon version, clip manifest hash) with the release evidence. Voice gate: at least 8 listeners, median 4/5 or better for calm and pace (PRD).
 
 ---
+
+## Content version 2 · practice content review (October 8, 2026)
+
+`reports/practice-content-review-2026-10-08.md` audited all 12 entries. What changed, by finding:
+
+| Finding | Change |
+|---|---|
+| F1 symptom advice | Coherent, Dirgha, and cyclic sighing no longer say tingling or lightheadedness *means* overbreathing, or tell people to carry on with smaller breaths. Every symptom line now says to stop and let breathing return to normal (English and Hindi; introductions re-rendered). |
+| F2 resume | A pause restarts the whole round from its first inhale, never a hold, top-up, or exhale; the paused screen says to breathe normally. |
+| F3 introductions | An adjusted rhythm hears only introductions marked `fitsAdjusted` (no counts or holds named), otherwise none. |
+| F4 4-7-8 rounds | `maxRounds: 8` applies in Adjust rhythm, routines, saved rhythms, links, and imports; minutes become the taught four rounds. |
+| F5 easier 4-7-8 | Half-second steps, so in 2 · hold 3.5 · out 4 can be set, saved, and shared. |
+| F6 first exhale | 4-7-8's how-to, introductions, and settling screen add a comfortable first exhale through the mouth, outside the rounds. |
+| F7 sleep evidence | Doğan &amp; Sungur 2026 added (abstract only, above). |
+| F8 evidence wording | Visama (Komori 2018 now cited; the 2024 null result named, not ranked), Coherent (no significant difference vs 12 breaths/min, not "equally"), Dirgha (43-smoker trial: no significant difference detected), Bhramari (no blood-pressure advantage; nitric oxide is a laboratory finding), Sheetali (Sharpe 2021 comparison; armpit skin temperature), Udgeeth (Bernardi is related mantra evidence), Chandra Bhedana (left-only studies are a different pattern). "Reliably raises" heart rate variability became "studies often observe". |
+| F9 routines | A routine stops before a later practice it hasn't taught and shows its how-to and caution; Begin continues. Works while the app is open; a locked Android phone may pass the stop. |
+| F10 cautions | The practice's short caution (or the hold caution, when holds are added) shows on Breathe and while settling. |
+
+Also from the report's teaching improvements: Sama Vritti is described as equal breathing in its box form with holds optional; "empty" became "after an easy exhale"; Dirgha says the belly moves and the air fills the lungs; Udgeeth says to stop the sound when the throat strains; Sheetali marks the asthma and low blood pressure advice as a teaching precaution; Bhramari and Udgeeth say "comfortable pitch" rather than "low"; cyclic sighing labels 3 · 1 · 6 as Viram's starting pace; the progression offer asks for ease, not just completions.
+
+**Still open (needs a qualified teacher, clinician, or listener):** a hold-free beginner entry point (I1), linked adjustment that keeps a technique's identity (I2), hum and Ujjayi familiarisation (I3), comfort-based progression beyond the wording (I5), a closing moment of stillness (I6), listener review of every changed clip, Hindi included (I7), and claim-level evidence records (I8). No reviewer is recorded; `review` stays null.
+
+| Source added | Check | Result |
+|---|---|---|
+| Komori 2018, *Ment Illn* 10(1):7669 · PMID 30046408 | NCBI E-utilities, October 8, 2026 | Matches `sources.ts` |
+| Doğan &amp; Sungur 2026, *Eur J Integr Med* 82:102620 | Crossref, October 8, 2026 (title, authors, venue, DOI); no PMID yet | Matches `sources.ts`; abstract only |
 
 ## Source check
 

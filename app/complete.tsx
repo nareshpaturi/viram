@@ -281,7 +281,8 @@ function CompleteScreen() {
       ) : saved && offer && !nextTime ? (
         <OfferCard
           title="NEXT TIME, IF YOU LIKE"
-          body={`You’ve completed ${offer.current.name} at ${describeRhythm(offer.current.steps)} ${timesWord(offer.count)} in the last two weeks. ${offer.prompt}`}
+          // Completing isn't the same as finding it easy (content review I5).
+          body={`You’ve completed ${offer.current.name} at ${describeRhythm(offer.current.steps)} ${timesWord(offer.count)} in the last two weeks. ${offer.prompt} Only if it feels easy: no strain, no dizziness, no gasping for the next breath.`}
           detail={`${rhythmLine(offer.next.steps)} · ${describeTarget(offer.next.target)}`}
           yes={{ title: 'Try next time', onPress: () => chooseNext({ kind: 'next', practice: offer.next }) }}
           no={{ title: 'Not now', onPress: () => chooseNext({ kind: 'notNow' }) }}

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { techniqueTarget } from '../src/content/targets';
 import { StyleSheet, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { describePace, describePlan, guidedPace, perMinute, stepLabel } from '../src/breathing/describe';
@@ -63,8 +64,14 @@ function withValidSlowing(draft: Practice): Practice {
 export default function AdjustRhythm() {
   const params = useLocalSearchParams<{ technique?: string; rhythm?: string; custom?: string }>();
   const { preferences, update } = usePreferences();
-  const [draft, setDraft] = useState(() => initialDraft(params, () => readyPractice(preferences, stores())));
+  const [draft, setDraft] = useState(() => {
+    const initial = initialDraft(params, () => readyPractice(preferences, stores()));
+    return { ...initial, target: techniqueTarget(initial.techniqueId ? findTechnique(initial.techniqueId) : undefined, initial.target) };
+  });
   const custom = draft.techniqueId === null;
+  // Taught in rounds (4-7-8): rounds only, up to the taught limit.
+  const taught = draft.techniqueId ? findTechnique(draft.techniqueId) : undefined;
+  const maxRounds = taught?.practice.maxRounds;
   const [halfSteps, setHalfSteps] = useState(() => custom && draft.steps.some((s) => !Number.isInteger(s.seconds)));
   const increment = custom ? (halfSteps ? 0.5 : 1) : incrementOf(draft);
   const longHolds = longHoldsOffered() && preferences.longHolds;
@@ -121,16 +128,32 @@ export default function AdjustRhythm() {
       <AppText variant="overline" accessibilityRole="header">
         TARGET
       </AppText>
-      <Segmented
-        label="Target"
-        value={byRounds ? 'rounds' : 'minutes'}
-        onChange={(kind) => setTarget(kind === 'rounds' ? { rounds: Math.min(MAX_ROUNDS, plan.rounds) } : { minutes: 5 })}
-        options={[
-          { value: 'minutes', label: 'Minutes' },
-          { value: 'rounds', label: 'Rounds' },
-        ]}
-      />
-      {byRounds ? (
+      {maxRounds ? (
+        <View style={styles.group}>
+          <Stepper
+            label="Rounds"
+            display={String(rounds)}
+            spoken={`${rounds} rounds`}
+            canDecrement={rounds > 1}
+            canIncrement={rounds < maxRounds}
+            onDecrement={() => setTarget({ rounds: rounds - 1 })}
+            onIncrement={() => setTarget({ rounds: rounds + 1 })}
+          />
+          {taught?.guidance.roundsNote ? <AppText variant="label">{taught.guidance.roundsNote}</AppText> : null}
+        </View>
+      ) : null}
+      {maxRounds ? null : (
+        <Segmented
+          label="Target"
+          value={byRounds ? 'rounds' : 'minutes'}
+          onChange={(kind) => setTarget(kind === 'rounds' ? { rounds: Math.min(MAX_ROUNDS, plan.rounds) } : { minutes: 5 })}
+          options={[
+            { value: 'minutes', label: 'Minutes' },
+            { value: 'rounds', label: 'Rounds' },
+          ]}
+        />
+      )}
+      {maxRounds ? null : byRounds ? (
         <View style={styles.group}>
           <Stepper
             label="Rounds"

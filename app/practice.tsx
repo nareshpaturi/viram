@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo } from 'react';
-import { BackHandler, Platform, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { BackHandler, Platform, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Redirect, router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -15,7 +15,8 @@ import { LOCK_TIP, PAUSE_TITLE, screenReaderNote } from '../src/practice/guidanc
 import { practicePath } from '../src/practice/launch';
 import { drawingLabel, drawsAboveCircle, drawsIllustration, practiceNote, VISUAL_GUIDE_NAME, visualGuideOf, type VisualGuide } from '../src/practice/visualGuide';
 import { VisualGuideRow } from '../src/components/VisualGuideRow';
-import { captionFor, subtitleOf } from '../src/practice/practice';
+import { captionFor, subtitleOf, techniqueOf } from '../src/practice/practice';
+import { cautionFor } from '../src/practice/caution';
 import { parseRun, type PracticeRun } from '../src/practice/run';
 import { findTechnique } from '../src/sharing/link';
 import { usePracticeSession, type SessionView } from '../src/practice/usePracticeSession';
@@ -194,6 +195,7 @@ function Body({ view, run, durations, guideSize, reducedMotion, countingAloud, l
         );
       }
       const settling = view.purpose === 'settle';
+      const preparation = techniqueOf(practiceOf(view.part))?.guidance.preparation;
       return (
         <View style={styles.fill}>
           <TopBar
@@ -214,8 +216,16 @@ function Body({ view, run, durations, guideSize, reducedMotion, countingAloud, l
                   : 'Your practice starts in a moment.'
                 : `Restarting ${view.resumeStep}.`}
             </AppText>
+            {/* Done once before the first round, e.g. 4-7-8's first exhale (content review F6). */}
+            {preparation ? <AppText style={[styles.centerText, styles.route]}>{preparation}</AppText> : null}
             {settling && lockTip ? <AppText style={styles.muted}>{lockTip}</AppText> : null}
             {settling && voiceOwnsSpeech ? <AppText style={styles.muted}>{screenReaderNote(Platform.OS)}</AppText> : null}
+            {/* Every way in, quick start and routines included, carries the practice's caution (F10). */}
+            {settling ? (
+              <AppText variant="label" style={styles.muted}>
+                {cautionFor(practiceOf(view.part))}
+              </AppText>
+            ) : null}
           </Centered>
         </View>
       );
@@ -325,6 +335,9 @@ function Body({ view, run, durations, guideSize, reducedMotion, countingAloud, l
           </View>
         );
       }
+      if (view.reason === 'prepare') {
+        return <PrepareNext practice={practiceOf(view.part)} label={partLabel(view.part)} onBegin={actions.resume} onEnd={actions.askToEnd} />;
+      }
       return (
         <View style={styles.fill}>
           <TopBar left={{ label: 'End', onPress: actions.askToEnd }} right="Paused" />
@@ -336,9 +349,10 @@ function Body({ view, run, durations, guideSize, reducedMotion, countingAloud, l
               {PAUSE_TITLE[view.reason]}
             </AppText>
             <AppText style={styles.muted}>
+              {/* Never left mid-hold: breathe normally until Resume starts a fresh breath (content review F2). */}
               {view.reason === 'user'
-                ? 'Your practice is paused.'
-                : `Your practice is waiting: round ${view.roundNumber} of ${view.rounds}, ${formatClock(view.remainingMs)} left.`}
+                ? 'Your practice is paused. Breathe normally.'
+                : `Your practice is waiting: round ${view.roundNumber} of ${view.rounds}, ${formatClock(view.remainingMs)} left. Breathe normally.`}
             </AppText>
             {view.reason === 'locked' && Platform.OS === 'ios' ? (
               <AppText variant="label" style={styles.muted}>
@@ -365,6 +379,39 @@ function Body({ view, run, durations, guideSize, reducedMotion, countingAloud, l
     default:
       return null;
   }
+}
+
+/**
+ * A routine stops before a practice it hasn't taught (content review F9):
+ * how it's done, its caution, and Begin when the person is ready. Paused,
+ * so nothing is timed and the hand can move at its own pace.
+ */
+function PrepareNext({ practice, label, onBegin, onEnd }: { practice: PracticeRun['parts'][number]; label: string | null; onBegin: () => void; onEnd: () => void }) {
+  const technique = techniqueOf(practice);
+  return (
+    <View style={styles.fill}>
+      <TopBar left={{ label: 'End', onPress: onEnd }} right={label ?? 'Up next'} />
+      <ScrollView contentContainerStyle={styles.prepare}>
+        <AppText variant="label" style={styles.muted}>
+          Up next
+        </AppText>
+        <AppText variant="phase" accessibilityRole="header" style={styles.centerText}>
+          {practice.name}
+        </AppText>
+        <AppText style={styles.muted}>{subtitleOf(practice)}</AppText>
+        {technique?.guidance.howTo.map((line, i) => (
+          <View key={i} style={styles.prepareStep}>
+            <AppText style={styles.prepareNumber}>{i + 1}.</AppText>
+            <AppText style={styles.prepareText}>{line}</AppText>
+          </View>
+        ))}
+        <AppText variant="label" style={styles.muted}>
+          {cautionFor(practice)}
+        </AppText>
+      </ScrollView>
+      <Button title={`Begin ${practice.name}`} variant="onPine" onPress={onBegin} />
+    </View>
+  );
 }
 
 function TopBar({ left, right }: { left?: { label: string; onPress: () => void }; right: string }) {
@@ -411,6 +458,10 @@ const styles = StyleSheet.create({
   captionPast: { color: colors.practiceTextMuted },
   actions: { gap: spacing.ms },
   pressed: { opacity: 0.7 },
+  prepare: { gap: spacing.ms, paddingVertical: spacing.md, alignItems: 'center' },
+  prepareStep: { flexDirection: 'row', gap: spacing.sm, alignSelf: 'stretch' },
+  prepareNumber: { minWidth: 20, color: colors.practiceTextMuted },
+  prepareText: { flex: 1, color: colors.practiceText },
   // The prototype (batch 3).
   practiceName: { alignItems: 'center', gap: 2 },
   nameText: { color: colors.practiceText, fontSize: 15, lineHeight: 20 },

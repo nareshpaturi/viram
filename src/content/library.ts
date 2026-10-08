@@ -8,7 +8,7 @@ import type { Technique } from './types';
 export const LIBRARY: Technique[] = [
   {
     id: 'sama-vritti',
-    contentVersion: 1,
+    contentVersion: 2,
     riskTier: 'gentle',
     shareable: true,
     family: 'classical',
@@ -20,7 +20,7 @@ export const LIBRARY: Technique[] = [
         { kind: 'inhale', seconds: 4, caption: 'In through the nose, slow and even.' },
         { kind: 'hold', seconds: 4, caption: 'Pause at the top. Keep your throat soft.' },
         { kind: 'exhale', seconds: 4, caption: 'Out through the nose, just as slowly.' },
-        { kind: 'rest', seconds: 4, caption: 'Pause, empty and easy.' },
+        { kind: 'rest', seconds: 4, caption: 'Pause after an easy exhale.' },
       ],
       increment: 1,
       target: { minutes: 5 },
@@ -28,15 +28,15 @@ export const LIBRARY: Technique[] = [
       progression: { steps: [[5, 5, 5, 5], [6, 6, 6, 6]], prompt: 'Try one second longer on every step next time?' },
     },
     guidance: {
-      lead: 'Four equal steps: breathe in, pause, breathe out, pause. An even count gives a busy mind something simple to follow.',
+      lead: 'Equal breathing, in its box form: breathe in, pause, breathe out, pause, all to one count. To begin without the pauses, set the holds to Off.',
       takeCareShort: 'Keep the holds easy. If one feels tight, shorten it or set it to Off.',
       howTo: [
         'Sit upright, or lie down with your head supported. Let your shoulders drop.',
         'Breathe through your nose for every step.',
         'Inhale for 4, without straining to fill up.',
         'Hold for 4 with your throat soft. Don’t clamp your throat or bear down.',
-        'Exhale for 4, smooth and unhurried, then rest for 4 before the next breath.',
-        'If the holds feel tight, shorten them or turn them off in Adjust rhythm.',
+        'Exhale for 4, smooth and unhurried, then rest for 4 before the next breath. The rest is a pause after a comfortable exhale, not an empty-lung strain.',
+        'If the holds feel tight, shorten them or turn them off in Adjust rhythm. You can go back to ordinary breathing at any time.',
       ],
       context:
         'Sama vritti means “even movement.” The Yoga Sutras describe regulating the breath by time and count, and B.K.S. Iyengar taught equal counts gradually: first an even inhale and exhale, then a pause after the inhale, and only later a pause after the exhale. The same four-count pattern spread through military and police training as “box breathing.”',
@@ -48,14 +48,14 @@ export const LIBRARY: Technique[] = [
         'Never practice breath holds in or near water.',
       ],
       research:
-        'In small, short studies, mostly with healthy students, box breathing eased anxiety within a session, and one trial found it softened the body’s stress response compared with normal breathing. In the largest head-to-head trial, it did no better than mindfulness meditation and didn’t change heart rate variability. There are no long-term studies. It is not a treatment.',
+        'In small, short studies, mostly with healthy students, box breathing eased anxiety within a session, and one trial found it softened the body’s stress response compared with normal breathing. In the largest head-to-head trial, it did no better than mindfulness meditation and didn’t change heart rate variability. We found no long-term studies. It is not a treatment.',
       basedOn: ['iyengar-pranayama', 'yoga-sutras', 'divine-time', 'balban-2023', 'mcallister-2026'],
       introduction: {
         clip: 'intro.sama-vritti',
         lines: [
           'Sit tall, or lie down with your head supported.',
           'Every step is four counts, all through the nose.',
-          'Breathe in. Pause, with your throat soft. Breathe out. Pause, empty and easy.',
+          'Breathe in. Pause, with your throat soft. Breathe out. Pause, after an easy exhale.',
           'If a pause ever feels tight, let the breath go and carry on gently.',
           'We’ll begin with an inhale.',
         ],
@@ -78,7 +78,7 @@ export const LIBRARY: Technique[] = [
   },
   {
     id: 'visama-vritti',
-    contentVersion: 1,
+    contentVersion: 2,
     riskTier: 'gentle',
     shareable: true,
     family: 'classical',
@@ -91,7 +91,7 @@ export const LIBRARY: Technique[] = [
         // Holds start Off; Adjust rhythm can add short ones within the 20 s cap.
         { kind: 'hold', seconds: 0, caption: 'Pause at the top, throat soft.' },
         { kind: 'exhale', seconds: 6, caption: 'Out through the nose, slow and unhurried.' },
-        { kind: 'rest', seconds: 0, caption: 'Pause, empty and easy.' },
+        { kind: 'rest', seconds: 0, caption: 'Pause after an easy exhale.' },
       ],
       increment: 1,
       target: { minutes: 5 },
@@ -117,8 +117,8 @@ export const LIBRARY: Technique[] = [
         'The classical form adds long holds. Learn it from a teacher, not from an app.',
       ],
       research:
-        'Breathing slowly, around six breaths a minute as here, reliably raises heart rate variability in the short term. Two small studies of this 4 · 6 pattern reported calmer readings and less anxiety, but neither had a comparison group. Whether the longer exhale adds anything beyond slowing down is mixed: some studies say yes, and the most careful recent one found no difference. It is not a treatment.',
-      basedOn: ['iyengar-pranayama', 'desikachar', 'gheranda', 'nhs-breathing', 'van-diest-2014', 'magnon-2021', 'meehan-2024', 'laborde-2022'],
+        'Studies often observe higher heart rate variability while people breathe slowly, around six breaths a minute as here. Two small studies of a 4 · 6 pattern, one of 10 men and one of 47 adults, reported calmer readings and less anxiety, but neither had a comparison group. Whether a longer exhale adds anything beyond slowing down is mixed: some studies say yes, and a 2024 study comparing a 1 : 2 ratio with even breaths at the same pace found no difference in heart rate variability. It is not a treatment.',
+      basedOn: ['iyengar-pranayama', 'desikachar', 'gheranda', 'nhs-breathing', 'van-diest-2014', 'komori-2018', 'magnon-2021', 'meehan-2024', 'laborde-2022'],
       introduction: {
         clip: 'intro.visama-vritti',
         lines: [
@@ -190,6 +190,7 @@ export const LIBRARY: Technique[] = [
       basedOn: ['hyp', 'gheranda', 'iyengar-pranayama', 'satyananda-apmb', 'ayush-cyp', 'nam-2024', 'ghiya-lee-2012', 'kamath-2017'],
       introduction: {
         clip: 'intro.nadi-shodhana',
+        fitsAdjusted: true,
         lines: [
           'Sit tall and let your shoulders soften.',
           'Bring your right hand up. Your thumb rests by the right nostril, your ring finger by the left.',
@@ -199,6 +200,7 @@ export const LIBRARY: Technique[] = [
         ],
         long: {
           clip: 'intro-long.nadi-shodhana',
+          fitsAdjusted: true,
           lines: [
             'Sit tall and rest your left hand on your knee. Let your shoulders soften.',
             'Fold the first two fingers of your right hand into your palm, or rest them lightly between your eyebrows.',
@@ -216,7 +218,7 @@ export const LIBRARY: Technique[] = [
   },
   {
     id: 'bhramari',
-    contentVersion: 1,
+    contentVersion: 2,
     riskTier: 'gentle',
     shareable: true,
     family: 'classical',
@@ -239,8 +241,8 @@ export const LIBRARY: Technique[] = [
         'Sit upright with your jaw loose. Close your lips softly and keep your teeth slightly apart.',
         'If you like, press the small flaps at the front of your ears gently with your index fingers. Or rest your hands in your lap.',
         'Breathe in through your nose for 4.',
-        'Breathe out for 8 while humming a low, steady “mmm.” Feel it buzz in your face and head.',
-        'Keep the hum soft. It doesn’t need to be loud.',
+        'Breathe out for 8 while humming a soft, steady “mmm” at a comfortable pitch. Feel it buzz in your face and head.',
+        'Keep the hum soft. It doesn’t need to be loud or deep, and it should end before you strain.',
         'When you finish, sit for a few breaths and notice the quiet.',
       ],
       context:
@@ -252,10 +254,11 @@ export const LIBRARY: Technique[] = [
         'Stop and breathe normally if you feel dizzy or uncomfortable.',
       ],
       research:
-        'Most studies are small, short, and from India. They generally report lower heart rate or blood pressure after practice, but a controlled trial in people with high blood pressure found no difference from ordinary slow breathing. Humming briefly raises nitric oxide in the nose; no study links that to health. It seems about as calming as other slow breathing. It is not a treatment.',
+        'Most studies are small, short, and from India. They generally report lower heart rate or blood pressure after practice. A controlled trial in people with high blood pressure found no blood-pressure advantage over its slow-breathing comparison. Humming raises nitric oxide in the nose in laboratory studies; no clinical benefit from this practice has been shown. A study comparing hum lengths measured short-term heart rate variability; it doesn’t show that one length suits everyone. It is not a treatment.',
       basedOn: ['hyp', 'gheranda', 'satyananda-apmb', 'iyengar-pranayama', 'ayush-cyp', 'weitzberg-2002', 'trivedi-2023', 'ghati-2021', 'kuppusamy-2018'],
       introduction: {
         clip: 'intro.bhramari',
+        fitsAdjusted: true,
         lines: [
           'Sit tall, lips softly closed, teeth slightly apart.',
           'You can rest your index fingers on the small flaps at the front of your ears and press gently, or leave your hands in your lap.',
@@ -344,7 +347,7 @@ export const LIBRARY: Technique[] = [
   },
   {
     id: 'sheetali',
-    contentVersion: 1,
+    contentVersion: 2,
     riskTier: 'gentle',
     shareable: true,
     family: 'classical',
@@ -376,14 +379,16 @@ export const LIBRARY: Technique[] = [
         'Skip it in cold weather, or in smoky, dusty, or polluted air. Breathing through the mouth skips the nose’s warming and filtering.',
         'Skip it with asthma, a cold, a cough, or a sore throat.',
         'Skip it if you have low blood pressure.',
+        'The advice on asthma and low blood pressure is a cautious teaching precaution, not a finding from trials. Ask a qualified teacher or your clinician if you’re unsure.',
         'With sensitive teeth, use the curled tongue rather than breathing through your teeth.',
         'Stop and breathe normally if you feel dizzy.',
       ],
       research:
-        'Evidence is thin. A few small trials in people with high blood pressure report lower readings after weeks of practice, but none compared it with another breathing practice. The only study that measured temperature found body temperature rose slightly rather than fell; the coolness is air passing over a wet tongue. It is not a treatment.',
+        'Evidence is thin. A few small trials in people with high blood pressure report lower readings after weeks of practice, compared with no breathing practice. In a small study of healthy adults, heart rate variability rose with Sheetali and with deep breathing, and Sheetali wasn’t significantly better. A study of 17 young men found the skin temperature in the armpit rose slightly rather than fell; the coolness is air passing over a wet tongue. It is not a treatment.',
       basedOn: ['hyp', 'gheranda', 'satyananda-apmb', 'iyengar-pranayama', 'ayush-cyp', 'telles-2020', 'shetty-2017', 'sharpe-2021'],
       introduction: {
         clip: 'intro.sheetali',
+        fitsAdjusted: true,
         lines: [
           'Sit tall with your head level.',
           'Curl your tongue into a tube and breathe in through it, like sipping through a straw.',
@@ -409,7 +414,7 @@ export const LIBRARY: Technique[] = [
   },
   {
     id: 'coherent',
-    contentVersion: 1,
+    contentVersion: 2,
     riskTier: 'gentle',
     shareable: true,
     family: 'modern',
@@ -426,7 +431,7 @@ export const LIBRARY: Technique[] = [
     },
     guidance: {
       lead: 'Slow, even breaths, about five and a half a minute, in and out for the same time. There are no counts to keep: just follow the guide.',
-      takeCareShort: 'Keep breaths gentle. If you feel lightheaded or tingly, breathe smaller.',
+      takeCareShort: 'Keep breaths gentle. If you feel dizzy or tingly, stop and breathe normally.',
       howTo: [
         'Sit or lie comfortably. Rest a hand on your belly if it helps.',
         'Breathe in through your nose as the guide grows, gently and without effort.',
@@ -435,32 +440,34 @@ export const LIBRARY: Technique[] = [
         'If 5.5 seconds feels long, shorten both steps in Adjust rhythm.',
       ],
       context:
-        'Researchers found that heart rate rises and falls most with the breath at around five to six breaths a minute, and call this resonance breathing. Stephen Elliott introduced Coherent Breathing, a slow, even pace like this, in 2005, and Richard Brown and Patricia Gerbarg taught it widely. The 5.5-second rhythm is a common average; each person’s ideal pace varies a little.',
+        'Researchers found that heart rate rises and falls most with the breath at around five to six breaths a minute, and call this resonance breathing. Stephen Elliott introduced Coherent Breathing, a slow, even pace like this, in 2005, and Richard Brown and Patricia Gerbarg taught it widely. Viram’s 5.5 seconds is a common starting pace, not a measure of your own resonance rate, which varies from person to person.',
       takeCare: [
-        'Keep breaths gentle. Lightheadedness, or tingling in your hands or lips, means you’re breathing too much: take smaller breaths or return to normal breathing.',
+        'Keep breaths gentle and roomy, never big. Big breaths can make you lightheaded.',
         'It’s fine to shorten the steps. Straining isn’t the goal.',
-        'Stop and breathe normally if you feel dizzy or short of breath.',
+        'If you feel dizzy, tingly, breathless, or uncomfortable, stop and let your breathing return to its normal rhythm. Don’t force the pace.',
       ],
       research:
-        'Slow breathing at this pace reliably raises heart rate variability during and shortly after practice. But the largest controlled trial, 400 adults over four weeks at the University of Sussex, found it improved stress, anxiety, and mood no more than a faster placebo breathing practice: both groups improved equally. Its pace hasn’t been shown to beat simpler slow breathing. It is not a treatment.',
+        'Studies often observe higher heart rate variability during and shortly after slow breathing at this pace. In the largest controlled trial, 400 adults practised daily for four weeks at the University of Sussex: stress, anxiety, and mood improved both with this pace and with a faster placebo practice at 12 breaths a minute, with no significant difference between them. It hasn’t been shown to beat other slow breathing practices. It is not a treatment.',
       basedOn: ['elliott', 'brown-gerbarg', 'lehrer-gevirtz-2014', 'laborde-2022', 'fincham-2023'],
       introduction: {
         clip: 'intro.coherent',
+        fitsAdjusted: true,
         lines: [
           'Sit or lie comfortably.',
           'There’s nothing to count. Breathe in through your nose as the guide grows, and out as it shrinks.',
           'Keep each breath soft and roomy, never big.',
-          'If you feel lightheaded, breathe smaller for a while.',
+          'If you feel dizzy or tingly, stop and breathe normally.',
           'We’ll begin with an inhale.',
         ],
         long: {
           clip: 'intro-long.coherent',
+          fitsAdjusted: true,
           lines: [
             'Sit or lie comfortably. Rest a hand on your belly if it helps.',
             'There’s nothing to count here. Breathe in through your nose as the guide grows, gently and without effort.',
             'Breathe out through your nose as it shrinks, just as slowly.',
             'Keep each breath soft and roomy, never big. The pace matters more than the size.',
-            'If the pace feels long, you can shorten both steps. And if you feel lightheaded or tingly, breathe smaller for a while.',
+            'If the pace feels long, you can shorten both steps. If you feel dizzy or tingly, stop and breathe normally.',
             'We’ll begin with an inhale.',
           ],
         },
@@ -470,7 +477,7 @@ export const LIBRARY: Technique[] = [
   },
   {
     id: '4-7-8',
-    contentVersion: 1,
+    contentVersion: 2,
     riskTier: 'gentle',
     shareable: true,
     family: 'modern',
@@ -483,10 +490,12 @@ export const LIBRARY: Technique[] = [
         { kind: 'exhale', seconds: 8, route: 'mouth', caption: 'Out through the mouth with a soft whoosh.' },
         { kind: 'rest', seconds: 0, caption: 'Pause before the next breath.' },
       ],
-      increment: 1,
+      // Half seconds, so the ratio can be counted faster: in 2, hold 3.5, out 4.
+      increment: 0.5,
       // Andrew Weil teaches four breaths at a time to start.
       target: { rounds: 4 },
       // Weil: no more than four breaths at a time for the first month, then up to eight.
+      maxRounds: 8,
       roundOptions: [
         { rounds: 4, note: 'as taught' },
         { rounds: 8, note: 'after a month of regular practice' },
@@ -496,32 +505,35 @@ export const LIBRARY: Technique[] = [
     guidance: {
       roundsNote: '4-7-8 is taught in rounds. Start with 4, and build to 8 only when the hold feels easy.',
       lead: 'Breathe in for 4, hold for 7, and breathe out through your mouth for 8. The counts are a ratio, not a test: keep them comfortable.',
-      takeCareShort: 'Start with 4 rounds. If the hold feels hard, shorten all three counts.',
+      takeCareShort: 'Start with 4 rounds. If the hold feels hard, count faster and keep the ratio.',
+      preparation: 'First, breathe out comfortably through your mouth. Then close your mouth.',
       howTo: [
         'Sit with your back straight, or lie down if you’re settling for sleep.',
         'Rest the tip of your tongue on the ridge just behind your upper front teeth, and keep it there.',
+        'Before the first round, breathe out comfortably through your mouth, without pushing. Then close your mouth.',
         'Breathe in quietly through your nose for 4.',
         'Hold your breath gently for 7.',
         'Breathe out through your mouth for 8 with a soft whoosh. Purse your lips if that’s easier.',
-        'Four rounds is enough to start. If the hold is hard, shorten all three counts together in Adjust rhythm.',
+        'Four rounds is enough to start; build to eight only after a month of regular practice. If the hold is hard, keep the ratio and count faster: in 2, hold 3.5, out 4. Set it in Adjust rhythm.',
       ],
       context:
         'Andrew Weil, a physician, popularized this pattern and describes it as adapted from pranayama. He teaches the counts as a ratio rather than a speed, suggests four breaths at a time, twice a day, and building to eight only after a month.',
       takeCare: [
         'Mild lightheadedness is common at first. If it happens, stop and breathe normally.',
-        'The hold should never strain. Shorten all three counts rather than forcing it.',
+        'The hold should never strain. Count faster with the same ratio, such as in 2, hold 3.5, out 4, rather than forcing it, or choose a practice without holds.',
         'With a heart or lung condition, or in pregnancy, check with your clinician first, or choose a practice without holds.',
         'Never practice breath holds in or near water.',
       ],
       research:
-        'Evidence is thin. Small trials, mostly around surgery or medical procedures, report less anxiety compared with routine care, but not compared with a placebo practice. In the one direct comparison, slow breathing at six breaths a minute raised heart rate variability more than 4-7-8. No rigorous trial has tested it for falling asleep. It is not a treatment.',
-      basedOn: ['weil-478', 'bhf-breathing', 'vierra-2022', 'aktas-2023', 'marchant-2025'],
+        'Evidence is limited. Small trials, mostly around surgery or medical procedures, report less anxiety compared with routine care, but not compared with a placebo practice. In the one direct comparison, slow breathing at six breaths a minute raised heart rate variability more than 4-7-8. Research on sleep is still limited: a small trial in nursing students reported better self-reported sleep quality after four weeks, compared with no practice. It doesn’t show an immediate effect on falling asleep, or that 4-7-8 works better than another relaxing breathing practice. It is not a treatment.',
+      basedOn: ['weil-478', 'bhf-breathing', 'vierra-2022', 'aktas-2023', 'marchant-2025', 'dogan-2026'],
       introduction: {
         clip: 'intro.4-7-8',
         lines: [
           'Rest the tip of your tongue just behind your upper front teeth, and keep it there.',
           'Breathe in quietly through your nose for four. Hold for seven. Then breathe out through your mouth for eight, with a soft whoosh.',
           'If the hold feels hard, don’t force it. Breathe out when you need to.',
+          'First, breathe out comfortably through your mouth. Then close it.',
           'We’ll begin with an inhale.',
         ],
         long: {
@@ -533,6 +545,7 @@ export const LIBRARY: Technique[] = [
             'Hold your breath gently for seven.',
             'Then breathe out through your mouth for eight, with a soft whoosh. Purse your lips if that’s easier.',
             'Four rounds is enough to start. If the hold feels hard, don’t force it. Breathe out when you need to.',
+            'First, breathe out comfortably through your mouth, without pushing. Then close your mouth.',
             'We’ll begin with an inhale.',
           ],
         },
@@ -542,7 +555,7 @@ export const LIBRARY: Technique[] = [
   },
   {
     id: 'dirgha',
-    contentVersion: 1,
+    contentVersion: 2,
     riskTier: 'gentle',
     shareable: true,
     family: 'classical',
@@ -560,28 +573,28 @@ export const LIBRARY: Technique[] = [
       posture: 'seated-or-lying',
     },
     guidance: {
-      lead: 'One slow, full breath that fills from the bottom up: belly, then ribs, then upper chest. Then out again, smooth and unhurried.',
-      takeCareShort: 'Fill comfortably, never to the limit. If you feel lightheaded, breathe smaller.',
+      lead: 'One slow, full breath you feel from the bottom up: the belly moves first, then the ribs widen, then the upper chest lifts a little. Then out again, smooth and unhurried.',
+      takeCareShort: 'Fill comfortably, never to the limit. If you feel dizzy, stop and breathe normally.',
       howTo: [
         'Sit upright, or lie on your back with your knees bent. Rest one hand on your belly and one on your chest if it helps.',
-        'Breathe in through your nose for 4. Let your belly rise first, then your ribs widen, then your upper chest lift a little.',
+        'Breathe in through your nose for 4. Let your belly expand first as your diaphragm moves down, then your ribs widen, then your upper chest lift a little. The air fills your lungs; the belly only moves.',
         'Make it one smooth breath, not three separate sips.',
         'Breathe out through your nose for 6. Let your chest soften, then your belly draw gently back.',
         'Keep your shoulders and neck soft. If the upper chest feels effortful, let the belly and ribs do the work.',
       ],
       context:
-        'Dirgha means “long.” The Yoga Sutras describe regulated breath becoming long and subtle. Filling the lungs in three parts, belly, ribs, then chest, comes from modern teaching: Swami Satyananda calls it yogic breathing, and an early English yoga manual called it the “complete breath” in 1904. Teachers often use it to learn the breath before other pranayama.',
+        'Dirgha means “long.” The Yoga Sutras describe regulated breath becoming long and subtle. The three-part image, belly, ribs, then chest, comes from modern teaching, as a way to notice where the breath moves: Swami Satyananda calls it yogic breathing, and an early English yoga manual called it the “complete breath” in 1904. Teachers often use it to learn the breath before other pranayama.',
       takeCare: [
         'Fill comfortably, never to the limit. Big breaths can make you lightheaded.',
         'Keep your shoulders and neck soft. The upper chest lifts only a little.',
-        'Lightheadedness, or tingling in your hands or lips, means you’re breathing too much: take smaller breaths or return to normal breathing.',
-        'Stop and breathe normally if you feel dizzy or short of breath.',
+        'If you feel dizzy, tingly, breathless, or uncomfortable, stop and let your breathing return to its normal rhythm. Don’t force the pace.',
       ],
       research:
-        'The three-part breath itself has barely been studied. In one small study of smokers who had gone 15 hours without a cigarette, a single session eased negative mood more than normal or deep breathing, but a later trial found it didn’t help people quit. Trials of belly breathing report less stress, but they are small and mostly low in quality. Slow breathing near six breaths a minute, as here, reliably raises heart rate variability. It is not a treatment.',
+        'The three-part breath itself has barely been studied. In one small study of smokers who had gone 15 hours without a cigarette, a single session eased negative mood more than normal or deep breathing. A later trial of 43 smokers, comparing counselling alone with counselling plus this breath, did not detect a significant difference in quitting. Trials of belly breathing report less stress, but they are small and mostly low in quality. Studies often observe higher heart rate variability during slow breathing near six breaths a minute, as here. It is not a treatment.',
       basedOn: ['satyananda-apmb', 'yoga-sutras', 'ramacharaka-1904', 'klinsophon-2020', 'klinsophon-2022', 'kwon-2026', 'laborde-2022'],
       introduction: {
         clip: 'intro.dirgha',
+        fitsAdjusted: true,
         lines: [
           'Sit tall, or lie on your back.',
           'Breathe in through your nose, filling from the bottom up: belly, then ribs, then a little into the chest.',
@@ -597,7 +610,7 @@ export const LIBRARY: Technique[] = [
             'Breathe in through your nose for four. Let your belly rise first, then your ribs widen, then your upper chest lift a little.',
             'Make it one smooth breath, not three separate sips.',
             'Breathe out through your nose for six. Let your chest soften, then your belly draw gently back.',
-            'Fill comfortably, never to the limit. If you feel lightheaded, take smaller breaths for a while.',
+            'Fill comfortably, never to the limit. If you feel dizzy, stop and breathe normally.',
             'We’ll begin with an inhale.',
           ],
         },
@@ -607,7 +620,7 @@ export const LIBRARY: Technique[] = [
   },
   {
     id: 'udgeeth',
-    contentVersion: 1,
+    contentVersion: 2,
     riskTier: 'gentle',
     shareable: true,
     family: 'classical',
@@ -626,28 +639,29 @@ export const LIBRARY: Technique[] = [
     },
     guidance: {
       lead: 'Breathe in slowly, then chant a long, soft Om for the whole exhale. The sound stretches the breath out and gives your attention something to rest on.',
-      takeCareShort: 'Keep the sound soft and low. If your throat strains, hum quietly instead.',
+      takeCareShort: 'Keep the sound soft. If your throat strains, stop the sound and breathe normally.',
       howTo: [
         'Sit upright with your jaw loose and your hands resting in your lap.',
         'Breathe in through your nose for 4.',
         'Breathe out for 8 while chanting “Om”: begin with an open “O,” and let it close into a soft “mmm” as the breath runs out.',
-        'Keep the voice low and gentle. It only needs to be loud enough for you to hear.',
+        'Keep the voice soft, at a comfortable pitch. It only needs to be loud enough for you to hear.',
         'Let the sound end on its own. There’s no need to push out the last of the air.',
         'When you finish, sit quietly for a few breaths.',
       ],
       context:
         'Udgeeth comes from udgitha, the sung part of the Sama Veda. The Chandogya Upanishad opens by naming the syllable Om as the udgitha and asking the reader to meditate on it, and it links the udgitha with the breath. Chanting Om on a long exhale as a named breathing practice is modern, and popular in India.',
       takeCare: [
-        'Keep the sound soft and low. If your throat or voice feels strained, let the sound go.',
+        'Keep the sound soft. If your throat or voice feels strained, stop making the sound and breathe normally.',
         'Om is sacred in several traditions. If you’d rather not chant it, hum “mmm” instead.',
         'Skip it with a blocked nose or a sore throat.',
         'Stop and breathe normally if you feel dizzy or short of breath.',
       ],
       research:
-        'Research on Om chanting is small and mostly from India. Short studies report heart-rate patterns linked with rest during and after chanting, and a study of mantra recitation found it slowed breathing to about six breaths a minute on its own. It hasn’t been compared with plain slow breathing, so much of the effect may come from breathing slowly. It is not a treatment.',
+        'Research on Om chanting is small and mostly from India. Short studies report heart-rate patterns linked with rest during and after chanting. A related study found that reciting a longer mantra slowed breathing to about six breaths a minute; it tested a different practice, so it doesn’t establish benefits of this Om exercise. Om chanting hasn’t been compared with plain slow breathing, so much of the effect may come from breathing slowly. It is not a treatment.',
       basedOn: ['chandogya', 'bernardi-2001', 'inbaraj-2022', 'laborde-2022'],
       introduction: {
         clip: 'intro.udgeeth',
+        fitsAdjusted: true,
         lines: [
           'Sit tall, with your jaw loose and your hands in your lap.',
           'Breathe in quietly through your nose. Then chant a long, soft Om for the whole exhale: an open O that closes into a hum.',
@@ -662,7 +676,7 @@ export const LIBRARY: Technique[] = [
             'Then breathe out for eight while chanting Om. Begin with an open O, and let it close into a soft hum as the breath runs out.',
             'Keep the voice low and gentle. It only needs to be loud enough for you to hear. You may feel it buzz softly in your chest and face.',
             'Let the sound end on its own before the next breath. There’s no need to push out the last of the air.',
-            'If your throat tires, or you’d rather not chant, hum quietly instead.',
+            'If your throat tires, stop the sound and breathe normally. If you’d rather not chant Om, hum quietly instead.',
             'We’ll begin with an inhale.',
           ],
         },
@@ -672,7 +686,7 @@ export const LIBRARY: Technique[] = [
   },
   {
     id: 'chandra-bhedana',
-    contentVersion: 1,
+    contentVersion: 2,
     riskTier: 'gentle',
     shareable: true,
     family: 'classical',
@@ -709,10 +723,11 @@ export const LIBRARY: Technique[] = [
         'Stop and breathe normally if you feel dizzy, anxious, or short of breath.',
       ],
       research:
-        'Studies are few, small, and mostly single sessions from India. In one, 20 yoga practitioners had slightly lower heart rate and blood pressure after nine rounds, compared with normal breathing rather than slow breathing. Studies of breathing through the left nostril alone point the same way, but results are inconsistent, and one small study found the right side more relaxing. It is not a treatment.',
+        'Studies are few, small, and mostly single sessions from India. In one, 20 yoga practitioners had slightly lower heart rate and blood pressure after nine rounds of Chandra Bhedana, compared with normal breathing rather than slow breathing. Other studies tested breathing in and out through the left nostril only, a different pattern; their results are inconsistent, and one small study found the right side more relaxing. It is not a treatment.',
       basedOn: ['hyp', 'gheranda', 'iyengar-pranayama', 'bhavanani-2014', 'raghuraj-2008', 'nivethitha-2016', 'vanutelli-2024'],
       introduction: {
         clip: 'intro.chandra-bhedana',
+        fitsAdjusted: true,
         lines: [
           'Sit tall and let your shoulders soften.',
           'Bring your right hand up. Your thumb rests by the right nostril, your ring finger by the left.',
@@ -722,6 +737,7 @@ export const LIBRARY: Technique[] = [
         ],
         long: {
           clip: 'intro-long.chandra-bhedana',
+          fitsAdjusted: true,
           lines: [
             'Sit tall and rest your left hand on your knee. Let your shoulders soften.',
             'Fold the first two fingers of your right hand into your palm, or rest them lightly between your eyebrows.',
@@ -738,7 +754,7 @@ export const LIBRARY: Technique[] = [
   },
   {
     id: 'cyclic-sighing',
-    contentVersion: 1,
+    contentVersion: 2,
     riskTier: 'gentle',
     shareable: true,
     family: 'modern',
@@ -757,7 +773,7 @@ export const LIBRARY: Technique[] = [
     },
     guidance: {
       lead: 'Two inhales through the nose, a long one and a short top-up, then a long, slow exhale through the mouth. It’s a sigh, slowed down and repeated.',
-      takeCareShort: 'Keep the top-up small. If you feel lightheaded, breathe smaller or stop.',
+      takeCareShort: 'Keep the top-up small. If you feel dizzy or tingly, stop and breathe normally.',
       howTo: [
         'Sit or lie comfortably, with your shoulders soft.',
         'Breathe in through your nose for 3, filling most of the way.',
@@ -766,23 +782,23 @@ export const LIBRARY: Technique[] = [
         'Keep it gentle: the top-up is small, and the exhale is slow rather than pushed.',
       ],
       context:
-        'Sighs happen on their own every few minutes: a deeper breath that seems to reset breathing. Researchers at Stanford Medicine turned a deliberate version, two inhales and a long exhale, into a five-minute daily practice called cyclic sighing, and in 2023 compared it with box breathing and mindfulness meditation.',
+        'Sighs happen on their own every few minutes: a deeper breath that seems to reset breathing. Researchers at Stanford Medicine turned a deliberate version, two inhales and a long exhale, into a five-minute daily practice called cyclic sighing, and in 2023 compared it with box breathing and mindfulness meditation. The 3 · 1 · 6 timing is Viram’s starting pace, not one the study found best.',
       takeCare: [
         'Keep the top-up small and the exhale unhurried. Big, fast breaths can make you lightheaded.',
-        'Lightheadedness, or tingling in your hands or lips, means you’re breathing too much: take smaller breaths or return to normal breathing.',
         'If breathing out through your mouth feels uncomfortable, breathe out slowly through your nose instead.',
-        'Stop and breathe normally if you feel dizzy or short of breath.',
+        'If you feel dizzy, tingly, breathless, or uncomfortable, stop and let your breathing return to its normal rhythm. Don’t force the pace.',
       ],
       research:
         'In a month-long Stanford study, five minutes a day of cyclic sighing lifted mood more than mindfulness meditation and slowed breathing at rest. It didn’t reduce anxiety more than meditation did, and no practice changed heart rate variability. Two small later studies found less anxiety or pain within minutes, compared with no practice or with an equally long session on injury care. It is not a treatment.',
       basedOn: ['stanford-cyclic-sighing', 'balban-2023', 'riedl-2026', 'hanley-2025'],
       introduction: {
         clip: 'intro.cyclic-sighing',
+        fitsAdjusted: true,
         lines: [
           'Sit or lie comfortably.',
           'Breathe in through your nose, then take one short extra sip to top up.',
           'Then let it all go slowly through your mouth, like a long sigh.',
-          'Keep it gentle. If you feel lightheaded, breathe smaller.',
+          'Keep it gentle. If you feel dizzy or tingly, stop and breathe normally.',
           'We’ll begin with an inhale.',
         ],
         long: {
@@ -793,7 +809,7 @@ export const LIBRARY: Technique[] = [
             'Breathe in through your nose for three, filling most of the way.',
             'Then, without breathing out, take one short extra sip through your nose to top up.',
             'Now breathe out slowly through your mouth for six, like a long, relaxed sigh, until the breath feels finished.',
-            'Keep the top-up small and the exhale unhurried. If you feel lightheaded or tingly, breathe smaller for a while.',
+            'Keep the top-up small and the exhale unhurried. If you feel dizzy or tingly, stop and breathe normally.',
             'We’ll begin with an inhale.',
           ],
         },

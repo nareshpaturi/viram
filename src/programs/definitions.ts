@@ -1,8 +1,10 @@
 /**
  * Curated programs (FR-20): two bundled plans built only from library
  * techniques. Definitions are versioned; an enrollment keeps a snapshot, so
- * a content update never changes a program in progress. No breath
- * retention anywhere, and every rhythm stays inside the technique's bounds.
+ * a content update never changes a program in progress. Foundations
+ * introduces box breathing's short holds in session 1; the Nadi Shodhana
+ * Path has no breath retention. Every rhythm stays inside the technique's
+ * bounds.
  */
 
 export interface ProgramPart {
