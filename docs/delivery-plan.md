@@ -571,3 +571,23 @@ These follow the same rules. Each builds on v1.0 without regressing its gates. D
 | E12 | Library additions | Practise Dirgha, Udgeeth, Chandra Bhedana, and cyclic sighing, and find Nadi Shodhana as “Anulom Vilom” | Content research | 3 |
 
 **v1.1 total: about 32 engineering days (about 6.5 weeks),** matching the earlier estimate. E12's content research and the “Om” and “Top up” clips run in the content and voice lanes during v1.0.
+
+## v1.2 · research gaps · 2026-10-07
+
+From the pranayama app feature research (`reports/Pranayama app feature preferences.md`): the top gaps against the 22 features users like most, and the things Viram did that could hurt it. Branch `claude/research-gaps`.
+
+| ID | What | State | Still needs |
+|---|---|---|---|
+| R01 | Any practice length, 1–60 minutes; hold − or + to repeat | Done | — |
+| R02 | Quick action is 5-minute box breathing (was 1 minute) | Done | — |
+| R03 | Reminder offered once, after the third practice | Done | — |
+| R04 | Totals since the first practice in History (no streaks) | Done | — |
+| R05 | Haptics that differ by phase: Marks or Through the breath, per-step switches | Code done; iOS Core Haptics, Android waveforms | Feel test on an iPhone and an Android phone; tune pulse lengths |
+| R06 | Other audio: iOS Automatic (default), Android Play along without lowering, Lower it | Code done | Device check with music playing, both platforms (CP1b table) |
+| R07 | Silent on a locked iPhone: Pause or Soft tones | Code done; simulator shows the practice continuing locked | Hear the soft tones on a device |
+| R08 | Viram for Apple Watch (`targets/watch`) and Wear OS (`wear/`), linked by `modules/viram-companion` | Code done; Wear OS and phone build; watch app not built here (needs the watchOS platform; CI's macOS image has it) | Build in CI; wrist-down run on a real watch, both platforms; App Group and watch signing in EAS |
+| R09 | Breathe widget, home and lock screen (iOS WidgetKit, Android app widget) | Done; iOS widget checked in the simulator | Android widget on a device |
+| R10 | Longer holds up to 60 s, behind its own Take care | Built; shown in development builds only | Named instructor review recorded in `src/content/longHolds.ts` |
+| R11 | Hindi voice scripts for every cue and introduction (`src/content/hindi.ts`) | Scripts done | Render with the Kokoro pipeline (`claude/soothing-audio`), a voice-language setting, and the Hindi listener gate |
+| — | Full Hindi localization of the screens | Not started | Translators and a review plan; the PRD keeps it a later concept |
+| — | Nadi Shodhana hand illustration | Not started | Brand decision: the line-diagram rule allows no bodies |
