@@ -51,6 +51,12 @@ export interface Technique {
      */
     roundOptions?: { rounds: number; note: string }[];
     /**
+     * A practice taught as a set number of rounds (4-7-8): its target is
+     * always rounds, never more than this, wherever it runs, from Adjust
+     * rhythm to routines, saved rhythms, links, and imports.
+     */
+    maxRounds?: number;
+    /**
      * v1.1 gentle progression (FR-15): the rhythms after the default, one
      * step at a time. Each lists every step's seconds in order. Offered,
      * never applied automatically.
@@ -68,6 +74,8 @@ export interface Technique {
     lead: string;
     /** Above the fold, before Begin. */
     takeCareShort: string;
+    /** Done once before the first round, shown while settling (4-7-8's first exhale). */
+    preparation?: string;
     howTo: string[];
     /** Headed “Traditionally” (classical) or “Where it comes from” (modern). */
     context: string;
@@ -78,8 +86,14 @@ export interface Technique {
     introduction: {
       clip: string;
       lines: string[];
+      /**
+       * The short introduction names no counts, lengths, or holds, so it still
+       * fits after Adjust rhythm changes the steps. Without this, an adjusted
+       * rhythm starts without an introduction rather than contradict it.
+       */
+      fitsAdjusted?: true;
       /** v1.1 fuller voice (FR-19): a longer version, chosen in Cues & sound. */
-      long?: { clip: string; lines: string[] };
+      long?: { clip: string; lines: string[]; fitsAdjusted?: true };
     };
   };
   /** “Reviewed by” renders only from this field. */

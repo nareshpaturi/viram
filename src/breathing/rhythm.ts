@@ -275,6 +275,12 @@ export function planStepAt(plan: StepPlan, elapsedMs: number): StepPosition {
   return { ...within, round: lo, startMs: starts[lo] + within.startMs };
 }
 
+/** Plan time where the round playing at `elapsedMs` began. */
+export function planRoundStartAt(plan: StepPlan, elapsedMs: number): number {
+  const { round } = planStepAt(plan, elapsedMs);
+  return plan.roundStartsMs ? plan.roundStartsMs[round] : round * roundMs(plan.steps);
+}
+
 /** `boundaries` for a plan, with each step as it plays in its round. */
 export function planBoundaries(
   plan: StepPlan,

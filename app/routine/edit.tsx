@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { AccessibilityInfo, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
-import { describeRhythm } from '../../src/breathing/describe';
+import { describeRhythm, describeTarget } from '../../src/breathing/describe';
 import { MAX_MINUTES } from '../../src/breathing/rhythm';
 import { AppText } from '../../src/components/AppText';
 import { Button, ButtonRow } from '../../src/components/Button';
@@ -134,15 +134,20 @@ export default function EditRoutine() {
                 <AppText variant="label">{practice ? describeRhythm(practice.steps) : 'Remove it or choose another practice.'}</AppText>
               </View>
             </View>
-            <Stepper
-              label="Minutes"
-              display={`${segment.minutes}m`}
-              spoken={`${segment.minutes} minutes`}
-              canDecrement={segment.minutes > 1}
-              canIncrement={segment.minutes < MAX_MINUTES}
-              onDecrement={() => step(i, -1)}
-              onIncrement={() => step(i, 1)}
-            />
+            {practice && 'rounds' in practice.target ? (
+              // A practice taught in rounds (4-7-8) keeps its taught count in a routine.
+              <AppText variant="label">{`${describeTarget(practice.target)}, as taught`}</AppText>
+            ) : (
+              <Stepper
+                label="Minutes"
+                display={`${segment.minutes}m`}
+                spoken={`${segment.minutes} minutes`}
+                canDecrement={segment.minutes > 1}
+                canIncrement={segment.minutes < MAX_MINUTES}
+                onDecrement={() => step(i, -1)}
+                onIncrement={() => step(i, 1)}
+              />
+            )}
             <View style={styles.actions}>
               <SmallAction label="Move up" disabled={i === 0} onPress={() => move(i, -1)} />
               <SmallAction label="Move down" disabled={i === segments.length - 1} onPress={() => move(i, 1)} />

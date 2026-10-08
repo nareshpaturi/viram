@@ -13,13 +13,14 @@
  * counts as practice time. Everything the screen shows is derived from
  * (state, clock) by `readPosition`; nothing here owns a timer.
  */
-import { planFor, planStepAt, type RhythmStep, type Slowing, type StepPlan, type StepPosition, type Target } from './rhythm';
+import { planFor, planRoundStartAt, planStepAt, type RhythmStep, type Slowing, type StepPlan, type StepPosition, type Target } from './rhythm';
 
 export const LEAD_MS = 3000;
 /** The routine transition screen: five quiet seconds, not practice time. */
 export const TRANSITION_MS = 5000;
 
-export type PauseReason = 'user' | 'call' | 'audio' | 'headphones' | 'lockScreen' | 'locked';
+/** 'prepare': a routine stops before a practice it hasn't introduced, to show how it's done. */
+export type PauseReason = 'user' | 'call' | 'audio' | 'headphones' | 'lockScreen' | 'locked' | 'prepare';
 
 export interface Segment {
   purpose: 'settle' | 'resume';
@@ -149,7 +150,12 @@ export function readPosition(plans: readonly SessionPlan[], segment: Segment, cl
   };
 }
 
-/** Freezes guidance. Time in a lead never counts; a partial step's time does. */
+/**
+ * Freezes guidance. Time in a lead never counts; a partial step's time does.
+ * Resume restarts the whole round, from its first inhale: after a pause no
+ * one is still holding, topped up, or half out, and alternate-nostril
+ * practice starts again on its first side.
+ */
 export function pause(plans: readonly SessionPlan[], state: SessionState, clockMs: number, reason: PauseReason): SessionState {
   if (state.status !== 'active') return state;
   const position = readPosition(plans, state.segment, clockMs);
@@ -158,14 +164,14 @@ export function pause(plans: readonly SessionPlan[], state: SessionState, clockM
     status: 'paused',
     reason,
     part: position.part,
-    resumePlanMs: inLead ? position.planMs : position.step.startMs,
+    resumePlanMs: inLead ? position.planMs : planRoundStartAt(plans[position.part], position.planMs),
     activeMs: position.activeMs,
     confirmingEnd: false,
     done: [...state.done, ...position.finishedInSegment],
   };
 }
 
-/** Restarts the interrupted step after the neutral lead. */
+/** Restarts the interrupted round after the neutral lead. */
 export function resume(state: SessionState): SessionState {
   if (state.status !== 'paused') return state;
   return {

@@ -14,6 +14,7 @@
  * from the installed library, never from the link.
  */
 import { LIBRARY } from '../content/library';
+import { techniqueTarget } from '../content/targets';
 import type { Technique } from '../content/types';
 import {
   MAX_MINUTES,
@@ -162,7 +163,7 @@ export function validateRhythm(input: SharedRhythm, options: { longHolds?: boole
     if (!isValidSeconds(s.kind, s.seconds, technique.practice.increment, longHolds)) return null;
     steps.push({ kind: ref.kind, seconds: s.seconds, side: ref.side, route: ref.route, cue: ref.cue });
   }
-  return { name, steps: steps.map(stripUndefined), target: input.target, techniqueId: technique.id };
+  return { name, steps: steps.map(stripUndefined), target: techniqueTarget(technique, input.target), techniqueId: technique.id };
 }
 
 function isStepShape(step: unknown): step is RhythmStep {

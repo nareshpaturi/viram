@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
+import { cautionFor } from '../../src/practice/caution';
 import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { AppText } from '../../src/components/AppText';
@@ -191,6 +192,10 @@ export default function Breathe() {
           Then {run.parts.slice(1).map((p) => p.name).join(', then ')}.
         </AppText>
       ) : null}
+      {/* The ready practice's short caution, before Begin (content review F10). */}
+      <AppText variant="label" style={styles.center}>
+        {cautionFor(practice)}
+      </AppText>
       <View style={[styles.group, { backgroundColor: glass.fill, borderColor: glass.rim }]}>
         <Frosted>
           {total ? (

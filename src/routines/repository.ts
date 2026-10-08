@@ -4,6 +4,7 @@
  * Segments hold references; the practices are resolved when a routine runs.
  */
 import { MAX_MINUTES } from '../breathing/rhythm';
+import { techniqueTarget } from '../content/targets';
 import { practiceFromTechnique, type Practice } from '../practice/practice';
 import { MAX_ROUTINE_PARTS, type PracticeRun } from '../practice/run';
 import { practiceFromRhythm } from '../rhythms/describe';
@@ -56,13 +57,18 @@ export function validateRoutine(name: string, segments: unknown): { name: string
 
 /** The practice a segment points at, or null when a saved rhythm was deleted. */
 export function resolveSegment(segment: RoutineSegment, rhythms: Pick<RhythmsRepository, 'get'>): Practice | null {
-  const target = { minutes: segment.minutes };
+  const minutes = { minutes: segment.minutes };
+  // A practice taught in rounds (4-7-8) runs its rounds, not the segment's minutes.
+  const withTarget = (practice: Practice): Practice => ({
+    ...practice,
+    target: techniqueTarget(practice.techniqueId ? findTechnique(practice.techniqueId) : undefined, minutes),
+  });
   if (segment.ref.kind === 'technique') {
     const technique = findTechnique(segment.ref.id);
-    return technique ? { ...practiceFromTechnique(technique), target } : null;
+    return technique ? withTarget(practiceFromTechnique(technique)) : null;
   }
   const rhythm = rhythms.get(segment.ref.id);
-  return rhythm ? { ...practiceFromRhythm(rhythm), target } : null;
+  return rhythm ? withTarget(practiceFromRhythm(rhythm)) : null;
 }
 
 /** A runnable routine, or the positions of practices that no longer exist. */

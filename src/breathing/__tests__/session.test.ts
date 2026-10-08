@@ -50,13 +50,31 @@ describe('single practice', () => {
     expect(position.step).toMatchObject({ index: 1, elapsedMs: 0 });
   });
 
-  it('pause keeps partial time and resume restarts the interrupted step', () => {
+  it('pause keeps partial time and resume restarts the interrupted round', () => {
+    // 21.5 s is in round 2's hold (16–20 s inhale, 20–24 s hold).
     const paused = pause(one, settle(), LEAD_MS + 21_500, 'call');
-    expect(paused).toMatchObject({ status: 'paused', reason: 'call', part: 0, resumePlanMs: 20_000, activeMs: 21_500 });
+    expect(paused).toMatchObject({ status: 'paused', reason: 'call', part: 0, resumePlanMs: 16_000, activeMs: 21_500 });
     const segment = segmentOf(resume(paused));
-    expect(segment).toMatchObject({ purpose: 'resume', startPlanMs: 20_000, activeBeforeMs: 21_500 });
+    expect(segment).toMatchObject({ purpose: 'resume', startPlanMs: 16_000, activeBeforeMs: 21_500 });
     expect(readPosition(one, segment, 0).lead).toBe('resume');
-    expect(readPosition(one, segment, LEAD_MS)).toMatchObject({ planMs: 20_000, activeMs: 21_500, roundNumber: 2 });
+    expect(readPosition(one, segment, LEAD_MS)).toMatchObject({ planMs: 16_000, activeMs: 21_500, roundNumber: 2 });
+    expect(readPosition(one, segment, LEAD_MS).step).toMatchObject({ index: 0 });
+  });
+
+  // The content review's probes (2026-10-08): no resume starts on a hold, a pause after the exhale, a top-up, or an exhale.
+  it.each([
+    ['sama-vritti', 'its first hold', 5_000],
+    ['sama-vritti', 'the pause after the exhale', 13_000],
+    ['cyclic-sighing', 'the top-up', 3_500],
+    ['cyclic-sighing', 'the long exhale', 6_000],
+    ['nadi-shodhana', 'the last exhale, on the left', 17_000],
+  ])('resuming %s from %s starts a fresh breath with the first inhale', (id, _where, atMs) => {
+    const plans = [sessionPlan(practice(id).steps, practice(id).target)];
+    const segment = segmentOf(resume(pause(plans, settle(), LEAD_MS + atMs, 'user')));
+    const first = readPosition(plans, segment, LEAD_MS);
+    expect(first.step.index).toBe(0);
+    expect(practice(id).steps[first.step.index].kind).toBe('inhale');
+    expect(practice(id).steps[first.step.index].cue).toBeUndefined();
   });
 
   it('never counts the lead or paused time', () => {
@@ -79,7 +97,7 @@ describe('single practice', () => {
 
   it('completes after a resume with the prior partial time included', () => {
     const finished = complete(one, resume(pause(one, settle(), LEAD_MS + 21_500, 'user')));
-    expect(finished.status === 'finished' && totals(finished.parts)).toEqual({ activeMs: 21_500 + (304_000 - 20_000), completedRounds: 19 });
+    expect(finished.status === 'finished' && totals(finished.parts)).toEqual({ activeMs: 21_500 + (304_000 - 16_000), completedRounds: 19 });
   });
 
   it('asks before ending and ends with complete rounds, including zero', () => {

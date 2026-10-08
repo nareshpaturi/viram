@@ -310,6 +310,23 @@ export const SOURCES = {
     doi: '10.1007/s11695-022-06405-1',
     pmid: '36480101',
   },
+  'komori-2018': {
+    kind: 'study',
+    authors: 'Komori T',
+    year: '2018',
+    title: 'The relaxation effect of prolonged expiratory breathing',
+    venue: 'Mental Illness 10(1):7669',
+    doi: '10.4081/mi.2018.7669',
+    pmid: '30046408',
+  },
+  'dogan-2026': {
+    kind: 'study',
+    authors: 'Doğan U, Sungur M',
+    year: '2026',
+    title: 'The effect of 4-7-8 breathing exercise training on sleep quality of undergraduate nursing students: a randomized controlled study',
+    venue: 'European Journal of Integrative Medicine 82:102620',
+    doi: '10.1016/j.eujim.2026.102620',
+  },
   'marchant-2025': {
     kind: 'study',
     authors: 'Marchant J et al.',

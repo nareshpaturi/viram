@@ -43,6 +43,7 @@ import type { OtherAudio, Preferences } from '../settings/preferences';
 import { newId } from '../storage/db';
 import { useScreenReader } from '../accessibility/useScreenReader';
 import { PAUSE_TITLE, speechOwner } from './guidanceRules';
+import { chooseIntroduction, partsToPrepare } from './introduction';
 import { practiceSettings } from './practiceSettings';
 import { techniqueOf } from './practice';
 import type { PracticeRun } from './run';
@@ -148,23 +149,22 @@ export function usePracticeSession({ run, preferences, quickStart, night, onIntr
   const speech = speechOwner({ screenReader, mode: settings.cues.mode });
   const [plans] = useState(() => run.parts.map((p) => sessionPlan(p.steps, p.target, p.slowing ?? null)));
   const names = run.parts.map((p) => p.name);
-  // Decided once per run, like the settings. Only the first practice is introduced.
+  // Decided once per run, like the settings. The first practice is introduced
+  // (never with counts it isn't doing); later ones in a routine are prepared.
   const [intro] = useState(() => {
     const technique = techniqueOf(run.parts[0]);
-    const wanted =
-      !quickStart &&
-      technique &&
-      (preferences.introductions === 'always' ||
-        (preferences.introductions === 'first' && !preferences.introductionsHeard.includes(technique.id)));
-    if (!wanted) return null;
+    const variant = chooseIntroduction(technique, run.parts[0], preferences, quickStart);
+    if (!technique || !variant) return null;
     const { introduction } = technique.guidance;
-    const long = preferences.introLength === 'long' && introduction.long;
+    const long = variant === 'long';
     const chosen = long ? introduction.long! : introduction;
     // Captions are in the language the voice speaks (src/content/hindi.ts for Hindi voices).
     const hindi = voiceLanguage(preferences.voice) === 'hi' ? HINDI_INTROS[technique.id] : undefined;
     return { id: technique.id, clip: chosen.clip, lines: hindi ? (long ? hindi.long : hindi.lines) : chosen.lines };
   });
   const introMs = intro ? (CLIP_MS[settings.voice]?.[intro.clip] ?? 0) : 0;
+  // Routine parts that stop first to show how they're done (content review F9).
+  const toPrepare = useRef(new Set(partsToPrepare(run.parts, preferences)));
 
   const stateRef = useRef<SessionState | null>(null);
   const recordRef = useRef({ id: newId(), startedAt: 0 });
@@ -422,11 +422,20 @@ export function usePracticeSession({ run, preferences, quickStart, night, onIntr
           transition(complete(plans, state));
           return;
         }
+        // Moving into a practice it hasn't taught: stop and show how, before its first cue.
+        const position = readPosition(plans, state.segment, clock);
+        if (position.lead === 'transition' && toPrepare.current.has(position.part)) {
+          toPrepare.current.delete(position.part);
+          const technique = techniqueOf(run.parts[position.part]);
+          if (technique) onIntroHeard(technique.id);
+          pauseFor('prepare');
+          return;
+        }
       }
       render();
     }, TICK_MS);
     return () => clearInterval(timer);
-  }, [beginSettle, introMs, plans, render, transition]);
+  }, [beginSettle, introMs, onIntroHeard, pauseFor, plans, render, run.parts, transition]);
 
   // ——— Interruptions, lock-screen controls, and locking in Silent ———
 

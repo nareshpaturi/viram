@@ -117,7 +117,7 @@ export const TECHNIQUES = {
   "4-7-8": {
     "name": "4-7-8 breathing",
     "subtitle": "Long hold, long exhale",
-    "increment": 1,
+    "increment": 0.5,
     "steps": [
       {
         "kind": "inhale"
