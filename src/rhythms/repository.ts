@@ -57,7 +57,7 @@ function fromRow(row: Row): SavedRhythm | null {
     steps: steps as RhythmStep[],
     target: targetFrom(row.target_kind, row.target_value),
     techniqueId: row.technique_id,
-  });
+  }, { longHolds: true });
   if (!checked || !origin) return null;
   let slowing: unknown = null;
   try {
@@ -117,7 +117,7 @@ export function rhythmsRepository(db: Db, now: () => number = Date.now) {
 
     /** Never overwrites: at 20 it reports the limit, and an identical rhythm reports the duplicate. */
     save(input: { name: string; steps: RhythmStep[]; target: Target; techniqueId: string | null; slowing?: Slowing | null; origin: RhythmOrigin }): SaveResult {
-      const valid = validateRhythm(input);
+      const valid = validateRhythm(input, { longHolds: true });
       const slowing = valid && checkSlowing(valid.techniqueId, valid.steps, input.slowing);
       if (!valid || slowing === false) return { ok: false, reason: 'invalid' };
       const checked = { ...valid, slowing };
@@ -137,7 +137,7 @@ export function rhythmsRepository(db: Db, now: () => number = Date.now) {
 
     rename(id: string, name: string): SavedRhythm | null {
       const current = get(id);
-      const checked = current && validateRhythm({ ...current, name });
+      const checked = current && validateRhythm({ ...current, name }, { longHolds: true });
       if (!current || !checked) return null;
       db.runSync('UPDATE rhythms SET name = ?, updated_at = ? WHERE id = ?', [checked.name, now(), id]);
       return get(id);

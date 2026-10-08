@@ -45,8 +45,7 @@ export function parseRun(value: unknown): PracticeRun | null {
   if (typeof value !== 'object' || value === null) return null;
   const v = value as Partial<PracticeRun>;
   if (!Array.isArray(v.parts) || v.parts.length < 1 || v.parts.length > MAX_ROUTINE_PARTS) return null;
-  const multi = v.parts.length > 1 || v.program != null;
-  const parts = v.parts.map((part) => parsePractice(part, { anyMinutes: multi }));
+  const parts = v.parts.map((part) => parsePractice(part));
   if (parts.some((p) => p === null)) return null;
   const name = cleanName(String(v.name ?? ''));
   const program = parseProgramRef(v.program);

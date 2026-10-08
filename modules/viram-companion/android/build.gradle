@@ -1,0 +1,20 @@
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'app.viram.companion'
+version = '1.0.0'
+
+android {
+  namespace "app.viram.companion"
+  defaultConfig {
+    versionCode 1
+    versionName "1.0.0"
+  }
+}
+
+dependencies {
+  // The Wear OS Data Layer. Without Google Play services (some devices), the watch is simply absent.
+  implementation "com.google.android.gms:play-services-wearable:19.0.0"
+}

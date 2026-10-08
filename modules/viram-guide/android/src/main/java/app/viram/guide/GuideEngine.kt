@@ -20,7 +20,8 @@ import android.os.VibratorManager
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.roundToLong
 
-data class GuideCue(val atMs: Double, val sound: String?, val haptic: Int, val nowPlaying: String?)
+/** `pulses` is the step's haptic pattern as [atMs, ms, amplitude, …]; empty plays `haptic` as one tap. */
+data class GuideCue(val atMs: Double, val sound: String?, val haptic: Int, val nowPlaying: String?, val pulses: DoubleArray = DoubleArray(0))
 
 /**
  * Plays one practice segment's cues on the audio clock (PRD FR-02, FR-04).
@@ -52,6 +53,8 @@ object GuideEngine {
   private class PendingTiming(val atMs: Double, val frame: Long, val sound: String, val generation: Int)
 
   private lateinit var context: Context
+  /** While playing along, lower other audio briefly under each cue (“Lower it”); otherwise leave it be. */
+  @Volatile var lowerOthers = false
   private var emit: ((String, Map<String, Any?>) -> Unit)? = null
   private val buffers = ConcurrentHashMap<String, FloatArray>()
   private val lock = Any()
@@ -437,7 +440,9 @@ object GuideEngine {
   private fun sideEffects(cue: GuideCue, frame: Long) {
     val delayMs = ((frame - playedFramesLocked()) * 1000 / RATE).coerceAtLeast(0)
     val expected = generation
-    if (cue.haptic > 0) {
+    if (cue.pulses.isNotEmpty()) {
+      events.postDelayed({ if (synchronized(lock) { generation } == expected) PhaseHaptics.play(context, cue.pulses) }, delayMs)
+    } else if (cue.haptic > 0) {
       events.postDelayed({ if (synchronized(lock) { generation } == expected) vibrate(cue.haptic) }, delayMs)
     }
     cue.nowPlaying?.let { text ->
@@ -449,7 +454,7 @@ object GuideEngine {
       }, delayMs)
     }
     val length = cue.sound?.let { buffers[it] }?.size ?: return
-    if (mixWithOthers) duckOthers(delayMs, length * 1000L / RATE)
+    if (mixWithOthers && lowerOthers) duckOthers(delayMs, length * 1000L / RATE)
   }
 
   // ——— Interruptions (FR-04) ———

@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { AccessibilityInfo, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { describeRhythm } from '../../src/breathing/describe';
-import { MAX_SEGMENT_MINUTES } from '../../src/breathing/rhythm';
+import { MAX_MINUTES } from '../../src/breathing/rhythm';
 import { AppText } from '../../src/components/AppText';
 import { Button, ButtonRow } from '../../src/components/Button';
 import { ConfirmPanel } from '../../src/components/ConfirmPanel';
@@ -46,7 +46,7 @@ export default function EditRoutine() {
   // Functional updates, so quick repeated taps each count.
   const step = (index: number, by: -1 | 1) =>
     setSegments((current) =>
-      current.map((s, i) => (i === index ? { ...s, minutes: Math.min(MAX_SEGMENT_MINUTES, Math.max(1, s.minutes + by)) } : s)),
+      current.map((s, i) => (i === index ? { ...s, minutes: Math.min(MAX_MINUTES, Math.max(1, s.minutes + by)) } : s)),
     );
   const move = (index: number, by: -1 | 1) => {
     setSegments((current) => {
@@ -139,7 +139,7 @@ export default function EditRoutine() {
               display={`${segment.minutes}m`}
               spoken={`${segment.minutes} minutes`}
               canDecrement={segment.minutes > 1}
-              canIncrement={segment.minutes < MAX_SEGMENT_MINUTES}
+              canIncrement={segment.minutes < MAX_MINUTES}
               onDecrement={() => step(i, -1)}
               onIncrement={() => step(i, 1)}
             />

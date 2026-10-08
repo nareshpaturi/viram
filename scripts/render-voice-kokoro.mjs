@@ -22,6 +22,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { VOICE_IDS } from '../src/audio/voices.ts';
 import { LIBRARY } from '../src/content/library.ts';
+import { HINDI_CUES, HINDI_INTROS } from '../src/content/hindi.ts';
 import { CUES } from '../src/content/voice.ts';
 import { durationMs, writeVoiceClip } from './lib/wav.mjs';
 
@@ -34,8 +35,12 @@ const option = (name) => (args.includes(name) ? args[args.indexOf(name) + 1] : u
 const voices = option('--voice') ? [option('--voice')] : VOICE_IDS;
 const only = option('--only')?.split(',');
 const onlyMissing = args.includes('--missing');
-// British voices (bf_, bm_) read with British English phonemes; every other voice with American.
-const langOf = (voice) => (voice.startsWith('b') ? 'en-gb' : 'en-us');
+// Hindi voices (ID ending in -hi) read the Hindi scripts with Hindi phonemes. British voices
+// (bf_, bm_) read with British English phonemes; every other voice with American.
+const hindi = (voice) => voice.endsWith('-hi');
+const langOf = (voice) => (hindi(voice) ? 'hi' : voice.startsWith('b') ? 'en-gb' : 'en-us');
+// A Hindi voice's folder is <kokoro voice>-hi; Kokoro itself knows only the speaker.
+const kokoroVoice = (voice) => voice.replace(/-hi$/, '');
 
 // Unhurried, like a teacher in a quiet room. Counts fit a one-second slot.
 const SPEED = { cue: 0.9, count: 1.0, name: 0.85, intro: 0.88 };
@@ -68,17 +73,22 @@ if (!DIR || !existsSync(join(DIR, 'kokoro-v1.0.onnx'))) {
 
 // A full stop gives cue words a settled, falling close instead of a list-reading lilt.
 // Introductions are long, so they are stored compressed.
-const clips = [
+/** Every clip a voice speaks, in its own language. Hindi lines come from src/content/hindi.ts. */
+const clipsFor = (voice) => [
   ...Object.entries(CUES).map(([id, cue]) => ({
     id,
     file: `${id}.wav`,
-    lines: [`${cue.text}.`],
+    lines: [`${hindi(voice) ? HINDI_CUES[id] : cue.text}${hindi(voice) ? '।' : '.'}`],
     speed: id.startsWith('count-') ? SPEED.count : SPEED.cue,
     limitMs: cue.maxSeconds * 1000,
   })),
   ...LIBRARY.flatMap((technique) => {
     const { introduction } = technique.guidance;
-    const intros = [introduction, ...(introduction.long ? [introduction.long] : [])].map((intro) => ({
+    const translated = HINDI_INTROS[technique.id];
+    const intros = [
+      { clip: introduction.clip, lines: hindi(voice) ? translated.lines : introduction.lines },
+      ...(introduction.long ? [{ clip: introduction.long.clip, lines: hindi(voice) ? translated.long : introduction.long.lines }] : []),
+    ].map((intro) => ({
       id: intro.clip,
       file: `${intro.clip}.m4a`,
       lines: intro.lines,
@@ -86,7 +96,9 @@ const clips = [
     }));
     if (!technique.pronunciation) return intros;
     if (!NAMES[technique.name]) throw new Error(`Add Kokoro phonemes for ${technique.name} to NAMES.`);
-    return [...intros, { id: technique.pronunciation.clip, file: `${technique.pronunciation.clip}.wav`, lines: [technique.name], speed: SPEED.name }];
+    // In Hindi the name is read from its Devanagari spelling.
+    const name = hindi(voice) ? technique.pronunciation.devanagari : technique.name;
+    return [...intros, { id: technique.pronunciation.clip, file: `${technique.pronunciation.clip}.wav`, lines: [name], speed: SPEED.name }];
   }),
 ].filter(({ id }) => !only || only.includes(id));
 
@@ -96,16 +108,17 @@ const leftOver = [];
 for (const voice of voices) {
   const out = join('assets/voice', voice);
   mkdirSync(out, { recursive: true });
-  let pending = clips.filter((clip) => !(onlyMissing && existsSync(join(out, clip.file))));
+  let pending = clipsFor(voice).filter((clip) => !(onlyMissing && existsSync(join(out, clip.file))));
   for (let attempt = 0; pending.length && attempt < MAX_TRIES; attempt++) {
     const jobs = pending.map((clip) => ({
       out: join(work, `${clip.id}.wav`),
       lines: clip.lines,
-      voice,
+      voice: kokoroVoice(voice),
       speed: clip.speed * 1.08 ** attempt,
       lang: langOf(voice),
       pauseMs: INTRO_PAUSE_MS,
-      names: NAMES,
+      // English phonemes for the Sanskrit names; Hindi reads them from Devanagari.
+      names: hindi(voice) ? {} : NAMES,
     }));
     execFileSync(PYTHON, ['scripts/lib/kokoro_tts.py'], { input: JSON.stringify(jobs), stdio: ['pipe', 'ignore', 'inherit'], env: { ...process.env, VIRAM_KOKORO_DIR: DIR } });
     pending = pending.filter((clip, i) => {
@@ -138,4 +151,4 @@ writeFileSync(
     2,
   )}\n`,
 );
-console.log(`Rendered ${clips.length} clips for ${voices.join(', ')} into assets/voice/ and recorded ${SETTINGS}. Next: npm run audio:manifest`);
+console.log(`Rendered ${clipsFor(voices[0]).length} clips each for ${voices.join(', ')} into assets/voice/ and recorded ${SETTINGS}. Next: npm run audio:manifest`);

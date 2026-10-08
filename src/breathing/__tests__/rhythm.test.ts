@@ -5,6 +5,8 @@ import {
   isValidRhythm,
   isValidSeconds,
   isValidTarget,
+  hasLongHolds,
+  maxSeconds,
   nudgeSeconds,
   planFor,
   stepAt,
@@ -115,7 +117,11 @@ describe('bounds (FR-01)', () => {
 
   it('validates targets', () => {
     expect(isValidTarget({ minutes: 5 })).toBe(true);
-    expect(isValidTarget({ minutes: 7 as 5 })).toBe(false);
+    expect(isValidTarget({ minutes: 7 })).toBe(true);
+    expect(isValidTarget({ minutes: 60 })).toBe(true);
+    expect(isValidTarget({ minutes: 61 })).toBe(false);
+    expect(isValidTarget({ minutes: 0 })).toBe(false);
+    expect(isValidTarget({ minutes: 2.5 })).toBe(false);
     expect(isValidTarget({ rounds: 1 })).toBe(true);
     expect(isValidTarget({ rounds: 108 })).toBe(true);
     expect(isValidTarget({ rounds: 109 })).toBe(false);
@@ -165,5 +171,25 @@ describe('pace labels', () => {
     expect(guidedPace('5.5 → 4.6')).toBe('guided 5.5 → 4.6 breaths/⁠min');
     // Read without the joiners, it's the plain label.
     expect(guidedPace('6').replace(/ /g, ' ').replace(/⁠/g, '')).toBe('guided 6 breaths/min');
+  });
+});
+
+describe('longer holds', () => {
+  it('lets holds and rests reach 60 s only when asked, never inhales or exhales', () => {
+    expect(isValidSeconds('hold', 40, 1)).toBe(false);
+    expect(isValidSeconds('hold', 40, 1, true)).toBe(true);
+    expect(isValidSeconds('rest', 60, 1, true)).toBe(true);
+    expect(isValidSeconds('rest', 61, 1, true)).toBe(false);
+    expect(isValidSeconds('inhale', 21, 1, true)).toBe(false);
+    expect(maxSeconds('exhale', true)).toBe(20);
+  });
+
+  it('steps up to 60 with them on, and only down from a long hold with them off', () => {
+    expect(nudgeSeconds('hold', 20, 1, 1)).toBe(20);
+    expect(nudgeSeconds('hold', 20, 1, 1, true)).toBe(21);
+    expect(nudgeSeconds('hold', 60, 1, 1, true)).toBe(60);
+    expect(nudgeSeconds('hold', 40, 1, 1)).toBe(40);
+    expect(nudgeSeconds('hold', 40, -1, 1)).toBe(39);
+    expect(hasLongHolds([{ kind: 'inhale', seconds: 4 }, { kind: 'hold', seconds: 21 }])).toBe(true);
   });
 });

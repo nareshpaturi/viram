@@ -18,7 +18,8 @@
       },
       "entitlements": {
         "com.apple.developer.healthkit": true,
-        "com.apple.developer.healthkit.access": []
+        "com.apple.developer.healthkit.access": [],
+        "com.apple.security.application-groups": ["group.app.viram"]
       }
     },
     "android": {
@@ -42,10 +43,12 @@
     },
     "plugins": [
       "./plugins/withLocalNotificationsOnly",
+      "./plugins/withWearApp",
       "expo-router",
       "expo-sqlite",
       "expo-asset",
       "expo-quick-actions",
+      "@bacons/apple-targets",
       ["expo-notifications", { "icon": "./assets/android-icon-monochrome.png", "color": "#12372F" }],
       [
         "expo-build-properties",

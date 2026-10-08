@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { BackHandler, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { BackHandler, Platform, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -296,6 +296,11 @@ function Body({ view, run, rounds, durations, guideSize, reducedMotion, counting
                 ? 'Your practice is paused.'
                 : `Your practice is waiting: round ${view.roundNumber} of ${view.rounds}, ${formatClock(view.remainingMs)} left.`}
             </AppText>
+            {view.reason === 'locked' && Platform.OS === 'ios' ? (
+              <AppText variant="label" style={styles.muted}>
+                iPhone can’t tap while it’s locked. To keep going locked, choose Soft tones for Silent in Cues & sound.
+              </AppText>
+            ) : null}
             <AppText style={styles.muted}>Resume starts {view.resumeStep} again after a three-second countdown.</AppText>
           </Centered>
           <Button title="Resume" variant="onPine" onPress={actions.resume} />

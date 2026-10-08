@@ -10,6 +10,8 @@ import { Screen } from '../src/components/Screen';
 import { parsePractice } from '../src/practice/practice';
 import { encodeShareLink, validateRhythm } from '../src/sharing/link';
 import { colors, radius, spacing } from '../src/theme';
+import { hasLongHolds } from '../src/breathing/rhythm';
+import { LONG_HOLDS } from '../src/content/longHolds';
 
 /**
  * Share preview (FR-11): shows exactly what the link contains before the
@@ -34,6 +36,7 @@ export default function SharePreview() {
     return (
       <Screen edges={['left', 'right']}>
         <AppText variant="heading">This practice can’t be shared.</AppText>
+        {practice && hasLongHolds(practice.steps) ? <AppText>{LONG_HOLDS.sharing}</AppText> : null}
         <Button title="Back" variant="secondary" onPress={() => router.back()} />
       </Screen>
     );

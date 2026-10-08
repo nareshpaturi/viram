@@ -56,7 +56,7 @@ function partPractice(part: ProgramSession['parts'][number]): Practice | null {
   const base = practiceFromTechnique(technique);
   const steps = part.seconds && part.seconds.length === base.steps.length ? base.steps.map((s, i) => ({ ...s, seconds: part.seconds![i] })) : base.steps;
   const target = { minutes: part.minutes };
-  return validateRhythm({ name: base.name, steps, target, techniqueId: technique.id }, { anyMinutes: true }) ? { ...base, steps, target } : null;
+  return validateRhythm({ name: base.name, steps, target, techniqueId: technique.id }) ? { ...base, steps, target } : null;
 }
 
 export function sessionPractices(session: ProgramSession): Practice[] | null {

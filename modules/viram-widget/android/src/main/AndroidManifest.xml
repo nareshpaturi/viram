@@ -1,0 +1,13 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <application>
+    <receiver
+      android:name="app.viram.widget.BreatheWidget"
+      android:exported="false"
+      android:label="@string/viram_widget_label">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+      </intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/viram_widget_info" />
+    </receiver>
+  </application>
+</manifest>

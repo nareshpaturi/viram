@@ -3,7 +3,7 @@
  * rhythm, with its own minutes. A practice may appear more than once.
  * Segments hold references; the practices are resolved when a routine runs.
  */
-import { MAX_SEGMENT_MINUTES } from '../breathing/rhythm';
+import { MAX_MINUTES } from '../breathing/rhythm';
 import { practiceFromTechnique, type Practice } from '../practice/practice';
 import { MAX_ROUTINE_PARTS, type PracticeRun } from '../practice/run';
 import { practiceFromRhythm } from '../rhythms/describe';
@@ -41,7 +41,7 @@ function isSegment(value: unknown): value is RoutineSegment {
     typeof s.ref.id === 'string' &&
     Number.isInteger(s.minutes) &&
     s.minutes >= 1 &&
-    s.minutes <= MAX_SEGMENT_MINUTES
+    s.minutes <= MAX_MINUTES
   );
 }
 

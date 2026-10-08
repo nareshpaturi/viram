@@ -26,43 +26,45 @@ export interface RhythmStep {
 export type StepCue = 'hum' | 'om' | 'top-up';
 export const STEP_CUES: readonly StepCue[] = ['hum', 'om', 'top-up'];
 
-/** The minute choices in Adjust rhythm and share links (FR-01). */
-export type MinuteTarget = 1 | 3 | 5 | 10;
-/** Routines and programs set any whole number of minutes per practice (FR-14, FR-20). */
+/** Any whole number of minutes from 1 to 60, or 1–108 rounds (FR-01). */
 export type Target = { minutes: number } | { rounds: number };
 export type Increment = 1 | 0.5;
 
 export const STEP_KINDS: readonly StepKind[] = ['inhale', 'hold', 'exhale', 'rest'];
-export const MINUTE_TARGETS: readonly MinuteTarget[] = [1, 3, 5, 10];
+/** Adjust rhythm's minute shortcuts; the stepper reaches any length in between. */
+export const MINUTE_SHORTCUTS = [3, 5, 10, 20, 30] as const;
+/** Longest practice: a single practice, or one part of a routine or program. */
+export const MAX_MINUTES = 60;
 export const ROUND_SHORTCUTS = [11, 21, 27] as const;
 export const MAX_ROUNDS = 108;
 export const MAX_STEP_SECONDS = 20;
-/** Longest single practice inside a routine or program. */
-export const MAX_SEGMENT_MINUTES = 30;
+/** With Longer holds on (src/content/longHolds.ts), holds and rests may run this long. */
+export const MAX_LONG_HOLD_SECONDS = 60;
 
 export function minSeconds(kind: StepKind): number {
   return kind === 'inhale' || kind === 'exhale' ? 1 : 0;
 }
 
-export function isValidSeconds(kind: StepKind, seconds: number, increment: Increment): boolean {
+/** Inhale and exhale up to 20 s; holds and rests up to 20, or 60 with Longer holds. */
+export function maxSeconds(kind: StepKind, longHolds = false): number {
+  return longHolds && (kind === 'hold' || kind === 'rest') ? MAX_LONG_HOLD_SECONDS : MAX_STEP_SECONDS;
+}
+
+export function isValidSeconds(kind: StepKind, seconds: number, increment: Increment, longHolds = false): boolean {
   return (
     Number.isFinite(seconds) &&
     seconds >= minSeconds(kind) &&
-    seconds <= MAX_STEP_SECONDS &&
+    seconds <= maxSeconds(kind, longHolds) &&
     Number.isInteger(seconds / increment)
   );
 }
 
-/**
- * Adjust rhythm and share links offer 1, 3, 5, or 10 minutes; routine and
- * program parts may use any whole number of minutes up to 30.
- */
-export function isValidTarget(target: Target, anyMinutes = false): boolean {
-  if ('minutes' in target) {
-    return anyMinutes
-      ? Number.isInteger(target.minutes) && target.minutes >= 1 && target.minutes <= MAX_SEGMENT_MINUTES
-      : MINUTE_TARGETS.includes(target.minutes as MinuteTarget);
-  }
+/** A hold or rest past the standard 20 s: kept on the device, never in a link. */
+export const hasLongHolds = (steps: readonly RhythmStep[]): boolean => steps.some((s) => s.seconds > MAX_STEP_SECONDS);
+
+/** Any whole number of minutes from 1 to 60, or 1–108 rounds, everywhere a target appears. */
+export function isValidTarget(target: Target): boolean {
+  if ('minutes' in target) return Number.isInteger(target.minutes) && target.minutes >= 1 && target.minutes <= MAX_MINUTES;
   return Number.isInteger(target.rounds) && target.rounds >= 1 && target.rounds <= MAX_ROUNDS;
 }
 
@@ -77,9 +79,9 @@ export function isValidRhythm(steps: readonly RhythmStep[], increment: Increment
 }
 
 /** Moves one step by one increment, staying inside its bounds. */
-export function nudgeSeconds(kind: StepKind, seconds: number, direction: 1 | -1, increment: Increment): number {
+export function nudgeSeconds(kind: StepKind, seconds: number, direction: 1 | -1, increment: Increment, longHolds = false): number {
   const next = seconds + direction * increment;
-  return Math.min(MAX_STEP_SECONDS, Math.max(minSeconds(kind), next));
+  return Math.min(Math.max(seconds, maxSeconds(kind, longHolds)), Math.max(minSeconds(kind), next));
 }
 
 export const stepMs = (step: RhythmStep): number => Math.round(step.seconds * 1000);

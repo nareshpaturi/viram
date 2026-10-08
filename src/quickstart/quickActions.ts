@@ -1,10 +1,10 @@
 /**
- * App-icon quick actions (FR-12): “Begin last practice”, “1-minute box
+ * App-icon quick actions (FR-12): “Begin last practice”, “5-minute box
  * breathing”, and the most recent other practice once history has two.
  */
 import { describeRhythm, describeTarget } from '../breathing/describe';
 import type { SessionRecord } from '../history/repository';
-import { oneMinuteBox, parsePractice, practiceKey, type Practice } from '../practice/practice';
+import { quickBox, parsePractice, practiceKey, type Practice } from '../practice/practice';
 
 export interface QuickAction {
   id: 'last' | 'box' | 'recent';
@@ -28,12 +28,12 @@ export function practiceFromRecord(record: SessionRecord): Practice | null {
 }
 
 export function quickActionItems(last: Practice | null, history: readonly SessionRecord[]): QuickAction[] {
-  const box = oneMinuteBox();
+  const box = quickBox();
   const items: QuickAction[] = [];
   if (last && history.length > 0) {
     items.push({ id: 'last', title: 'Begin last practice', subtitle: `${last.name} · ${describeTarget(last.target)}`, icon: 'symbol:play.circle', params: null });
   }
-  items.push({ id: 'box', title: '1-minute box breathing', subtitle: `${box.name} · ${describeRhythm(box.steps)}`, icon: 'symbol:square', params: null });
+  items.push({ id: 'box', title: '5-minute box breathing', subtitle: `${box.name} · ${describeRhythm(box.steps)}`, icon: 'symbol:square', params: null });
 
   const singles = history.filter((r) => !r.parts);
   const distinct = new Set(singles.map((r) => practiceKey(r)));
