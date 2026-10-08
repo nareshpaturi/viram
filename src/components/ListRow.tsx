@@ -1,8 +1,12 @@
-import type { ReactNode } from 'react';
+import { createContext, useContext, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Frosted, useGlass } from '../light/light';
 import { colors, shadows, spacing, touchTarget } from '../theme';
 import { AppText } from './AppText';
+import { Chevron } from './Chevron';
+
+/** Rows on a white card sit a little roomier, with mist dividers (UX02). */
+const White = createContext(false);
 
 interface Props {
   title: string;
@@ -22,6 +26,7 @@ interface Props {
 /** A tappable row: title, supporting lines, trailing value, and a chevron. */
 export function ListRow({ title, subtitle, detail, trailing, onPress, accessibilityHint, accessibilityLabel, children, danger, leading }: Props) {
   const label = accessibilityLabel ?? [title, subtitle, detail, trailing].filter(Boolean).join(', ');
+  const white = useContext(White);
   return (
     <Pressable
       onPress={onPress}
@@ -29,7 +34,7 @@ export function ListRow({ title, subtitle, detail, trailing, onPress, accessibil
       accessibilityRole={onPress ? 'button' : undefined}
       accessibilityLabel={label}
       accessibilityHint={accessibilityHint}
-      style={({ pressed }) => [styles.row, pressed && styles.pressed]}
+      style={({ pressed }) => [styles.row, white && styles.whiteRow, pressed && styles.pressed]}
     >
       {leading}
       <View style={styles.text}>
@@ -41,13 +46,16 @@ export function ListRow({ title, subtitle, detail, trailing, onPress, accessibil
         {children}
       </View>
       {trailing ? <AppText variant="label" style={styles.trailing}>{trailing}</AppText> : null}
-      {onPress ? <AppText variant="control" style={styles.chevron} importantForAccessibility="no">›</AppText> : null}
+      {onPress ? <Chevron color={colors.inkFaint} /> : null}
     </Pressable>
   );
 }
 
-/** Rows grouped on one frosted card with hairline separators (Soft Light). */
-export function RowGroup({ children, title }: { children: ReactNode; title?: string }) {
+/**
+ * Rows grouped on one card with hairline separators: frosted over a wash
+ * (Soft Light), or white over paper, as in Practices (UX02).
+ */
+export function RowGroup({ children, title, tone = 'frosted' }: { children: ReactNode; title?: string; tone?: 'frosted' | 'white' }) {
   const glass = useGlass();
   return (
     <View style={styles.groupWrap}>
@@ -56,10 +64,12 @@ export function RowGroup({ children, title }: { children: ReactNode; title?: str
           {title.toUpperCase()}
         </AppText>
       ) : null}
-      <View style={[styles.group, { backgroundColor: glass.fill, borderColor: glass.rim }]}>
+      <View style={[styles.group, tone === 'white' ? styles.white : { backgroundColor: glass.fill, borderColor: glass.rim }]}>
         {/* Pulls the last row's divider under the clipped edge. */}
-        <View style={styles.lastDivider}>
-          <Frosted>{children}</Frosted>
+        <View style={tone === 'white' ? styles.lastWhiteDivider : styles.lastDivider}>
+          <White.Provider value={tone === 'white'}>
+            <Frosted>{children}</Frosted>
+          </White.Provider>
         </View>
       </View>
     </View>
@@ -77,11 +87,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.divider,
   },
+  whiteRow: { minHeight: 64, gap: 14, paddingVertical: 10, paddingLeft: spacing.md, paddingRight: 14, borderBottomWidth: 1, borderBottomColor: colors.mist },
   pressed: { backgroundColor: 'rgba(238, 244, 239, 0.8)' },
   text: { flex: 1, gap: 2 },
   trailing: { color: colors.inkSoft },
-  chevron: { color: colors.inkFaint, fontSize: 22 },
   groupWrap: { gap: spacing.sm },
   lastDivider: { marginBottom: -StyleSheet.hairlineWidth },
+  lastWhiteDivider: { marginBottom: -1 },
   group: { borderRadius: 18, overflow: 'hidden', borderWidth: 1, boxShadow: shadows.card },
+  white: { borderRadius: 20, backgroundColor: colors.surface, borderColor: colors.surface, boxShadow: '0px 6px 18px rgba(18, 55, 47, 0.06)' },
 });

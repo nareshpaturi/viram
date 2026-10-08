@@ -14,19 +14,21 @@ interface Props {
   programId: string;
   sessions: { total: number; done: number } | null;
   onPress: () => void;
+  /** Stacked full width (Practices › Programs) instead of a 286 px carousel card. */
+  fullWidth?: boolean;
 }
 
 /**
  * A program in Practices (Soft Light): a 286 px card in its own light. It
  * grows taller at large text sizes rather than clipping.
  */
-export function ProgramCard({ eyebrow, name, summary, minutes, programId, sessions, onPress }: Props) {
+export function ProgramCard({ eyebrow, name, summary, minutes, programId, sessions, onPress, fullWidth }: Props) {
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`${name}. ${eyebrow}. ${summary} About ${minutes} minutes in total.`}
-      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+      style={({ pressed }) => [styles.card, fullWidth && styles.fullWidth, pressed && styles.pressed]}
     >
       <Wash wash={PROGRAM_LIGHT[programId] ?? WASHES.day} />
       <AppText variant="overline" style={styles.eyebrow}>
@@ -57,6 +59,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: colors.surface,
   },
+  fullWidth: { width: 'auto', alignSelf: 'stretch' },
   pressed: { opacity: 0.85 },
   eyebrow: { fontSize: 12, lineHeight: 16 },
   name: { fontFamily: fonts.displayMedium, fontSize: 22, lineHeight: 27 },
