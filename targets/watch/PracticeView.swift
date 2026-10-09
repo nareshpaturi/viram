@@ -12,7 +12,7 @@ struct PracticeView: View {
     Group {
       switch runner.stage {
       case .settling(let until, let first):
-        SettleView(until: until, first: first, onCancel: runner.canCancel ? { runner.cancel() } : nil)
+        SettleView(until: until, first: first, caution: runner.practice.caution, onCancel: runner.canCancel ? { runner.cancel() } : nil)
       case .paused where confirmingEnd:
         EndView(onKeepBreathing: { confirmingEnd = false }, onEnd: { runner.endEarly() })
       case .running, .paused:
@@ -94,6 +94,7 @@ func clock(_ ms: Double) -> String {
 struct SettleView: View {
   let until: Date
   let first: Bool
+  let caution: String?
   let onCancel: (() -> Void)?
 
   var body: some View {
@@ -106,14 +107,23 @@ struct SettleView: View {
             .font(.system(size: 44, weight: .medium).monospacedDigit())
             .foregroundStyle(Color("inhale"))
         }
+        // Before the first round, the practice's caution, as on the phone (content review F10),
+        // then Cancel right under it: both in view in the three seconds, the tip below.
+        if first, let caution {
+          Text(caution)
+            .font(.footnote)
+            .multilineTextAlignment(.center)
+            .foregroundStyle(Color("mist"))
+            .fixedSize(horizontal: false, vertical: true)
+        }
+        if let onCancel {
+          Button("Cancel", action: onCancel)
+        }
         Text("Eyes closed is fine. The taps will guide you.")
           .font(.footnote)
           .multilineTextAlignment(.center)
           .foregroundStyle(Color("mist"))
           .fixedSize(horizontal: false, vertical: true)
-        if let onCancel {
-          Button("Cancel", action: onCancel)
-        }
       }
     }
   }
