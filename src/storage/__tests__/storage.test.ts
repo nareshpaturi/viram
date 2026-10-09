@@ -169,13 +169,13 @@ describe('preferences', () => {
     expect(preferences.read().voice).toBe('af_heart');
   });
 
-  it('plays the tanpura softly by default, and keeps a valid music choice', () => {
+  it('starts with music off, and keeps a valid music choice', () => {
     const { preferences } = freshStores();
-    expect(preferences.read()).toMatchObject({ music: 'tanpura', musicVolume: 0.5 });
+    expect(preferences.read()).toMatchObject({ music: 'off', musicVolume: 0.5 });
     preferences.write({ music: 'pad', musicVolume: 0.3 });
     expect(preferences.read()).toMatchObject({ music: 'pad', musicVolume: 0.3 });
     preferences.write({ music: 'drums' as never, musicVolume: -1 });
-    expect(preferences.read()).toMatchObject({ music: 'tanpura', musicVolume: 0.5 });
+    expect(preferences.read()).toMatchObject({ music: 'off', musicVolume: 0.5 });
   });
 });
 

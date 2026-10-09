@@ -127,12 +127,55 @@ export function fade(samples, inSeconds, outSeconds) {
   return samples;
 }
 
-export const rms = (samples) => Math.sqrt(samples.reduce((sum, x) => sum + x * x, 0) / samples.length);
 export const peak = (samples) => samples.reduce((m, x) => Math.max(m, Math.abs(x)), 0);
 
-/** Scales to an RMS level in dBFS, never past the peak ceiling. */
-export function level(samples, rmsDb, ceiling = 0.7) {
-  return scale(samples, Math.min(10 ** (rmsDb / 20) / rms(samples), ceiling / peak(samples)));
+function biquad(x, [b0, b1, b2], [a0, a1, a2]) {
+  const y = new Float32Array(x.length);
+  let x1 = 0, x2 = 0, y1 = 0, y2 = 0;
+  for (let i = 0; i < x.length; i++) {
+    const out = (b0 * x[i] + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2) / a0;
+    x2 = x1;
+    x1 = x[i];
+    y2 = y1;
+    y1 = out;
+    y[i] = out;
+  }
+  return y;
+}
+
+/** BS.1770 K-weighting, the filter loudness meters use: a high shelf near 1.7 kHz and a high-pass near 38 Hz. */
+function kWeighted(samples) {
+  const shelf = (() => {
+    const A = 10 ** (4 / 40);
+    const w = (2 * Math.PI * 1681.97) / SAMPLE_RATE;
+    const c = Math.cos(w);
+    const al = Math.sin(w) / (2 * 0.70718);
+    const r = 2 * Math.sqrt(A) * al;
+    return [[A * (A + 1 + (A - 1) * c + r), -2 * A * (A - 1 + (A + 1) * c), A * (A + 1 + (A - 1) * c - r)], [A + 1 - (A - 1) * c + r, 2 * (A - 1 - (A + 1) * c), A + 1 - (A - 1) * c - r]];
+  })();
+  const w = (2 * Math.PI * 38.135) / SAMPLE_RATE;
+  const c = Math.cos(w);
+  const al = Math.sin(w) / (2 * 0.50033);
+  return biquad(biquad(samples, ...shelf), [(1 + c) / 2, -(1 + c), (1 + c) / 2], [1 + al, -2 * c, 1 - al]);
+}
+
+/** The loudest 400 ms, in LUFS (BS.1770 momentary loudness): how loud a sound gets at its fullest. */
+export function loudestMoment(samples) {
+  const y = kWeighted(samples);
+  const window = seconds(0.4);
+  const hop = seconds(0.05);
+  let loudest = 0;
+  for (let i = 0; i + window <= y.length; i += hop) {
+    let sum = 0;
+    for (let j = i; j < i + window; j++) sum += y[j] * y[j];
+    loudest = Math.max(loudest, sum / window);
+  }
+  return -0.691 + 10 * Math.log10(loudest);
+}
+
+/** Scales so the loudest moment reads `lufs`. */
+export function levelLoudest(samples, lufs) {
+  return scale(samples, 10 ** ((lufs - loudestMoment(samples)) / 20));
 }
 
 export function scale(samples, gain) {

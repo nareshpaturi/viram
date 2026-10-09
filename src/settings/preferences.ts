@@ -106,7 +106,8 @@ export const DEFAULT_PREFERENCES: Preferences = {
   otherAudio: Platform.OS === 'ios' ? 'auto' : 'alongside',
   toneSet: 'soft-bells',
   voice: DEFAULT_VOICE,
-  music: 'tanpura',
+  // Off until chosen: the cues come first, and music is an extra people opt into.
+  music: 'off',
   musicVolume: 0.5,
   keepScreenOn: false,
   introductions: 'first',

@@ -57,7 +57,7 @@ export default function CuesAndSound() {
         ) : null}
       </Section>
 
-      <Section title="MUSIC" help="Plays softly under Voice and Tones, in tune with the tones. Silent stays silent, and it stays quiet whenever Viram is playing along with your own music.">
+      <Section title="MUSIC" help="Off unless you choose one. It plays softly under Voice and Tones, in tune with the tones. Silent stays silent, and it stays quiet whenever Viram is playing along with your own music.">
         <RadioCard label="Music">
           {MUSIC_CHOICES.map((music, i) => (
             <RadioRow
