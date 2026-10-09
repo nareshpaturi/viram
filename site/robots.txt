@@ -1,0 +1,6 @@
+# Viram welcomes search engines and AI assistants: the guides are here to be found.
+User-agent: *
+Allow: /
+Disallow: /r/
+
+Sitemap: https://viram.app/sitemap.xml

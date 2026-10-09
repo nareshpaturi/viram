@@ -1,5 +1,5 @@
 // Fills the share-link page with textContent only: link content is never markup.
-import { APP_STORE_URL, PLAY_STORE_URL } from '../config.js';
+// Store buttons are handled by /stores.js, as on every page.
 import { decodePayload, describeSteps, describeTarget } from './decode.js';
 
 const raw = location.pathname.replace(/^\/r\//, '').replace(/\/$/, '');
@@ -27,10 +27,3 @@ if (practice) {
   text('name', 'This link can’t be opened.');
   document.getElementById('invalid').hidden = false;
 }
-
-const appStore = document.getElementById('app-store');
-if (APP_STORE_URL) {
-  appStore.href = APP_STORE_URL;
-  appStore.hidden = false;
-}
-document.getElementById('play-store').href = PLAY_STORE_URL;

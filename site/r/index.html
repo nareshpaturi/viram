@@ -4,31 +4,84 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="referrer" content="no-referrer">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; base-uri 'none'; form-action 'none'">
   <title>A practice shared with Viram</title>
   <meta name="description" content="A breathing practice shared with Viram. Practice it free: no account, no ads, and it works offline.">
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#FBFCF8">
+  <link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/style.css">
+  <script type="module" src="/stores.js"></script>
   <script type="module" src="/r/page.js"></script>
 </head>
 <body>
-  <main>
-    <a class="brand" href="/"><svg width="36" height="36" viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" rx="22" fill="#12372F"/><path d="M36.85 27.28A28 28 0 0 0 36.85 76.72" stroke="#A8CFD0" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M63.15 27.28A28 28 0 0 1 63.15 76.72" stroke="#EEF4EF" stroke-width="9" stroke-linecap="round" fill="none"/><circle cx="50" cy="27.3" r="4.6" fill="#E46F51"/></svg> Viram</a>
-    <section class="card" aria-live="polite">
-      <p class="muted" id="kicker">A practice shared with you</p>
-      <h1 id="name">Opening the practice…</h1>
-      <p id="based-on"></p>
-      <p id="rhythm"></p>
-      <p class="muted" id="target"></p>
-    </section>
-    <p id="invalid" hidden>This link can’t be opened. It may be incomplete, or made with a newer version of Viram.</p>
-    <p>Practice it free with Viram. No account, no ads, and it works offline.</p>
-    <div class="actions">
-      <a class="button" id="app-store" hidden>Download on the App Store</a>
-      <a class="button" id="play-store">Get it on Google Play</a>
-      <a class="button secondary" id="open-app" hidden>Already have Viram? Open this practice</a>
+  <!-- header -->
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="/" aria-label="Viram home"><svg viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" rx="22" fill="#12372F"/><path d="M36.85 27.28A28 28 0 0 0 36.85 76.72" stroke="#A8CFD0" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M63.15 27.28A28 28 0 0 1 63.15 76.72" stroke="#EEF4EF" stroke-width="9" stroke-linecap="round" fill="none"/><circle cx="50" cy="27.3" r="4.6" fill="#E46F51"/></svg> Viram</a>
+      <nav class="site-nav" aria-label="Main">
+        <a href="/#features">Features</a>
+        <a href="/techniques/">Techniques</a>
+        <a href="/#faq">FAQ</a>
+        <a class="pill" href="/#get">Get Viram</a>
+      </nav>
     </div>
-    <p class="note small">Instructions and safety notes come from the Viram app, not from the link. Breathe gently, and stop if you feel dizzy or uncomfortable. A wellness practice, not medical advice.</p>
-    <p class="muted small">This page shows only the rhythm in the link. No cookies or trackers. <a href="/privacy/">Privacy</a></p>
+  </header>
+  <!-- /header -->
+  <main id="main" class="page wash">
+    <div class="narrow">
+      <section class="card" aria-live="polite">
+        <p class="muted" id="kicker">A practice shared with you</p>
+        <h1 id="name">Opening the practice…</h1>
+        <p id="based-on"></p>
+        <p id="rhythm"></p>
+        <p class="muted" id="target"></p>
+      </section>
+      <p id="invalid" hidden>This link can’t be opened. It may be incomplete, or made with a newer version of Viram.</p>
+      <p>Practice it free with Viram. No account, no ads, and it works offline.</p>
+      <div class="actions" data-stores>
+        <a class="button secondary" id="open-app" hidden>Already have Viram? Open this practice</a>
+        <a class="button" data-store="app" hidden>Download on the App Store</a>
+        <a class="button" data-store="play" hidden>Get it on Google Play</a>
+        <span class="soon" data-soon>Coming soon to the App Store and Google Play</span>
+      </div>
+      <p class="note small">Instructions and safety notes come from the Viram app, not from the link. Breathe gently, and stop if you feel dizzy or uncomfortable. A wellness practice, not medical advice.</p>
+      <p class="muted small">This page shows only the rhythm in the link. No cookies or trackers. <a href="/privacy/">Privacy</a></p>
+    </div>
   </main>
+  <!-- footer -->
+  <footer class="site-footer">
+    <div class="wrap">
+      <div>
+        <a class="brand" href="/"><svg viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" rx="22" fill="#12372F"/><path d="M36.85 27.28A28 28 0 0 0 36.85 76.72" stroke="#A8CFD0" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M63.15 27.28A28 28 0 0 1 63.15 76.72" stroke="#EEF4EF" stroke-width="9" stroke-linecap="round" fill="none"/><circle cx="50" cy="27.3" r="4.6" fill="#E46F51"/></svg> Viram</a>
+        <p>Pranayama, guided at your pace. Free, private, and ready offline.</p>
+      </div>
+      <div>
+        <h2>Practise</h2>
+        <ul>
+          <li><a href="/techniques/sama-vritti/">Sama Vritti</a></li>
+          <li><a href="/techniques/nadi-shodhana/">Nadi Shodhana</a></li>
+          <li><a href="/techniques/bhramari/">Bhramari</a></li>
+          <li><a href="/techniques/4-7-8/">4-7-8 breathing</a></li>
+          <li><a href="/techniques/ujjayi/">Ujjayi</a></li>
+          <li><a href="/techniques/coherent/">Coherent breathing</a></li>
+          <li><a href="/techniques/">All techniques</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Viram</h2>
+        <ul>
+          <li><a href="/#features">Features</a></li>
+          <li><a href="/#faq">Questions</a></li>
+          <li><a href="/privacy/">Privacy</a></li>
+          <li><a href="/support/">Support</a></li>
+          <li><a href="mailto:hello@viram.app">hello@viram.app</a></li>
+        </ul>
+      </div>
+      <p class="fine">A wellness practice, not medical advice. Breathe gently, and stop if you feel dizzy or uncomfortable. © 2026 Viram.</p>
+    </div>
+  </footer>
+  <!-- /footer -->
 </body>
 </html>
