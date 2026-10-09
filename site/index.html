@@ -4,25 +4,413 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="referrer" content="no-referrer">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; base-uri 'none'; form-action 'none'">
+  <title>Viram · Free pranayama and breathing app, guided by voice</title>
+  <meta name="description" content="Viram is a free pranayama app for iPhone and Android. Practise Nadi Shodhana, Bhramari, box breathing, 4-7-8 and more with a calm voice that keeps guiding with your phone locked. No ads, no account.">
+  <link rel="canonical" href="https://viram.app/">
+  <meta name="theme-color" content="#FBFCF8">
+  <link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/img/favicon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
+  <link rel="preload" href="/fonts/dm-sans-400.ttf" as="font" type="font/ttf" crossorigin>
+  <link rel="preload" href="/fonts/newsreader-500.ttf" as="font" type="font/ttf" crossorigin>
   <link rel="stylesheet" href="/style.css">
-  <title>Viram · Pranayama, guided at your pace</title>
-  <meta name="description" content="Steady breath. Steady mind. Authentic pranayama, free and offline. No ads, no account.">
+  <link rel="stylesheet" href="/techniques/orbs.css">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Viram">
+  <meta property="og:title" content="Viram · Pranayama, guided at your pace">
+  <meta property="og:description" content="A free pranayama app: 12 gentle breathing techniques, a calm guiding voice, and no ads, account, or tracking.">
+  <meta property="og:url" content="https://viram.app/">
+  <meta property="og:image" content="https://viram.app/img/og.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
   <script type="module" src="/stores.js"></script>
+  <script type="application/ld+json">{
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://viram.app/#org",
+        "name": "Viram",
+        "url": "https://viram.app/",
+        "logo": "https://viram.app/img/icon-512.png",
+        "email": "hello@viram.app"
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://viram.app/#site",
+        "name": "Viram",
+        "url": "https://viram.app/",
+        "publisher": { "@id": "https://viram.app/#org" },
+        "inLanguage": "en"
+      },
+      {
+        "@type": "MobileApplication",
+        "name": "Viram",
+        "alternateName": "Viram: Pranayama & Breathing",
+        "description": "A free pranayama and breathing app. It guides 12 gentle techniques, including Nadi Shodhana, Bhramari, Ujjayi, box breathing and 4-7-8 breathing, by voice, tones, or haptics, keeps guiding with the phone locked, and works offline with no ads, account, or tracking.",
+        "operatingSystem": "iOS, Android",
+        "applicationCategory": "HealthApplication",
+        "applicationSubCategory": "Breathing and meditation",
+        "url": "https://viram.app/",
+        "image": "https://viram.app/img/icon-512.png",
+        "screenshot": ["https://viram.app/img/screen-breathe.jpg", "https://viram.app/img/screen-practice.jpg", "https://viram.app/img/screen-library.jpg", "https://viram.app/img/screen-guide.jpg"],
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "featureList": [
+          "12 guided pranayama and breathing techniques with steps, care notes, and sources",
+          "Voice, tone, and haptic guidance that keeps going with the phone locked",
+          "Any length from 1 to 60 minutes, or a set number of rounds",
+          "Adjustable rhythms, saved rhythms, routines, and programs",
+          "Night practice on a dim, true-black surface",
+          "Share a practice by link",
+          "Works offline, with no ads, no account, and no tracking"
+        ],
+        "publisher": { "@id": "https://viram.app/#org" }
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          { "@type": "Question", "name": "What is pranayama?", "acceptedAnswer": { "@type": "Answer", "text": "Pranayama is the practice of shaping the breath, from the yoga tradition. Its techniques set the length of each inhale, exhale, and pause, sometimes with humming, alternate nostrils, or a soft sound in the throat. Viram teaches gentle forms, without forceful holds." } },
+          { "@type": "Question", "name": "Is Viram free?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Viram is free, with no ads, no subscriptions, and no account." } },
+          { "@type": "Question", "name": "Does it keep guiding with my phone locked?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. With voice or tones, Viram keeps guiding with the screen off, so you can put your phone down and close your eyes. In Silent mode, Android keeps guiding with haptics; an iPhone can't play haptics while locked, so you choose whether locking pauses or continues with soft tones." } },
+          { "@type": "Question", "name": "Does Viram work offline?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Everything, including the voice, is on your phone. Viram never needs a connection to guide a practice." } },
+          { "@type": "Question", "name": "Which breathing techniques are included?", "acceptedAnswer": { "@type": "Answer", "text": "Sama Vritti (box breathing), Visama Vritti (extended exhale), Nadi Shodhana (alternate nostril breathing, also called Anulom Vilom), Bhramari (humming bee breath), Ujjayi (ocean breath), Sheetali (cooling breath), coherent breathing, 4-7-8 breathing, Dirgha (three-part breath), Udgeeth (Om chanting), Chandra Bhedana (left nostril breathing), and cyclic sighing." } },
+          { "@type": "Question", "name": "What does Viram know about me?", "acceptedAnswer": { "@type": "Answer", "text": "Nothing leaves your phone. There is no account and no server. Your practice history stays on your device, and you can export or delete it anytime." } },
+          { "@type": "Question", "name": "Can I share a practice with my students?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Any practice, including a rhythm you adjusted, can be sent as a link. It opens in Viram ready to begin, and the link carries only the practice, never anything about you." } },
+          { "@type": "Question", "name": "Is breathing practice safe?", "acceptedAnswer": { "@type": "Answer", "text": "Viram teaches gentle practices, and every technique has its own care notes. Breathe gently and stop if you feel dizzy or uncomfortable. If you live with a heart or lung condition or are pregnant, check with your clinician first. Viram is a wellness practice, not medical advice." } }
+        ]
+      }
+    ]
+  }</script>
 </head>
 <body>
-  <main>
-    <a class="brand" href="/"><svg width="36" height="36" viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" rx="22" fill="#12372F"/><path d="M36.85 27.28A28 28 0 0 0 36.85 76.72" stroke="#A8CFD0" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M63.15 27.28A28 28 0 0 1 63.15 76.72" stroke="#EEF4EF" stroke-width="9" stroke-linecap="round" fill="none"/><circle cx="50" cy="27.3" r="4.6" fill="#E46F51"/></svg> Viram</a>
-    <h1>Steady breath.<br>Steady mind.</h1>
-    <p class="muted">Pranayama, guided at your pace.</p>
-    <p>Learn and practice pranayama with Viram. Follow clear guides for Nadi Shodhana, Bhramari, Ujjayi, box breathing, and more, each with steps, care notes, and sources. Set any rhythm by minutes or rounds, and close your eyes: the voice keeps guiding even with your phone locked. Share a practice with your students by link. Your history stays on your device, and you can export it anytime.</p>
-    <p><strong>Free, always. No ads. No account. Ready offline.</strong></p>
-    <div class="actions">
-      <a class="button" id="app-store" hidden>Download on the App Store</a>
-      <a class="button" id="play-store">Get it on Google Play</a>
+  <!-- header -->
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="/" aria-label="Viram home"><svg viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" rx="22" fill="#12372F"/><path d="M36.85 27.28A28 28 0 0 0 36.85 76.72" stroke="#A8CFD0" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M63.15 27.28A28 28 0 0 1 63.15 76.72" stroke="#EEF4EF" stroke-width="9" stroke-linecap="round" fill="none"/><circle cx="50" cy="27.3" r="4.6" fill="#E46F51"/></svg> Viram</a>
+      <nav class="site-nav" aria-label="Main">
+        <a href="/#features">Features</a>
+        <a href="/techniques/">Techniques</a>
+        <a href="/#faq">FAQ</a>
+        <a class="pill" href="/#get">Get Viram</a>
+      </nav>
     </div>
-    <p class="note small">A wellness practice, not medical advice. Breathe gently, and stop if you feel dizzy or uncomfortable.</p>
-    <p class="small"><a href="/privacy/">Privacy policy</a> · <a href="/support/">Support</a></p>
+  </header>
+  <!-- /header -->
+  <main id="main">
+    <section class="hero wash">
+      <div class="wrap">
+        <div>
+          <p class="eyebrow">Free pranayama app for iPhone and Android</p>
+          <h1>Steady breath. <em>Steady mind.</em></h1>
+          <p class="lede">Viram guides authentic pranayama, from Nadi Shodhana and Bhramari to box breathing, with a calm voice, soft tones, or gentle haptics. Close your eyes: it keeps guiding with your phone locked.</p>
+          <div class="actions" data-stores>
+            <a class="button" data-store="app" hidden>Download on the App Store</a>
+            <a class="button" data-store="play" hidden>Get it on Google Play</a>
+            <span class="soon" data-soon>Coming soon to the App Store and Google Play</span>
+          </div>
+          <ul class="promise">
+            <li>Free, always</li>
+            <li>No ads</li>
+            <li>No account</li>
+            <li>Works offline</li>
+          </ul>
+        </div>
+        <div class="hero-visual">
+        <!-- hero-orb -->
+        <div class="orb orb--sama-vritti" role="img" aria-label="Breathing guide for Sama Vritti: In 4 · Hold 4 · Out 4 · Rest 4">
+          <div class="orb__halo"></div>
+          <div class="orb__disc"></div>
+          <ol class="orb__labels" aria-hidden="true">
+            <li>Inhale<span>4 seconds</span></li>
+            <li>Hold<span>4 seconds</span></li>
+            <li>Exhale<span>4 seconds</span></li>
+            <li>Rest<span>4 seconds</span></li>
+          </ol>
+          <p class="orb__still" aria-hidden="true">In 4 · Hold 4 · Out 4 · Rest 4</p>
+        </div>
+        <!-- /hero-orb -->
+        </div>
+      </div>
+    </section>
+
+    <section class="band" id="app" aria-labelledby="app-title">
+      <div class="wrap">
+        <div class="section-head center">
+          <p class="eyebrow">The app</p>
+          <h2 id="app-title">A little space to breathe, whenever you need it.</h2>
+          <p class="lede">Open Viram and your practice is ready. One tap begins, three seconds to settle, then the guide carries you through every breath.</p>
+        </div>
+        <div class="phones">
+          <figure class="phone reveal"><img src="/img/screen-breathe.jpg" width="590" height="1283" alt="Viram's Breathe screen: 4-7-8 breathing ready to begin, with its rhythm, care note, duration, and guidance." loading="lazy" decoding="async"><figcaption>Ready when you are<span>Your practice, one tap away</span></figcaption></figure>
+          <figure class="phone reveal"><img src="/img/screen-practice.jpg" width="590" height="1283" alt="Nadi Shodhana in progress: the guide shows Exhale right with a countdown, which nostril is open, and the time remaining." loading="lazy" decoding="async"><figcaption>Breathe with the guide<span>Voice, tones, and haptics in step</span></figcaption></figure>
+          <figure class="phone reveal"><img src="/img/screen-library.jpg" width="590" height="1283" alt="The Practices library, listing classical pranayama and modern breathing patterns." loading="lazy" decoding="async"><figcaption>Twelve techniques<span>Classical and modern</span></figcaption></figure>
+          <figure class="phone reveal"><img src="/img/screen-guide.jpg" width="590" height="1283" alt="The Nadi Shodhana guide: pronunciation, rhythm, Take care notes, and Begin." loading="lazy" decoding="async"><figcaption>Learn each one<span>Steps, care notes, sources</span></figcaption></figure>
+        </div>
+      </div>
+    </section>
+
+    <section class="band band--mist" id="features" aria-labelledby="features-title">
+      <div class="wrap">
+        <div class="section-head">
+          <p class="eyebrow">Features</p>
+          <h2 id="features-title">Everything a daily practice needs. Nothing it doesn’t.</h2>
+        </div>
+        <div class="features">
+          <article class="feature reveal">
+            <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/><path d="M9 8h7M9 12h5"/></svg></span>
+            <h3>Authentic pranayama</h3>
+            <p>Twelve gentle techniques, from Nadi Shodhana to box breathing, each with clear steps, care notes, and the sources behind them.</p>
+          </article>
+          <article class="feature reveal">
+            <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 10v4M8 7v10M12 4v16M16 8v8M20 11v2"/></svg></span>
+            <h3>A voice that keeps time</h3>
+            <p>A calm voice names each step, or choose one of three tone sets. Captions and the on-screen guide stay exactly in step.</p>
+          </article>
+          <article class="feature reveal">
+            <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span>
+            <h3>Eyes closed, phone locked</h3>
+            <p>Guidance keeps going with the screen off, so you can put your phone down and simply breathe.</p>
+          </article>
+          <article class="feature reveal">
+            <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="3" width="8" height="18" rx="2"/><path d="M4 8v8M20 8v8M1.5 10v4M22.5 10v4"/></svg></span>
+            <h3>Haptics you can follow</h3>
+            <p>Gentle taps mark every phase, and each phase feels different, so you can practise by touch alone.</p>
+          </article>
+          <article class="feature reveal">
+            <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg></span>
+            <h3>Your rhythm, your length</h3>
+            <p>Practise for 1 to 60 minutes or a set number of rounds. Adjust any rhythm, slow it gradually, and save your own.</p>
+          </article>
+          <article class="feature reveal">
+            <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="6" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="18" r="2"/><path d="M6.5 7.5l4 3M13.5 13.5l4 3"/></svg></span>
+            <h3>Programs and routines</h3>
+            <p>Learn with Pranayama Foundations, one technique at a time, or join your favourite practices into a routine.</p>
+          </article>
+          <article class="feature reveal">
+            <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg></span>
+            <h3>Night practice</h3>
+            <p>A dim, true-black surface for practising in bed or before sleep, easy on tired eyes.</p>
+          </article>
+          <article class="feature reveal">
+            <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg></span>
+            <h3>Share with your students</h3>
+            <p>Send any practice as a link. It opens in Viram with its rhythm, ready to begin.</p>
+          </article>
+          <article class="feature reveal">
+            <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v6c0 4.4-3 7.7-7 9-4-1.3-7-4.6-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg></span>
+            <h3>Private by design</h3>
+            <p>No account, no ads, no tracking. Your history stays on your phone, and you can export it anytime.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="band wash" aria-labelledby="how-title">
+      <div class="wrap">
+        <div class="section-head">
+          <p class="eyebrow">How a practice works</p>
+          <h2 id="how-title">Three steps, then just breathing.</h2>
+        </div>
+        <ol class="steps">
+          <li class="reveal"><h3>Choose a practice</h3><p>Start with Breathe’s ready practice, pick from the library, or open one of your own rhythms.</p></li>
+          <li class="reveal"><h3>Settle in</h3><p>A short spoken introduction the first time, then three quiet seconds to settle before the first breath.</p></li>
+          <li class="reveal"><h3>Breathe with the guide</h3><p>The voice, tones, or haptics mark every step. Pause anytime; your time is saved to History when you finish.</p></li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="band" id="techniques" aria-labelledby="techniques-title">
+      <div class="wrap">
+        <div class="section-head">
+          <p class="eyebrow">The library</p>
+          <h2 id="techniques-title">Twelve techniques, clearly explained.</h2>
+          <p class="lede">Classical pranayama and modern breathing patterns, each with its rhythm, instructions, and care notes. Read any guide here, then practise it in Viram.</p>
+        </div>
+        <!-- techniques -->
+        <ul class="techniques">
+          <li><a class="technique-card" href="/techniques/sama-vritti/">
+          <span class="kind">Classical</span>
+          <strong>Sama Vritti</strong>
+          <span class="sub">Box breathing</span>
+          <span class="rhythm"><span class="dots" aria-hidden="true"><i class="dot-inhale"></i><i class="dot-hold"></i><i class="dot-exhale"></i><i class="dot-rest"></i></span>In 4 · Hold 4 · Out 4 · Rest 4</span>
+        </a></li>
+          <li><a class="technique-card" href="/techniques/visama-vritti/">
+          <span class="kind">Classical</span>
+          <strong>Visama Vritti</strong>
+          <span class="sub">Extended exhale</span>
+          <span class="rhythm"><span class="dots" aria-hidden="true"><i class="dot-inhale"></i><i class="dot-exhale"></i></span>In 4 · Out 6</span>
+        </a></li>
+          <li><a class="technique-card" href="/techniques/nadi-shodhana/">
+          <span class="kind">Classical</span>
+          <strong>Nadi Shodhana</strong>
+          <span class="sub">Alternate nostril breathing</span>
+          <span class="rhythm"><span class="dots" aria-hidden="true"><i class="dot-inhale"></i><i class="dot-exhale"></i><i class="dot-inhale"></i><i class="dot-exhale"></i></span>In 4 · Out 6, each side</span>
+        </a></li>
+          <li><a class="technique-card" href="/techniques/bhramari/">
+          <span class="kind">Classical</span>
+          <strong>Bhramari</strong>
+          <span class="sub">Humming bee breath</span>
+          <span class="rhythm"><span class="dots" aria-hidden="true"><i class="dot-inhale"></i><i class="dot-exhale"></i></span>In 4 · Hum 8</span>
+        </a></li>
+          <li><a class="technique-card" href="/techniques/ujjayi/">
+          <span class="kind">Classical</span>
+          <strong>Ujjayi</strong>
+          <span class="sub">Ocean breath</span>
+          <span class="rhythm"><span class="dots" aria-hidden="true"><i class="dot-inhale"></i><i class="dot-exhale"></i></span>In 5 · Out 5</span>
+        </a></li>
+          <li><a class="technique-card" href="/techniques/sheetali/">
+          <span class="kind">Classical</span>
+          <strong>Sheetali</strong>
+          <span class="sub">Cooling breath</span>
+          <span class="rhythm"><span class="dots" aria-hidden="true"><i class="dot-inhale"></i><i class="dot-exhale"></i></span>In 4 · Out 6</span>
+        </a></li>
+          <li><a class="technique-card" href="/techniques/coherent/">
+          <span class="kind">Modern</span>
+          <strong>Coherent breathing</strong>
+          <span class="sub">Slow, even breathing</span>
+          <span class="rhythm"><span class="dots" aria-hidden="true"><i class="dot-inhale"></i><i class="dot-exhale"></i></span>In 5.5 · Out 5.5</span>
+        </a></li>
+          <li><a class="technique-card" href="/techniques/4-7-8/">
+          <span class="kind">Modern</span>
+          <strong>4-7-8 breathing</strong>
+          <span class="sub">Long hold, long exhale</span>
+          <span class="rhythm"><span class="dots" aria-hidden="true"><i class="dot-inhale"></i><i class="dot-hold"></i><i class="dot-exhale"></i></span>In 4 · Hold 7 · Out 8</span>
+        </a></li>
+          <li><a class="technique-card" href="/techniques/dirgha/">
+          <span class="kind">Classical</span>
+          <strong>Dirgha</strong>
+          <span class="sub">Three-part breath</span>
+          <span class="rhythm"><span class="dots" aria-hidden="true"><i class="dot-inhale"></i><i class="dot-exhale"></i></span>In 4 · Out 6</span>
+        </a></li>
+          <li><a class="technique-card" href="/techniques/udgeeth/">
+          <span class="kind">Classical</span>
+          <strong>Udgeeth</strong>
+          <span class="sub">Om on the exhale</span>
+          <span class="rhythm"><span class="dots" aria-hidden="true"><i class="dot-inhale"></i><i class="dot-exhale"></i></span>In 4 · Om 8</span>
+        </a></li>
+          <li><a class="technique-card" href="/techniques/chandra-bhedana/">
+          <span class="kind">Classical</span>
+          <strong>Chandra Bhedana</strong>
+          <span class="sub">In left, out right</span>
+          <span class="rhythm"><span class="dots" aria-hidden="true"><i class="dot-inhale"></i><i class="dot-exhale"></i></span>In 4 left · Out 6 right</span>
+        </a></li>
+          <li><a class="technique-card" href="/techniques/cyclic-sighing/">
+          <span class="kind">Modern</span>
+          <strong>Cyclic sighing</strong>
+          <span class="sub">Double inhale, long exhale</span>
+          <span class="rhythm"><span class="dots" aria-hidden="true"><i class="dot-inhale"></i><i class="dot-inhale"></i><i class="dot-exhale"></i></span>In 3 · Top up 1 · Out 6</span>
+        </a></li>
+        </ul>
+        <!-- /techniques -->
+        <p class="center more"><a class="button secondary" href="/techniques/">Read every technique guide</a></p>
+      </div>
+    </section>
+
+    <section class="band band--pine" aria-labelledby="privacy-title">
+      <div class="wrap">
+        <div class="section-head">
+          <p class="eyebrow">Privacy</p>
+          <h2 id="privacy-title">Your practice stays yours.</h2>
+          <p class="lede">There is no account and no server. Your history stays on your phone, and you can export it anytime, or add completed practices to Apple Health or Health Connect if you choose.</p>
+        </div>
+        <ul class="pledges">
+          <li><strong>Free, always</strong><span>No subscriptions, no premium tier, no paywall.</span></li>
+          <li><strong>No account</strong><span>Open the app and breathe. Nothing to sign up for.</span></li>
+          <li><strong>No ads or tracking</strong><span>No advertising or analytics in the app or on this site.</span></li>
+          <li><strong>Works offline</strong><span>Everything, including the voice, is on your phone.</span></li>
+        </ul>
+        <p class="small more"><a href="/privacy/">Read the privacy policy</a></p>
+      </div>
+    </section>
+
+    <section class="band band--mist" id="safety" aria-labelledby="safety-title">
+      <div class="narrow">
+        <p class="eyebrow">Practising safely</p>
+        <h2 id="safety-title">Gentle by design.</h2>
+        <p class="lede">Viram teaches gentle forms of pranayama, without forceful breath holds, and every technique carries its own care notes. These apply to all of them:</p>
+        <div class="care">
+          <!-- care -->
+          <ul>
+            <li>Stop and breathe normally if you feel dizzy, tingly, short of breath, or anxious.</li>
+            <li>Chest pain, fainting, or a pounding heart with dizziness: stop and get medical help.</li>
+            <li>Don’t practise while driving or operating machinery.</li>
+            <li>Never practise breath holds in or near water, including the bath.</li>
+            <li>Living with a heart or lung condition, or pregnant? Check with your clinician first, especially before holds.</li>
+            <li>If focusing on your breath makes you more anxious, stop. That happens to some people and is normal.</li>
+            <li>Breathing practice is not a treatment and doesn’t replace medical care.</li>
+          </ul>
+          <!-- /care -->
+        </div>
+      </div>
+    </section>
+
+    <section class="band" id="faq" aria-labelledby="faq-title">
+      <div class="narrow">
+        <div class="section-head">
+          <p class="eyebrow">Questions</p>
+          <h2 id="faq-title">Good to know.</h2>
+        </div>
+        <div class="faq">
+          <details><summary>What is pranayama?</summary><p>Pranayama is the practice of shaping the breath, from the yoga tradition. Its techniques set the length of each inhale, exhale, and pause, sometimes with humming, alternate nostrils, or a soft sound in the throat. Viram teaches gentle forms, without forceful holds.</p></details>
+          <details><summary>Is Viram free?</summary><p>Yes. Viram is free, with no ads, no subscriptions, and no account.</p></details>
+          <details><summary>Does it keep guiding with my phone locked?</summary><p>Yes. With voice or tones, Viram keeps guiding with the screen off, so you can put your phone down and close your eyes. In Silent mode, Android keeps guiding with haptics; an iPhone can’t play haptics while locked, so you choose whether locking pauses or continues with soft tones.</p></details>
+          <details><summary>Does Viram work offline?</summary><p>Yes. Everything, including the voice, is on your phone. Viram never needs a connection to guide a practice.</p></details>
+          <details><summary>Which breathing techniques are included?</summary><p>Sama Vritti (box breathing), Visama Vritti (extended exhale), Nadi Shodhana (alternate nostril breathing, also called Anulom Vilom), Bhramari (humming bee breath), Ujjayi (ocean breath), Sheetali (cooling breath), coherent breathing, 4-7-8 breathing, Dirgha (three-part breath), Udgeeth (Om chanting), Chandra Bhedana (left nostril breathing), and cyclic sighing. <a href="/techniques/">Read the guides</a>.</p></details>
+          <details><summary>What does Viram know about me?</summary><p>Nothing leaves your phone. There is no account and no server. Your practice history stays on your device, and you can export or delete it anytime. <a href="/privacy/">Privacy policy</a>.</p></details>
+          <details><summary>Can I share a practice with my students?</summary><p>Yes. Any practice, including a rhythm you adjusted, can be sent as a link. It opens in Viram ready to begin, and the link carries only the practice, never anything about you.</p></details>
+          <details><summary>Is breathing practice safe?</summary><p>Viram teaches gentle practices, and every technique has its own care notes. Breathe gently and stop if you feel dizzy or uncomfortable. If you live with a heart or lung condition or are pregnant, check with your clinician first. Viram is a wellness practice, not medical advice.</p></details>
+        </div>
+      </div>
+    </section>
+
+    <section class="band wash" id="get" aria-labelledby="get-title">
+      <div class="narrow center">
+        <h2 id="get-title">Breathe with Viram.</h2>
+        <p class="lede">Free on iPhone and Android. No ads, no account, ready offline.</p>
+        <div class="actions" data-stores>
+          <a class="button" data-store="app" hidden>Download on the App Store</a>
+          <a class="button" data-store="play" hidden>Get it on Google Play</a>
+          <span class="soon" data-soon>Coming soon to the App Store and Google Play</span>
+        </div>
+        <p class="small muted" data-soon>Want a note when it’s out? Write to <a href="mailto:hello@viram.app?subject=Tell%20me%20when%20Viram%20is%20out">hello@viram.app</a>.</p>
+      </div>
+    </section>
   </main>
+  <!-- footer -->
+  <footer class="site-footer">
+    <div class="wrap">
+      <div>
+        <a class="brand" href="/"><svg viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" rx="22" fill="#12372F"/><path d="M36.85 27.28A28 28 0 0 0 36.85 76.72" stroke="#A8CFD0" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M63.15 27.28A28 28 0 0 1 63.15 76.72" stroke="#EEF4EF" stroke-width="9" stroke-linecap="round" fill="none"/><circle cx="50" cy="27.3" r="4.6" fill="#E46F51"/></svg> Viram</a>
+        <p>Pranayama, guided at your pace. Free, private, and ready offline.</p>
+      </div>
+      <div>
+        <h2>Practise</h2>
+        <ul>
+          <li><a href="/techniques/sama-vritti/">Sama Vritti</a></li>
+          <li><a href="/techniques/nadi-shodhana/">Nadi Shodhana</a></li>
+          <li><a href="/techniques/bhramari/">Bhramari</a></li>
+          <li><a href="/techniques/4-7-8/">4-7-8 breathing</a></li>
+          <li><a href="/techniques/ujjayi/">Ujjayi</a></li>
+          <li><a href="/techniques/coherent/">Coherent breathing</a></li>
+          <li><a href="/techniques/">All techniques</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Viram</h2>
+        <ul>
+          <li><a href="/#features">Features</a></li>
+          <li><a href="/#faq">Questions</a></li>
+          <li><a href="/privacy/">Privacy</a></li>
+          <li><a href="/support/">Support</a></li>
+          <li><a href="mailto:hello@viram.app">hello@viram.app</a></li>
+        </ul>
+      </div>
+      <p class="fine">A wellness practice, not medical advice. Breathe gently, and stop if you feel dizzy or uncomfortable. © 2026 Viram.</p>
+    </div>
+  </footer>
+  <!-- /footer -->
 </body>
 </html>

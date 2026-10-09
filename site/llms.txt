@@ -1,0 +1,33 @@
+# Viram
+
+> Viram is a free pranayama (yogic breathing) app for iPhone and Android. It guides 12 gentle breathing techniques by voice, tones, or haptics, keeps guiding with the phone locked, works offline, and has no ads, no account, and no tracking.
+
+Key facts:
+- Free, with no ads, subscriptions, or account. Practice history stays on the phone.
+- Techniques: Sama Vritti (box breathing); Visama Vritti (extended exhale); Nadi Shodhana (alternate nostril breathing); Bhramari (humming bee breath); Ujjayi (ocean breath); Sheetali (cooling breath); Coherent breathing (slow, even breathing); 4-7-8 breathing (long hold, long exhale); Dirgha (three-part breath); Udgeeth (om on the exhale); Chandra Bhedana (in left, out right); Cyclic sighing (double inhale, long exhale).
+- Guidance: a calm voice, three tone sets, or phase-by-phase haptics, in step with an on-screen breathing guide. It keeps guiding with the screen locked.
+- Practice by minutes (1 to 60) or rounds (1 to 108), adjust any rhythm, save your own, follow a program, and share a practice by link.
+- A wellness practice, not medical advice. Every technique carries its own care notes and sources.
+- Contact: hello@viram.app
+
+## Techniques
+- [Sama Vritti (box breathing)](https://viram.app/techniques/sama-vritti/): In 4 · Hold 4 · Out 4 · Rest 4 seconds. Keep the holds easy. If one feels tight, shorten it or set it to Off.
+- [Visama Vritti (extended exhale)](https://viram.app/techniques/visama-vritti/): In 4 · Out 6 seconds. Keep breaths soft. If the next inhale feels rushed, shorten the exhale.
+- [Nadi Shodhana (alternate nostril breathing)](https://viram.app/techniques/nadi-shodhana/): In 4 · Out 6, each side seconds. Skip it with a blocked nose. Stop if you feel dizzy.
+- [Bhramari (humming bee breath)](https://viram.app/techniques/bhramari/): In 4 · Hum 8 seconds. Skip it with an ear or nose infection. Never press inside your ears.
+- [Ujjayi (ocean breath)](https://viram.app/techniques/ujjayi/): In 5 · Out 5 seconds. Keep the sound soft, heard only by you. Never squeeze your throat.
+- [Sheetali (cooling breath)](https://viram.app/techniques/sheetali/): In 4 · Out 6 seconds. Skip it in cold weather, or with asthma, a cold, or low blood pressure.
+- [Coherent breathing (slow, even breathing)](https://viram.app/techniques/coherent/): In 5.5 · Out 5.5 seconds. Keep breaths gentle. If you feel dizzy or tingly, stop and breathe normally.
+- [4-7-8 breathing (long hold, long exhale)](https://viram.app/techniques/4-7-8/): In 4 · Hold 7 · Out 8 seconds. Start with 4 rounds. If the hold feels hard, count faster and keep the ratio.
+- [Dirgha (three-part breath)](https://viram.app/techniques/dirgha/): In 4 · Out 6 seconds. Fill comfortably, never to the limit. If you feel dizzy, stop and breathe normally.
+- [Udgeeth (om on the exhale)](https://viram.app/techniques/udgeeth/): In 4 · Om 8 seconds. Keep the sound soft. If your throat strains, stop the sound and breathe normally.
+- [Chandra Bhedana (in left, out right)](https://viram.app/techniques/chandra-bhedana/): In 4 left · Out 6 right seconds. Skip it with a blocked nose. Stop if you feel dizzy.
+- [Cyclic sighing (double inhale, long exhale)](https://viram.app/techniques/cyclic-sighing/): In 3 · Top up 1 · Out 6 seconds. Keep the top-up small. If you feel dizzy or tingly, stop and breathe normally.
+
+## About Viram
+- [Home](https://viram.app/): features, how a practice works, and common questions
+- [Privacy](https://viram.app/privacy/): what the app keeps, all on your device
+- [Support](https://viram.app/support/): contact and help
+
+## Optional
+- [Full technique guides](https://viram.app/llms-full.txt): every technique's instructions, care notes, and sources as plain text

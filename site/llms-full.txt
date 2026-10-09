@@ -1,0 +1,540 @@
+# Viram: technique guides
+
+> Viram is a free pranayama (yogic breathing) app for iPhone and Android. It guides 12 gentle breathing techniques by voice, tones, or haptics, keeps guiding with the phone locked, works offline, and has no ads, no account, and no tracking.
+
+These are the guides the app shows, with the sources each one is based on. A wellness practice, not medical advice.
+
+## Practising safely
+- Stop and breathe normally if you feel dizzy, tingly, short of breath, or anxious.
+- Chest pain, fainting, or a pounding heart with dizziness: stop and get medical help.
+- Don’t practise while driving or operating machinery.
+- Never practise breath holds in or near water, including the bath.
+- Living with a heart or lung condition, or pregnant? Check with your clinician first, especially before holds.
+- If focusing on your breath makes you more anxious, stop. That happens to some people and is normal.
+- Breathing practice is not a treatment and doesn’t replace medical care.
+
+## Sama Vritti (box breathing)
+
+URL: https://viram.app/techniques/sama-vritti/
+Pronunciation: SUH-muh VRIT-tee (सम वृत्ति)
+Type: Classical pranayama
+Rhythm (seconds): In 4 · Hold 4 · Out 4 · Rest 4
+Default: 5 min · 19 rounds · 5:04, about 3.8 breaths a minute
+
+Equal breathing, in its box form: breathe in, pause, breathe out, pause, all to one count. To begin without the pauses, set the holds to Off.
+
+### How to practise
+1. Sit upright, or lie down with your head supported. Let your shoulders drop.
+2. Breathe through your nose for every step.
+3. Inhale for 4, without straining to fill up.
+4. Hold for 4 with your throat soft. Don’t clamp your throat or bear down.
+5. Exhale for 4, smooth and unhurried, then rest for 4 before the next breath. The rest is a pause after a comfortable exhale, not an empty-lung strain.
+6. If the holds feel tight, shorten them or turn them off in Adjust rhythm. You can go back to ordinary breathing at any time.
+
+### Each round
+- Inhale, 4 s: In through the nose, slow and even.
+- Hold after inhale, 4 s: Pause at the top. Keep your throat soft.
+- Exhale, 4 s: Out through the nose, just as slowly.
+- Rest, 4 s: Pause after an easy exhale.
+
+### Take care
+- Keep the holds easy. If one feels tight, shorten it or set it to Off.
+- Holds should feel easy. If one feels tight, shorten it or set it to Off.
+- If holding your breath makes you uneasy, turn the holds off and breathe evenly instead.
+- With high blood pressure, a heart or lung condition, or in pregnancy, set the holds to Off or check with your clinician first.
+- Stop and breathe normally if you feel dizzy or short of breath.
+- Never practice breath holds in or near water.
+
+### Traditionally
+Sama vritti means “even movement.” The Yoga Sutras describe regulating the breath by time and count, and B.K.S. Iyengar taught equal counts gradually: first an even inhale and exhale, then a pause after the inhale, and only later a pause after the exhale. The same four-count pattern spread through military and police training as “box breathing.”
+
+### What the research says
+In small, short studies, mostly with healthy students, box breathing eased anxiety within a session, and one trial found it softened the body’s stress response compared with normal breathing. In the largest head-to-head trial, it did no better than mindfulness meditation and didn’t change heart rate variability. We found no long-term studies. It is not a treatment.
+
+### Sources
+- B.K.S. Iyengar (1981). Light on Pranayama. George Allen & Unwin.
+- Patanjali (c. 4th century). Yoga Sutras, with the commentary of Vyasa. Translated by James Haughton Woods, 1914. https://archive.org/details/yogasystemofpata00wooduoft
+- Mark Divine (2016). The breathing technique a Navy SEAL uses to stay calm and focused. TIME. https://time.com/4316151/breathing-technique-navy-seal-calm-focused/
+- Balban MY et al. (2023). Brief structured respiration practices enhance mood and reduce physiological arousal. Cell Reports Medicine 4(1):100895. https://doi.org/10.1016/j.xcrm.2022.100895
+- McAllister MJ et al. (2026). Box breathing and prolonged exhalation reduces markers of physiological stress reactivity in response to a virtual Trier Social Stress Test. Comprehensive Psychoneuroendocrinology 27:100360. https://doi.org/10.1016/j.cpnec.2026.100360
+
+## Visama Vritti (extended exhale)
+
+URL: https://viram.app/techniques/visama-vritti/
+Pronunciation: VISH-uh-muh VRIT-tee (विषम वृत्ति)
+Type: Classical pranayama
+Rhythm (seconds): In 4 · Out 6
+Default: 5 min · 30 rounds · 5:00, about 6 breaths a minute
+
+A breath where the exhale is longer than the inhale. Viram starts with the gentlest form: in for 4, out for 6, with no holds.
+
+### How to practise
+1. Sit upright or lie down, and let your jaw and shoulders soften.
+2. Breathe in through your nose for 4.
+3. Breathe out through your nose for 6, slow and smooth, without pushing the air out.
+4. Keep the breaths soft rather than big.
+5. If you find yourself gasping for the next breath, shorten the exhale in Adjust rhythm.
+
+### Each round
+- Inhale, 4 s: In through the nose, soft and easy.
+- Hold after inhale, off: Pause at the top, throat soft.
+- Exhale, 6 s: Out through the nose, slow and unhurried.
+- Rest, off: Pause after an easy exhale.
+
+### Take care
+- Keep breaths soft. If the next inhale feels rushed, shorten the exhale.
+- Keep the breaths soft. Big breaths can make you lightheaded.
+- If the next inhale feels rushed, shorten the exhale.
+- Stop and breathe normally if you feel dizzy or short of breath.
+- The classical form adds long holds. Learn it from a teacher, not from an app.
+
+### Traditionally
+Visama vritti means “uneven movement”: steps of different lengths. B.K.S. Iyengar taught it with long holds in ratios such as 1:4:2, and only under a teacher’s eye; the Gheranda Samhita counts a similar ratio. Viram keeps just the lengthened exhale, a gentle, hold-free form closer to modern teaching.
+
+### What the research says
+Studies often observe higher heart rate variability while people breathe slowly, around six breaths a minute as here. Two small studies of a 4 · 6 pattern, one of 10 men and one of 47 adults, reported calmer readings and less anxiety, but neither had a comparison group. Whether a longer exhale adds anything beyond slowing down is mixed: some studies say yes, and a 2024 study comparing a 1 : 2 ratio with even breaths at the same pace found no difference in heart rate variability. It is not a treatment.
+
+### Sources
+- B.K.S. Iyengar (1981). Light on Pranayama. George Allen & Unwin.
+- T.K.V. Desikachar (1995). The Heart of Yoga. Inner Traditions.
+- Gheranda (attributed) (c. 17th century). Gheranda Samhita. Translated by Srisa Chandra Vasu, 1914. https://archive.org/details/Gheranda_Samhita
+- NHS (2026). Breathing exercises for stress. https://www.nhs.uk/mental-health/self-help/guides-tools-and-activities/breathing-exercises-for-stress/
+- Van Diest I et al. (2014). Inhalation/exhalation ratio modulates the effect of slow breathing on heart rate variability and relaxation. Applied Psychophysiology and Biofeedback 39(3–4):171–180. https://doi.org/10.1007/s10484-014-9253-x
+- Komori T (2018). The relaxation effect of prolonged expiratory breathing. Mental Illness 10(1):7669. https://doi.org/10.4081/mi.2018.7669
+- Magnon V et al. (2021). Benefits from one session of deep and slow breathing on vagal tone and anxiety in young and older adults. Scientific Reports 11:19267. https://doi.org/10.1038/s41598-021-98736-9
+- Meehan ZM, Shaffer F (2024). Do longer exhalations increase HRV during slow-paced breathing?. Applied Psychophysiology and Biofeedback 49(3):407–417. https://doi.org/10.1007/s10484-024-09637-2
+- Laborde S et al. (2022). Effects of voluntary slow breathing on heart rate and heart rate variability: a systematic review and a meta-analysis. Neuroscience and Biobehavioral Reviews 138:104711. https://doi.org/10.1016/j.neubiorev.2022.104711
+
+## Nadi Shodhana (alternate nostril breathing)
+
+URL: https://viram.app/techniques/nadi-shodhana/
+Also called: Anulom Vilom
+Pronunciation: NAH-dee SHOH-duh-nuh (नाडी शोधन)
+Type: Classical pranayama
+Rhythm (seconds): In 4 · Out 6, each side
+Default: 5 min · 15 rounds · 5:00, about 6 breaths a minute
+
+Breathe through one nostril at a time, switching sides with your right hand. Slow, silent, and without holds.
+
+### How to practise
+1. Sit tall and rest your left hand on your knee.
+2. Fold the index and middle fingers of your right hand into your palm, or rest them lightly between your eyebrows.
+3. Your thumb closes the right nostril; your ring finger closes the left. A light touch is enough.
+4. Inhale left. Close left, open right. Exhale right.
+5. Inhale right. Close right, open left. Exhale left. That’s one round.
+6. Keep the breath slow and silent. When you finish, lower your hand and breathe through both nostrils.
+
+### Each round
+- Inhale left, 4 s: Thumb closes the right nostril.
+- Exhale right, 6 s: Ring finger closes the left. Thumb lifts.
+- Inhale right, 4 s: Ring finger stays on the left.
+- Exhale left, 6 s: Thumb closes the right. Ring finger lifts.
+
+### Take care
+- Skip it with a blocked nose. Stop if you feel dizzy.
+- Breathe softly; never force air through a nostril.
+- Skip it with a blocked nose, a cold, or sinus pain.
+- If the exhale feels long, make it equal to the inhale in Adjust rhythm.
+- Stop and breathe normally if you feel dizzy, anxious, or short of breath.
+
+### Traditionally
+Nadi shodhana means “clearing the channels.” The Hatha Yoga Pradipika describes breathing in through one nostril and out through the other, with long holds, to purify the nadis, the body’s energy channels in yoga tradition. It is traditionally practiced before meditation, and many practitioners in India know it as Anulom Vilom. Teachers usually begin without holds, as Viram does.
+
+### What the research says
+Most studies are small, single sessions, and many come from one research group. A review of six trials found blood pressure fell modestly, but results varied widely. Findings for anxiety are mixed, and the one study that compared it with plain slow breathing at the same pace found similar effects. It is not a treatment.
+
+### Sources
+- Svatmarama (c. 15th century). Hatha Yoga Pradipika. Translated by Pancham Sinh, 1914. https://archive.org/details/dli.csl.7087
+- Gheranda (attributed) (c. 17th century). Gheranda Samhita. Translated by Srisa Chandra Vasu, 1914. https://archive.org/details/Gheranda_Samhita
+- B.K.S. Iyengar (1981). Light on Pranayama. George Allen & Unwin.
+- Swami Satyananda Saraswati (2008). Asana Pranayama Mudra Bandha. Yoga Publications Trust, 4th revised edition.
+- Ministry of AYUSH, Government of India (2019). Common Yoga Protocol. 4th revised edition. https://www.mea.gov.in/images/pdf/common-yoga-protocol-english.pdf
+- Nam TG et al. (2024). Effectiveness of alternative nostril breathing on blood pressure: a systematic review and meta-analysis of randomized controlled trials. Complementary Medicine Research 31(5):449–460. https://doi.org/10.1159/000539707
+- Ghiya S, Lee CM (2012). Influence of alternate nostril breathing on heart rate variability in non-practitioners of yogic breathing. International Journal of Yoga 5(1):66–69. https://doi.org/10.4103/0973-6131.91717
+- Kamath A et al. (2017). Effect of alternate nostril breathing exercise on experimentally induced anxiety in healthy volunteers using the simulated public speaking model: a randomized controlled pilot study. BioMed Research International 2017:2450670. https://doi.org/10.1155/2017/2450670
+
+## Bhramari (humming bee breath)
+
+URL: https://viram.app/techniques/bhramari/
+Pronunciation: BRAH-muh-ree (भ्रामरी)
+Type: Classical pranayama
+Rhythm (seconds): In 4 · Hum 8
+Default: 5 min · 25 rounds · 5:00, about 5 breaths a minute
+
+Breathe in quietly, then hum softly all the way through the exhale. The long, even hum slows the breath and gives your attention a sound to rest on.
+
+### How to practise
+1. Sit upright with your jaw loose. Close your lips softly and keep your teeth slightly apart.
+2. If you like, press the small flaps at the front of your ears gently with your index fingers. Or rest your hands in your lap.
+3. Breathe in through your nose for 4.
+4. Breathe out for 8 while humming a soft, steady “mmm” at a comfortable pitch. Feel it buzz in your face and head.
+5. Keep the hum soft. It doesn’t need to be loud or deep, and it should end before you strain.
+6. When you finish, sit for a few breaths and notice the quiet.
+
+### Each round
+- Inhale, 4 s: In through the nose, quietly.
+- Hum, 8 s: Lips closed. A soft, even “mmm” as you breathe out.
+
+### Take care
+- Skip it with an ear or nose infection. Never press inside your ears.
+- Skip it with an ear infection, or a blocked or infected nose.
+- If you close your ears, press the flaps gently. Never put your fingers inside your ears.
+- Practice sitting up rather than lying down.
+- Stop and breathe normally if you feel dizzy or uncomfortable.
+
+### Traditionally
+Bhramari is named after the bhramara, a large black bee. The Hatha Yoga Pradipika lists it among eight classical breath practices, with a bee-like sound on both the inhale and the exhale. The Gheranda Samhita teaches it with the ears closed, listening for inner sounds. Modern teachers usually hum only on the exhale, as here, often before meditation.
+
+### What the research says
+Most studies are small, short, and from India. They generally report lower heart rate or blood pressure after practice. A controlled trial in people with high blood pressure found no blood-pressure advantage over its slow-breathing comparison. Humming raises nitric oxide in the nose in laboratory studies; no clinical benefit from this practice has been shown. A study comparing hum lengths measured short-term heart rate variability; it doesn’t show that one length suits everyone. It is not a treatment.
+
+### Sources
+- Svatmarama (c. 15th century). Hatha Yoga Pradipika. Translated by Pancham Sinh, 1914. https://archive.org/details/dli.csl.7087
+- Gheranda (attributed) (c. 17th century). Gheranda Samhita. Translated by Srisa Chandra Vasu, 1914. https://archive.org/details/Gheranda_Samhita
+- Swami Satyananda Saraswati (2008). Asana Pranayama Mudra Bandha. Yoga Publications Trust, 4th revised edition.
+- B.K.S. Iyengar (1981). Light on Pranayama. George Allen & Unwin.
+- Ministry of AYUSH, Government of India (2019). Common Yoga Protocol. 4th revised edition. https://www.mea.gov.in/images/pdf/common-yoga-protocol-english.pdf
+- Weitzberg E, Lundberg JO (2002). Humming greatly increases nasal nitric oxide. American Journal of Respiratory and Critical Care Medicine 166(2):144–145. https://doi.org/10.1164/rccm.200202-138BC
+- Trivedi GY et al. (2023). Effect of various lengths of respiration on heart rate variability during simple Bhramari (humming). International Journal of Yoga 16(2):123–131. https://doi.org/10.4103/ijoy.ijoy_113_23
+- Ghati N et al. (2021). A randomized trial of the immediate effect of bee-humming breathing exercise on blood pressure and heart rate variability in patients with essential hypertension. Explore 17(4):312–319. https://doi.org/10.1016/j.explore.2020.03.009
+- Kuppusamy M et al. (2018). Effects of Bhramari Pranayama on health: a systematic review. Journal of Traditional and Complementary Medicine 8(1):11–16. https://doi.org/10.1016/j.jtcme.2017.02.003
+
+## Ujjayi (ocean breath)
+
+URL: https://viram.app/techniques/ujjayi/
+Pronunciation: ooj-JAH-yee (उज्जायी)
+Type: Classical pranayama
+Rhythm (seconds): In 5 · Out 5
+Default: 5 min · 30 rounds · 5:00, about 6 breaths a minute
+
+Slow breathing through the nose with a gentle narrowing at the back of the throat, so each breath makes a soft, even sound, like distant waves.
+
+### How to practise
+1. Sit upright or lie down. Close your mouth and breathe through your nose.
+2. Gently narrow the back of your throat so the breath makes a soft, even sound, like a quiet snore.
+3. Breathe in for 5 and out for 5, keeping the sound steady both ways.
+4. Keep your face, jaw, and tongue soft. Only you need to hear it.
+5. If your throat tires, let the sound go and keep breathing slowly.
+
+### Each round
+- Inhale, 5 s: In through the nose, with a soft sound in the throat.
+- Exhale, 5 s: Out through the nose, the same soft sound.
+
+### Take care
+- Keep the sound soft, heard only by you. Never squeeze your throat.
+- Keep your throat relaxed. The sound comes from a slight narrowing, never from squeezing.
+- If your throat feels dry or strained, drop the sound and breathe slowly.
+- Stop and breathe normally if you feel dizzy or short of breath.
+
+### Traditionally
+Ujjayi is often translated as “victorious.” The Hatha Yoga Pradipika describes drawing the breath in through both nostrils with a sound felt from the throat to the chest, holding it, and breathing out through the left nostril. Modern teachers such as B.K.S. Iyengar and Swami Satyananda teach it without holds, often as a first pranayama.
+
+### What the research says
+Research on Ujjayi itself is thin. In one small study of beginners, slow breathing alone lowered blood pressure more clearly than slow breathing with the Ujjayi sound, which raised heart rate slightly. Much of what people feel may come from breathing slowly; the sound can help keep attention on the breath. It is not a treatment.
+
+### Sources
+- Svatmarama (c. 15th century). Hatha Yoga Pradipika. Translated by Pancham Sinh, 1914. https://archive.org/details/dli.csl.7087
+- B.K.S. Iyengar (1981). Light on Pranayama. George Allen & Unwin.
+- Swami Satyananda Saraswati (2008). Asana Pranayama Mudra Bandha. Yoga Publications Trust, 4th revised edition.
+- Mason H et al. (2013). Cardiovascular and respiratory effect of yogic slow breathing in the yoga beginner: what is the best approach?. Evidence-Based Complementary and Alternative Medicine 2013:743504. https://doi.org/10.1155/2013/743504
+- Laborde S et al. (2022). Effects of voluntary slow breathing on heart rate and heart rate variability: a systematic review and a meta-analysis. Neuroscience and Biobehavioral Reviews 138:104711. https://doi.org/10.1016/j.neubiorev.2022.104711
+
+## Sheetali (cooling breath)
+
+URL: https://viram.app/techniques/sheetali/
+Pronunciation: SHEE-tuh-lee (शीतली)
+Type: Classical pranayama
+Rhythm (seconds): In 4 · Out 6
+Default: 3 min · 18 rounds · 3:00, about 6 breaths a minute
+
+Breathe in through a curled tongue, as if through a straw, and out through your nose. The incoming air feels cool on the tongue.
+
+### How to practise
+1. Sit upright with your head level.
+2. Stick your tongue out a little and curl the sides up into a tube.
+3. Breathe in through the tube for 4, like sipping through a straw.
+4. Draw your tongue in, close your mouth, and breathe out through your nose for 6.
+5. Can’t curl your tongue? Many people can’t. Try Sheetkari (sheet-KAH-ree): teeth lightly together, lips parted, breathe in through your teeth with a soft hiss.
+
+### Each round
+- Inhale, 4 s: Curl your tongue and sip the air in.
+- Exhale, 6 s: Close your mouth. Out through the nose.
+
+### Take care
+- Skip it in cold weather, or with asthma, a cold, or low blood pressure.
+- Skip it in cold weather, or in smoky, dusty, or polluted air. Breathing through the mouth skips the nose’s warming and filtering.
+- Skip it with asthma, a cold, a cough, or a sore throat.
+- Skip it if you have low blood pressure.
+- The advice on asthma and low blood pressure is a cautious teaching precaution, not a finding from trials. Ask a qualified teacher or your clinician if you’re unsure.
+- With sensitive teeth, use the curled tongue rather than breathing through your teeth.
+- Stop and breathe normally if you feel dizzy.
+
+### Traditionally
+Sheetali means “cooling.” The Hatha Yoga Pradipika describes drawing air in over the tongue, holding it, and breathing out through the nose, and credits it with easing heat, thirst, and hunger. Curling the tongue into a tube comes from modern teaching, and the practice is traditionally kept for hot weather. Viram’s version has no hold.
+
+### What the research says
+Evidence is thin. A few small trials in people with high blood pressure report lower readings after weeks of practice, compared with no breathing practice. In a small study of healthy adults, heart rate variability rose with Sheetali and with deep breathing, and Sheetali wasn’t significantly better. A study of 17 young men found the skin temperature in the armpit rose slightly rather than fell; the coolness is air passing over a wet tongue. It is not a treatment.
+
+### Sources
+- Svatmarama (c. 15th century). Hatha Yoga Pradipika. Translated by Pancham Sinh, 1914. https://archive.org/details/dli.csl.7087
+- Gheranda (attributed) (c. 17th century). Gheranda Samhita. Translated by Srisa Chandra Vasu, 1914. https://archive.org/details/Gheranda_Samhita
+- Swami Satyananda Saraswati (2008). Asana Pranayama Mudra Bandha. Yoga Publications Trust, 4th revised edition.
+- B.K.S. Iyengar (1981). Light on Pranayama. George Allen & Unwin.
+- Ministry of AYUSH, Government of India (2019). Common Yoga Protocol. 4th revised edition. https://www.mea.gov.in/images/pdf/common-yoga-protocol-english.pdf
+- Telles S et al. (2020). Body temperature and energy expenditure during and after yoga breathing practices traditionally described as cooling. Medical Science Monitor Basic Research 26:e920107. https://doi.org/10.12659/MSMBR.920107
+- Shetty P et al. (2017). Effects of Sheetali and Sheetkari pranayamas on blood pressure and autonomic function in hypertensive patients. Integrative Medicine (Encinitas) 16(5):32–37. https://pubmed.ncbi.nlm.nih.gov/30936803/
+- Sharpe E et al. (2021). Investigating components of pranayama for effects on heart rate variability. Journal of Psychosomatic Research 148:110569. https://doi.org/10.1016/j.jpsychores.2021.110569
+
+## Coherent breathing (slow, even breathing)
+
+URL: https://viram.app/techniques/coherent/
+Type: Modern breathing pattern
+Rhythm (seconds): In 5.5 · Out 5.5
+Default: 5 min · 28 rounds · 5:08, about 5.5 breaths a minute
+
+Slow, even breaths, about five and a half a minute, in and out for the same time. There are no counts to keep: just follow the guide.
+
+### How to practise
+1. Sit or lie comfortably. Rest a hand on your belly if it helps.
+2. Breathe in through your nose as the guide grows, gently and without effort.
+3. Breathe out through your nose as it shrinks, just as slowly.
+4. Keep the breaths soft and roomy, not big. The pace matters more than the size.
+5. If 5.5 seconds feels long, shorten both steps in Adjust rhythm.
+
+### Each round
+- Inhale, 5.5 s: Follow the guide in, soft and slow.
+- Exhale, 5.5 s: Follow the guide out. No need to empty fully.
+
+### Take care
+- Keep breaths gentle. If you feel dizzy or tingly, stop and breathe normally.
+- Keep breaths gentle and roomy, never big. Big breaths can make you lightheaded.
+- It’s fine to shorten the steps. Straining isn’t the goal.
+- If you feel dizzy, tingly, breathless, or uncomfortable, stop and let your breathing return to its normal rhythm. Don’t force the pace.
+
+### Where it comes from
+Researchers found that heart rate rises and falls most with the breath at around five to six breaths a minute, and call this resonance breathing. Stephen Elliott introduced Coherent Breathing, a slow, even pace like this, in 2005, and Richard Brown and Patricia Gerbarg taught it widely. Viram’s 5.5 seconds is a common starting pace, not a measure of your own resonance rate, which varies from person to person.
+
+### What the research says
+Studies often observe higher heart rate variability during and shortly after slow breathing at this pace. In the largest controlled trial, 400 adults practised daily for four weeks at the University of Sussex: stress, anxiety, and mood improved both with this pace and with a faster placebo practice at 12 breaths a minute, with no significant difference between them. It hasn’t been shown to beat other slow breathing practices. It is not a treatment.
+
+### Sources
+- Stephen Elliott (2005). The New Science of Breath.
+- Richard P. Brown and Patricia L. Gerbarg (2012). The Healing Power of the Breath. Shambhala.
+- Lehrer PM, Gevirtz R (2014). Heart rate variability biofeedback: how and why does it work?. Frontiers in Psychology 5:756. https://doi.org/10.3389/fpsyg.2014.00756
+- Laborde S et al. (2022). Effects of voluntary slow breathing on heart rate and heart rate variability: a systematic review and a meta-analysis. Neuroscience and Biobehavioral Reviews 138:104711. https://doi.org/10.1016/j.neubiorev.2022.104711
+- Fincham GW, Strauss C, Cavanagh K (2023). Effect of coherent breathing on mental health and wellbeing: a randomised placebo-controlled trial. Scientific Reports 13:22141. https://doi.org/10.1038/s41598-023-49279-8
+
+## 4-7-8 breathing (long hold, long exhale)
+
+URL: https://viram.app/techniques/4-7-8/
+Type: Modern breathing pattern
+Rhythm (seconds): In 4 · Hold 7 · Out 8
+Default: 4 rounds · 1:16, about 3.2 breaths a minute
+
+Breathe in for 4, hold for 7, and breathe out through your mouth for 8. The counts are a ratio, not a test: keep them comfortable.
+
+### How to practise
+1. Sit with your back straight, or lie down if you’re settling for sleep.
+2. Rest the tip of your tongue on the ridge just behind your upper front teeth, and keep it there.
+3. Before the first round, breathe out comfortably through your mouth, without pushing. Then close your mouth.
+4. Breathe in quietly through your nose for 4.
+5. Hold your breath gently for 7.
+6. Breathe out through your mouth for 8 with a soft whoosh. Purse your lips if that’s easier.
+7. Four rounds is enough to start; build to eight only after a month of regular practice. If the hold is hard, keep the ratio and count faster: in 2, hold 3.5, out 4. Set it in Adjust rhythm.
+
+### Each round
+- Inhale, 4 s: In quietly through the nose.
+- Hold after inhale, 7 s: Hold gently. Tongue stays behind your teeth.
+- Exhale, 8 s: Out through the mouth with a soft whoosh.
+- Rest, off: Pause before the next breath.
+
+### Take care
+- Start with 4 rounds. If the hold feels hard, count faster and keep the ratio.
+- Mild lightheadedness is common at first. If it happens, stop and breathe normally.
+- The hold should never strain. Count faster with the same ratio, such as in 2, hold 3.5, out 4, rather than forcing it, or choose a practice without holds.
+- With a heart or lung condition, or in pregnancy, check with your clinician first, or choose a practice without holds.
+- Never practice breath holds in or near water.
+
+### Where it comes from
+Andrew Weil, a physician, popularized this pattern and describes it as adapted from pranayama. He teaches the counts as a ratio rather than a speed, suggests four breaths at a time, twice a day, and building to eight only after a month.
+
+### What the research says
+Evidence is limited. Small trials, mostly around surgery or medical procedures, report less anxiety compared with routine care, but not compared with a placebo practice. In the one direct comparison, slow breathing at six breaths a minute raised heart rate variability more than 4-7-8. Research on sleep is still limited: a small trial in nursing students reported better self-reported sleep quality after four weeks, compared with no practice. It doesn’t show an immediate effect on falling asleep, or that 4-7-8 works better than another relaxing breathing practice. It is not a treatment.
+
+### Sources
+- Andrew Weil Center for Integrative Medicine, University of Arizona (n.d.). 4-7-8 Breath. https://awcim.arizona.edu/content/CLH00048.html
+- British Heart Foundation (2026). 3 breathing exercises to relieve stress. https://www.bhf.org.uk/informationsupport/heart-matters-magazine/wellbeing/breathing-exercises
+- Vierra J et al. (2022). Effects of sleep deprivation and 4-7-8 breathing control on heart rate variability, blood pressure, blood glucose, and endothelial function in healthy young adults. Physiological Reports 10(13):e15389. https://doi.org/10.14814/phy2.15389
+- Aktaş GK, İlgin VE (2023). The effect of deep breathing exercise and 4-7-8 breathing techniques applied to patients after bariatric surgery on anxiety and quality of life. Obesity Surgery 33(3):920–929. https://doi.org/10.1007/s11695-022-06405-1
+- Marchant J et al. (2025). Comparing the effects of square, 4-7-8, and 6 breaths-per-minute breathing conditions on heart rate variability, CO2 levels, and mood. Applied Psychophysiology and Biofeedback 50(2):261–276. https://doi.org/10.1007/s10484-025-09688-z
+- Doğan U, Sungur M (2026). The effect of 4-7-8 breathing exercise training on sleep quality of undergraduate nursing students: a randomized controlled study. European Journal of Integrative Medicine 82:102620. https://doi.org/10.1016/j.eujim.2026.102620
+
+## Dirgha (three-part breath)
+
+URL: https://viram.app/techniques/dirgha/
+Also called: Dirgha Pranayama, Full yogic breath, Complete breath
+Pronunciation: DEER-guh (दीर्घ)
+Type: Classical pranayama
+Rhythm (seconds): In 4 · Out 6
+Default: 5 min · 30 rounds · 5:00, about 6 breaths a minute
+
+One slow, full breath you feel from the bottom up: the belly moves first, then the ribs widen, then the upper chest lifts a little. Then out again, smooth and unhurried.
+
+### How to practise
+1. Sit upright, or lie on your back with your knees bent. Rest one hand on your belly and one on your chest if it helps.
+2. Breathe in through your nose for 4. Let your belly expand first as your diaphragm moves down, then your ribs widen, then your upper chest lift a little. The air fills your lungs; the belly only moves.
+3. Make it one smooth breath, not three separate sips.
+4. Breathe out through your nose for 6. Let your chest soften, then your belly draw gently back.
+5. Keep your shoulders and neck soft. If the upper chest feels effortful, let the belly and ribs do the work.
+
+### Each round
+- Inhale, 4 s: In through the nose: belly, then ribs, then upper chest.
+- Exhale, 6 s: Out through the nose. Chest softens, then belly.
+
+### Take care
+- Fill comfortably, never to the limit. If you feel dizzy, stop and breathe normally.
+- Fill comfortably, never to the limit. Big breaths can make you lightheaded.
+- Keep your shoulders and neck soft. The upper chest lifts only a little.
+- If you feel dizzy, tingly, breathless, or uncomfortable, stop and let your breathing return to its normal rhythm. Don’t force the pace.
+
+### Traditionally
+Dirgha means “long.” The Yoga Sutras describe regulated breath becoming long and subtle. The three-part image, belly, ribs, then chest, comes from modern teaching, as a way to notice where the breath moves: Swami Satyananda calls it yogic breathing, and an early English yoga manual called it the “complete breath” in 1904. Teachers often use it to learn the breath before other pranayama.
+
+### What the research says
+The three-part breath itself has barely been studied. In one small study of smokers who had gone 15 hours without a cigarette, a single session eased negative mood more than normal or deep breathing. A later trial of 43 smokers, comparing counselling alone with counselling plus this breath, did not detect a significant difference in quitting. Trials of belly breathing report less stress, but they are small and mostly low in quality. Studies often observe higher heart rate variability during slow breathing near six breaths a minute, as here. It is not a treatment.
+
+### Sources
+- Swami Satyananda Saraswati (2008). Asana Pranayama Mudra Bandha. Yoga Publications Trust, 4th revised edition.
+- Patanjali (c. 4th century). Yoga Sutras, with the commentary of Vyasa. Translated by James Haughton Woods, 1914. https://archive.org/details/yogasystemofpata00wooduoft
+- Yogi Ramacharaka (William Walker Atkinson) (1904). The Hindu-Yogi Science of Breath. Yogi Publication Society, Chicago. https://archive.org/details/scienceofbreathc00ramaiala
+- Klinsophon T, Thaveeratitham P, Janwantanakul P (2020). The effect of breathing exercise on nicotine withdrawal symptoms, cigarette cravings, and affect. Journal of Addictions Nursing 31(4):269–275. https://doi.org/10.1097/JAN.0000000000000367
+- Klinsophon T, Thaveeratitham P, Janwantanakul P (2022). The effect of three-part breathing exercise on smoking cessation: a 6-month cluster-randomized clinical trial. Journal of Bodywork and Movement Therapies 32:156–162. https://doi.org/10.1016/j.jbmt.2022.04.015
+- Kwon CY, Won J, Lee B (2026). The health effects of diaphragmatic breathing: a systematic review. Complementary Therapies in Medicine 96:103317. https://doi.org/10.1016/j.ctim.2025.103317
+- Laborde S et al. (2022). Effects of voluntary slow breathing on heart rate and heart rate variability: a systematic review and a meta-analysis. Neuroscience and Biobehavioral Reviews 138:104711. https://doi.org/10.1016/j.neubiorev.2022.104711
+
+## Udgeeth (om on the exhale)
+
+URL: https://viram.app/techniques/udgeeth/
+Also called: Om chanting, Udgeet, Udgitha
+Pronunciation: ood-GEET (उद्गीथ)
+Type: Classical pranayama
+Rhythm (seconds): In 4 · Om 8
+Default: 5 min · 25 rounds · 5:00, about 5 breaths a minute
+
+Breathe in slowly, then chant a long, soft Om for the whole exhale. The sound stretches the breath out and gives your attention something to rest on.
+
+### How to practise
+1. Sit upright with your jaw loose and your hands resting in your lap.
+2. Breathe in through your nose for 4.
+3. Breathe out for 8 while chanting “Om”: begin with an open “O,” and let it close into a soft “mmm” as the breath runs out.
+4. Keep the voice soft, at a comfortable pitch. It only needs to be loud enough for you to hear.
+5. Let the sound end on its own. There’s no need to push out the last of the air.
+6. When you finish, sit quietly for a few breaths.
+
+### Each round
+- Inhale, 4 s: In through the nose, slow and full.
+- Om, 8 s: A long, soft “Om”: an open “O” that closes into a hum.
+
+### Take care
+- Keep the sound soft. If your throat strains, stop the sound and breathe normally.
+- Keep the sound soft. If your throat or voice feels strained, stop making the sound and breathe normally.
+- Om is sacred in several traditions. If you’d rather not chant it, hum “mmm” instead.
+- Skip it with a blocked nose or a sore throat.
+- Stop and breathe normally if you feel dizzy or short of breath.
+
+### Traditionally
+Udgeeth comes from udgitha, the sung part of the Sama Veda. The Chandogya Upanishad opens by naming the syllable Om as the udgitha and asking the reader to meditate on it, and it links the udgitha with the breath. Chanting Om on a long exhale as a named breathing practice is modern, and popular in India.
+
+### What the research says
+Research on Om chanting is small and mostly from India. Short studies report heart-rate patterns linked with rest during and after chanting. A related study found that reciting a longer mantra slowed breathing to about six breaths a minute; it tested a different practice, so it doesn’t establish benefits of this Om exercise. Om chanting hasn’t been compared with plain slow breathing, so much of the effect may come from breathing slowly. It is not a treatment.
+
+### Sources
+- Anonymous (Sama Veda tradition) (c. 8th–6th century BCE). Chandogya Upanishad. Translated by F. Max Müller, 1879 (Sacred Books of the East, vol. 1). https://archive.org/details/upanishads01mluoft
+- Bernardi L et al. (2001). Effect of rosary prayer and yoga mantras on autonomic cardiovascular rhythms: comparative study. BMJ 323(7327):1446–1449. https://doi.org/10.1136/bmj.323.7327.1446
+- Inbaraj G et al. (2022). Immediate effects of OM chanting on heart rate variability measures compared between experienced and inexperienced yoga practitioners. International Journal of Yoga 15(1):52–58. https://doi.org/10.4103/ijoy.ijoy_141_21
+- Laborde S et al. (2022). Effects of voluntary slow breathing on heart rate and heart rate variability: a systematic review and a meta-analysis. Neuroscience and Biobehavioral Reviews 138:104711. https://doi.org/10.1016/j.neubiorev.2022.104711
+
+## Chandra Bhedana (in left, out right)
+
+URL: https://viram.app/techniques/chandra-bhedana/
+Also called: Chandra Bheda, Moon-piercing breath
+Pronunciation: CHUN-druh BAY-duh-nuh (चन्द्र भेदन)
+Type: Classical pranayama
+Rhythm (seconds): In 4 left · Out 6 right
+Default: 5 min · 30 rounds · 5:00, about 6 breaths a minute
+
+Breathe in through the left nostril and out through the right, every breath, switching with your right hand. Slow, silent, and without holds.
+
+### How to practise
+1. Sit tall and rest your left hand on your knee.
+2. Fold the index and middle fingers of your right hand into your palm, or rest them lightly between your eyebrows.
+3. Close the right nostril with your thumb and breathe in through the left for 4.
+4. Close the left with your ring finger, lift your thumb, and breathe out through the right for 6.
+5. Close the right again, open the left, and repeat. Every inhale is on the left, every exhale on the right.
+6. Keep the breath slow and silent. When you finish, lower your hand and breathe through both nostrils.
+
+### Each round
+- Inhale left, 4 s: Thumb closes the right nostril. The left is open.
+- Exhale right, 6 s: Ring finger closes the left. Thumb lifts.
+
+### Take care
+- Skip it with a blocked nose. Stop if you feel dizzy.
+- Breathe softly; never force air through a nostril.
+- Skip it with a blocked nose, a cold, or sinus pain.
+- If the exhale feels long, make it equal to the inhale in Adjust rhythm.
+- Stop and breathe normally if you feel dizzy, anxious, or short of breath.
+
+### Traditionally
+Chandra bhedana means “piercing the moon.” In hatha yoga the left nostril is linked with the moon and the right with the sun. The Hatha Yoga Pradipika and the Gheranda Samhita teach only the sun version, breathing in on the right, with long holds. The moon version, its mirror image, comes from later teaching, including B.K.S. Iyengar’s. Viram’s version has no holds.
+
+### What the research says
+Studies are few, small, and mostly single sessions from India. In one, 20 yoga practitioners had slightly lower heart rate and blood pressure after nine rounds of Chandra Bhedana, compared with normal breathing rather than slow breathing. Other studies tested breathing in and out through the left nostril only, a different pattern; their results are inconsistent, and one small study found the right side more relaxing. It is not a treatment.
+
+### Sources
+- Svatmarama (c. 15th century). Hatha Yoga Pradipika. Translated by Pancham Sinh, 1914. https://archive.org/details/dli.csl.7087
+- Gheranda (attributed) (c. 17th century). Gheranda Samhita. Translated by Srisa Chandra Vasu, 1914. https://archive.org/details/Gheranda_Samhita
+- B.K.S. Iyengar (1981). Light on Pranayama. George Allen & Unwin.
+- Bhavanani AB, Ramanathan M, Balaji R, Pushpa D (2014). Differential effects of uninostril and alternate nostril pranayamas on cardiovascular parameters and reaction time. International Journal of Yoga 7(1):60–65. https://doi.org/10.4103/0973-6131.123489
+- Raghuraj P, Telles S (2008). Immediate effect of specific nostril manipulating yoga breathing practices on autonomic and respiratory variables. Applied Psychophysiology and Biofeedback 33(2):65–75. https://doi.org/10.1007/s10484-008-9055-0
+- Nivethitha L, Mooventhan A, Manjunath NK (2016). Effects of various pranayama on cardiovascular and autonomic variables. Ancient Science of Life 36(2):72–77. https://doi.org/10.4103/asl.ASL_178_16
+- Vanutelli ME, Grigis C, Lucchiari C (2024). Breathing right… or left! The effects of unilateral nostril breathing on psychological and cognitive wellbeing: a pilot study. Brain Sciences 14(4):302. https://doi.org/10.3390/brainsci14040302
+
+## Cyclic sighing (double inhale, long exhale)
+
+URL: https://viram.app/techniques/cyclic-sighing/
+Also called: Physiological sigh
+Type: Modern breathing pattern
+Rhythm (seconds): In 3 · Top up 1 · Out 6
+Default: 5 min · 30 rounds · 5:00, about 6 breaths a minute
+
+Two inhales through the nose, a long one and a short top-up, then a long, slow exhale through the mouth. It’s a sigh, slowed down and repeated.
+
+### How to practise
+1. Sit or lie comfortably, with your shoulders soft.
+2. Breathe in through your nose for 3, filling most of the way.
+3. Without breathing out, take one short extra sip through your nose to top up.
+4. Breathe out slowly through your mouth for 6, like a relaxed sigh, until the breath feels finished.
+5. Keep it gentle: the top-up is small, and the exhale is slow rather than pushed.
+
+### Each round
+- Inhale, 3 s: In through the nose, filling most of the way.
+- Top up, 1 s: One short extra sip through the nose.
+- Exhale, 6 s: Out slowly through the mouth, like a long sigh.
+
+### Take care
+- Keep the top-up small. If you feel dizzy or tingly, stop and breathe normally.
+- Keep the top-up small and the exhale unhurried. Big, fast breaths can make you lightheaded.
+- If breathing out through your mouth feels uncomfortable, breathe out slowly through your nose instead.
+- If you feel dizzy, tingly, breathless, or uncomfortable, stop and let your breathing return to its normal rhythm. Don’t force the pace.
+
+### Where it comes from
+Sighs happen on their own every few minutes: a deeper breath that seems to reset breathing. Researchers at Stanford Medicine turned a deliberate version, two inhales and a long exhale, into a five-minute daily practice called cyclic sighing, and in 2023 compared it with box breathing and mindfulness meditation. The 3 · 1 · 6 timing is Viram’s starting pace, not one the study found best.
+
+### What the research says
+In a month-long Stanford study, five minutes a day of cyclic sighing lifted mood more than mindfulness meditation and slowed breathing at rest. It didn’t reduce anxiety more than meditation did, and no practice changed heart rate variability. Two small later studies found less anxiety or pain within minutes, compared with no practice or with an equally long session on injury care. It is not a treatment.
+
+### Sources
+- Hadley Leggett, Stanford Medicine (2023). ‘Cyclic sighing’ can help breathe away anxiety. https://med.stanford.edu/news/insights/2023/02/cyclic-sighing-can-help-breathe-away-anxiety.html
+- Balban MY et al. (2023). Brief structured respiration practices enhance mood and reduce physiological arousal. Cell Reports Medicine 4(1):100895. https://doi.org/10.1016/j.xcrm.2022.100895
+- Riedl EM et al. (2026). Simply breathing anxiety away? A pilot, just-in-time ecological momentary intervention study of one-minute cyclic sighing versus box breathing as tools for acute anxiety reduction and attention promotion in real life. Anxiety, Stress, & Coping 39(5):608–622. https://doi.org/10.1080/10615806.2026.2659809
+- Hanley AW, Davis A, Worts P, Pratscher S (2025). Cyclic sighing in the clinic waiting room may decrease pain: results from a pilot randomized controlled trial. Journal of Behavioral Medicine 48(2):385–393. https://doi.org/10.1007/s10865-024-00548-5

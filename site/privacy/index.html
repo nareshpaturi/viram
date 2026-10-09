@@ -4,39 +4,106 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="referrer" content="no-referrer">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; base-uri 'none'; form-action 'none'">
+  <title>Privacy policy · Viram</title>
+  <meta name="description" content="Viram keeps your practice on your phone: no account, no server, no ads, no tracking. What the app stores, what it never does, and how Health and watch features work.">
+  <link rel="canonical" href="https://viram.app/privacy/">
+  <meta name="theme-color" content="#FBFCF8">
+  <link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/img/favicon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
   <link rel="stylesheet" href="/style.css">
-  <title>Privacy · Viram</title>
+  <script type="module" src="/stores.js"></script>
 </head>
 <body>
-  <main>
-    <a class="brand" href="/"><svg width="36" height="36" viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" rx="22" fill="#12372F"/><path d="M36.85 27.28A28 28 0 0 0 36.85 76.72" stroke="#A8CFD0" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M63.15 27.28A28 28 0 0 1 63.15 76.72" stroke="#EEF4EF" stroke-width="9" stroke-linecap="round" fill="none"/><circle cx="50" cy="27.3" r="4.6" fill="#E46F51"/></svg> Viram</a>
-    <h1>Privacy</h1>
-    <p class="muted">Your practice, on your device. Last updated September 27, 2026.</p>
+  <!-- header -->
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="/" aria-label="Viram home"><svg viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" rx="22" fill="#12372F"/><path d="M36.85 27.28A28 28 0 0 0 36.85 76.72" stroke="#A8CFD0" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M63.15 27.28A28 28 0 0 1 63.15 76.72" stroke="#EEF4EF" stroke-width="9" stroke-linecap="round" fill="none"/><circle cx="50" cy="27.3" r="4.6" fill="#E46F51"/></svg> Viram</a>
+      <nav class="site-nav" aria-label="Main">
+        <a href="/#features">Features</a>
+        <a href="/techniques/">Techniques</a>
+        <a href="/#faq">FAQ</a>
+        <a class="pill" href="/#get">Get Viram</a>
+      </nav>
+    </div>
+  </header>
+  <!-- /header -->
+  <main id="main" class="page">
+    <div class="narrow">
+      <h1>Privacy policy</h1>
+      <p class="muted">Your practice, on your device. Last updated October 9, 2026.</p>
 
-    <h2>What Viram keeps, and where</h2>
-    <p>Viram stores your settings, your saved rhythms (My rhythms), and your practice history on your phone only. For each practice it keeps the practice name, its rhythm, when you practiced, how long, how many rounds, and whether you finished or ended early. There is no account and no server. Viram never asks for your name, email, location, contacts, or health data.</p>
+      <h2>What Viram keeps, and where</h2>
+      <p>Viram stores your settings, your saved rhythms and routines, your program progress, and your practice history on your phone only. For each practice it keeps the practice name, its rhythm, when you practised, how long, how many rounds, and whether you finished or ended early. There is no account and no server. Viram never asks for your name, email, location, or contacts.</p>
 
-    <h2>What Viram doesn’t do</h2>
-    <ul>
-      <li>No ads and no advertising or analytics SDKs.</li>
-      <li>No tracking across apps or websites.</li>
-      <li>No selling or sharing of practice data.</li>
-      <li>No microphone, camera, location, or Health access.</li>
-    </ul>
+      <h2>What Viram doesn’t do</h2>
+      <ul>
+        <li>No ads, and no advertising or analytics SDKs.</li>
+        <li>No tracking across apps or websites.</li>
+        <li>No selling or sharing of practice data.</li>
+        <li>No microphone, camera, contacts, or location access.</li>
+        <li>Viram never reads any health data.</li>
+      </ul>
 
-    <h2>Backups, export, and deletion</h2>
-    <p>Your Viram data is part of your phone’s own backup (iCloud or Google), so a phone restored from backup keeps your practice. You can export everything as one file from Settings › Your data; the file goes only where you send it. You can delete your local history from Settings at any time; your settings and saved rhythms stay unless you delete them too.</p>
+      <h2>Apple Health and Health Connect (optional)</h2>
+      <p>If you turn this on, Viram adds each completed practice of at least one minute to Apple Health on iPhone, or Health Connect on Android, as a mindful or breathing session: only its start and end time. Viram asks only for permission to write these sessions, never to read anything. Health data is not used for advertising, and Viram never sends it anywhere. You can turn this off in Viram’s Settings, and view or delete the sessions in Apple Health or Health Connect.</p>
 
-    <h2>Share links</h2>
-    <p>A share link contains only a practice name, its rhythm, how long it runs, and, for library practices, which one it is based on. It contains nothing about you, your device, or your history. Anyone who has the link can read it. Opening a link in Viram sends nothing anywhere: the app reads it on your phone.</p>
-    <p>When a link opens this website instead, the page reads the rhythm in your browser. The site sets no cookies and runs no trackers or third-party scripts. Our host keeps standard server logs (such as the page requested and the time), which we look at only in aggregate, for example to count how often shared-practice pages are visited. Store buttons carry a fixed campaign name so we can count installs that came from share links; they never include anything about you or the link.</p>
+      <h2>Apple Watch and Wear OS (optional)</h2>
+      <p>If you use Viram on a watch, your phone sends it your practices and haptic settings, and the watch sends back each practice you do there so it appears in your History. This travels directly between your own devices through Apple’s and Google’s watch connections. Viram has no server in between.</p>
 
-    <h2>Guidance audio</h2>
-    <p>Voice guidance is generated by AI from Viram’s scripts before release and bundled in the app. Nothing you say or do is sent to a voice service.</p>
+      <h2>Reminders</h2>
+      <p>If you turn on a daily reminder, it is scheduled on your phone as a local notification. Nothing is sent to a server.</p>
 
-    <h2>Changes and contact</h2>
-    <p>If this policy changes, we will update this page and the date above. Questions: see <a href="/support/">Support</a>.</p>
+      <h2>Backups, export, and deletion</h2>
+      <p>Your Viram data is part of your phone’s own backup (iCloud or Google), so a phone restored from backup keeps your practice. You can export everything as one file from Settings › Your data; the file goes only where you send it. You can delete your local history from Settings at any time; your settings and saved rhythms stay unless you delete them too. Sessions already added to Apple Health or Health Connect stay there until you delete them in that app.</p>
+
+      <h2>Share links</h2>
+      <p>A share link contains only a practice name, its rhythm, how long it runs, and, for library practices, which one it is based on. It contains nothing about you, your device, or your history. Anyone who has the link can read it. Opening a link in Viram sends nothing anywhere: the app reads it on your phone.</p>
+
+      <h2>This website</h2>
+      <p>When a link opens this website instead, the page reads the rhythm in your browser. The site sets no cookies and runs no trackers or third-party scripts; its fonts and images are served from viram.app itself. Our host keeps standard server logs (such as the page requested and the time), which we look at only in aggregate, for example to count how often shared-practice pages are visited. Store buttons carry a fixed campaign name so we can count installs that came from share links; they never include anything about you or the link.</p>
+
+      <h2>Guidance audio</h2>
+      <p>Voice guidance is generated by AI from Viram’s scripts before release and bundled in the app. Nothing you say or do is sent to a voice service.</p>
+
+      <h2>Changes and contact</h2>
+      <p>If this policy changes, we will update this page and the date above. Questions: write to <a href="mailto:hello@viram.app">hello@viram.app</a>, or see <a href="/support/">Support</a>.</p>
+    </div>
   </main>
+  <!-- footer -->
+  <footer class="site-footer">
+    <div class="wrap">
+      <div>
+        <a class="brand" href="/"><svg viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" rx="22" fill="#12372F"/><path d="M36.85 27.28A28 28 0 0 0 36.85 76.72" stroke="#A8CFD0" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M63.15 27.28A28 28 0 0 1 63.15 76.72" stroke="#EEF4EF" stroke-width="9" stroke-linecap="round" fill="none"/><circle cx="50" cy="27.3" r="4.6" fill="#E46F51"/></svg> Viram</a>
+        <p>Pranayama, guided at your pace. Free, private, and ready offline.</p>
+      </div>
+      <div>
+        <h2>Practise</h2>
+        <ul>
+          <li><a href="/techniques/sama-vritti/">Sama Vritti</a></li>
+          <li><a href="/techniques/nadi-shodhana/">Nadi Shodhana</a></li>
+          <li><a href="/techniques/bhramari/">Bhramari</a></li>
+          <li><a href="/techniques/4-7-8/">4-7-8 breathing</a></li>
+          <li><a href="/techniques/ujjayi/">Ujjayi</a></li>
+          <li><a href="/techniques/coherent/">Coherent breathing</a></li>
+          <li><a href="/techniques/">All techniques</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Viram</h2>
+        <ul>
+          <li><a href="/#features">Features</a></li>
+          <li><a href="/#faq">Questions</a></li>
+          <li><a href="/privacy/">Privacy</a></li>
+          <li><a href="/support/">Support</a></li>
+          <li><a href="mailto:hello@viram.app">hello@viram.app</a></li>
+        </ul>
+      </div>
+      <p class="fine">A wellness practice, not medical advice. Breathe gently, and stop if you feel dizzy or uncomfortable. © 2026 Viram.</p>
+    </div>
+  </footer>
+  <!-- /footer -->
 </body>
 </html>
