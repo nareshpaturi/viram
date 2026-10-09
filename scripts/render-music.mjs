@@ -3,13 +3,16 @@
 // native guide repeats under a practice. Generated here, so they carry no licence.
 // Run with `npm run audio:music`.
 import { mkdirSync } from 'node:fs';
-import { addPartial, hall, highpass, level, lowpass, note, random, seconds, wrapLoop } from './lib/synth.mjs';
+import { addPartial, hall, highpass, levelLoudest, lowpass, note, random, seconds, wrapLoop } from './lib/synth.mjs';
 import { SAMPLE_RATE, writeWav } from './lib/wav.mjs';
 
 const LOOP = 48;
 const TAIL = 24;
-// Beds sit well under the voice (−20 dBFS speech) even at full music volume.
-const BED_RMS_DB = -24;
+// Each bed's loudest moment at full music volume (BS.1770 momentary loudness).
+// Cue words peak near −21 LUFS and the softer bells near −24 at the default cue
+// volume, so the default 50% music volume (−40 LUFS) sits about 19 dB under the
+// words and 16 under the bells, and even 100% stays 13 dB under the words.
+const BED_LOUDEST_LUFS = -34;
 
 /**
  * One tanpura pluck. Partials ring and fade, the low ones longest; the jawari
@@ -28,7 +31,8 @@ function pluck(out, at, freq, gain, rand) {
       decay: 7 / (1 + n / 10),
       attack: 0.004,
       length: seconds(9),
-      envelope: (t) => 0.35 + 1.6 * Math.exp(-((octaves - Math.log2(formant(t))) ** 2) / (2 * 0.35 ** 2)),
+      // A gentle jawari: enough shimmer to sound like a tanpura, not a buzz that competes with the voice.
+      envelope: (t) => 0.35 + 1.0 * Math.exp(-((octaves - Math.log2(formant(t))) ** 2) / (2 * 0.35 ** 2)),
     });
   }
 }
@@ -49,7 +53,7 @@ function tanpura() {
       pluck(out, seconds(cycle * 6 + string.at + jitter + 0.03), string.freq, string.gain * (0.92 + 0.16 * rand()), rand);
     }
   }
-  return finish(lowpass(highpass(out, 45), 6000), { wet: 0.35, feedback: 0.92, damping: 0.3 });
+  return finish(lowpass(highpass(out, 45), 3500), { wet: 0.35, feedback: 0.92, damping: 0.3 });
 }
 
 /** A warm note: soft harmonics, three slightly detuned copies, and a slow swell. Notes cross-fade over their 4-second edges. */
@@ -59,7 +63,8 @@ function padNote(out, start, length, freq, gain, rand) {
   const attack = 4;
   const envelope = (t) => {
     const edge = Math.min(1, t / attack, (length - t) / attack);
-    const swell = 0.75 + 0.25 * Math.sin(2 * Math.PI * rate * t + phase);
+    // A shallow swell, so the pad never surges up into the cues.
+    const swell = 0.88 + 0.12 * Math.sin(2 * Math.PI * rate * t + phase);
     return edge <= 0 ? 0 : (0.5 - 0.5 * Math.cos(Math.PI * edge)) * swell;
   };
   for (const cents of [-5, 0, 5]) {
@@ -85,11 +90,11 @@ function pad() {
     const start = (i * span - 2 + LOOP) % LOOP;
     chord.forEach((semitones, j) => padNote(out, seconds(start), span + 4, note(semitones), j === 0 ? 0.8 : 0.6, rand));
   });
-  return finish(lowpass(highpass(out, 45), 2600), { wet: 0.45, feedback: 0.93, damping: 0.4 });
+  return finish(lowpass(highpass(out, 45), 2200), { wet: 0.45, feedback: 0.93, damping: 0.4 });
 }
 
 function finish(dry, space) {
-  return level(wrapLoop(hall(dry, space), seconds(LOOP)), BED_RMS_DB);
+  return levelLoudest(wrapLoop(hall(dry, space), seconds(LOOP)), BED_LOUDEST_LUFS);
 }
 
 mkdirSync('assets/music', { recursive: true });
