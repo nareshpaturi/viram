@@ -2,7 +2,7 @@
   "applinks": {
     "details": [
       {
-        "appIDs": ["TEAM_ID.app.viram"],
+        "appIDs": ["BPD6N9TLQ4.app.viram"],
         "components": [{ "/": "/r/*", "comment": "Shared practice links open the in-app preview." }]
       }
     ]

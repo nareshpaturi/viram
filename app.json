@@ -9,6 +9,7 @@
     "icon": "./assets/icon.png",
     "ios": {
       "bundleIdentifier": "app.viram",
+      "appleTeamId": "BPD6N9TLQ4",
       "supportsTablet": false,
       "associatedDomains": ["applinks:viram.app"],
       "infoPlist": {

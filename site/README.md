@@ -19,7 +19,7 @@ static hosts need the equivalent rewrite of `/r/*` to `/r/index.html`.
 ## Before deploying (owner lane, delivery plan D18)
 
 - Register viram.app and point it at the static host.
-- Replace `TEAM_ID` in `apple-app-site-association` with the Apple Developer Team ID. The file is served as `application/json` with no redirect.
+- `apple-app-site-association` carries the Apple Developer Team ID (`BPD6N9TLQ4`, also `ios.appleTeamId` in `app.json`). The file is served as `application/json` with no redirect.
 - Replace `PLAY_APP_SIGNING_SHA256` in `assetlinks.json` with the Play app-signing certificate's SHA-256 fingerprint (Play Console › App integrity), and add the upload key's fingerprint for testing builds.
 - Set `APP_STORE_URL` in `config.js` once the App Store record exists.
 - Confirm the `hello@viram.app` support address.
