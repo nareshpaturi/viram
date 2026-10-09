@@ -44,15 +44,15 @@ class ViramCompanionModule : Module() {
     }
 
     AsyncFunction("sendContext") { json: String, promise: Promise ->
-      if (!playServices()) return@AsyncFunction promise.resolve(null)
+      if (!playServices()) return@AsyncFunction promise.resolve(false)
       val request = PutDataMapRequest.create(CompanionStore.CONTEXT_PATH).apply {
         dataMap.putString(CompanionStore.KEY_JSON, json)
         // A changed item is what the watch hears about; the same JSON twice is a no-op.
       }.asPutDataRequest().setUrgent()
       Wearable.getDataClient(context).putDataItem(request)
-        .addOnSuccessListener { promise.resolve(null) }
-        // No watch, or the Data Layer is unavailable: nothing to do.
-        .addOnFailureListener { promise.resolve(null) }
+        .addOnSuccessListener { promise.resolve(true) }
+        // No watch, or the Data Layer is unavailable: tried again next time.
+        .addOnFailureListener { promise.resolve(false) }
     }
 
     Function("pendingSessions") {

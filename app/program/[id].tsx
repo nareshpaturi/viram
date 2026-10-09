@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import { AccessibilityInfo, StyleSheet, View } from 'react-native';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { refreshWatch } from '../../src/companion/CompanionBridge';
 import { AppText } from '../../src/components/AppText';
 import { Button } from '../../src/components/Button';
 import { Card } from '../../src/components/Card';
@@ -58,6 +59,7 @@ export default function ProgramOverview() {
   const totals = programTotals(program);
   const save = (e: Enrollment) => {
     stores().programs.activate(e, Date.now());
+    refreshWatch();
     refresh();
   };
   const begin = (n: number) => {
@@ -76,6 +78,7 @@ export default function ProgramOverview() {
           onCancel={() => setLeaving(false)}
           onConfirm={() => {
             stores().programs.save(leave(enrollment, Date.now()));
+            refreshWatch();
             setLeaving(false);
             refresh();
             AccessibilityInfo.announceForAccessibility(`Left ${program.name}. Your progress is kept.`);

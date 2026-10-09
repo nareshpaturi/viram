@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import { AccessibilityInfo, Pressable, StyleSheet, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
+import { refreshWatch } from '../src/companion/CompanionBridge';
 import { AppText } from '../src/components/AppText';
 import { Button, ButtonRow } from '../src/components/Button';
 import { ConfirmPanel } from '../src/components/ConfirmPanel';
@@ -33,6 +34,7 @@ export default function MyRhythms() {
           onCancel={() => setDeleting(null)}
           onConfirm={() => {
             stores().rhythms.remove(deleting.id);
+            refreshWatch();
             setDeleting(null);
             setOpen(null);
             reload();

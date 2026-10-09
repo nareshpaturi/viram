@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { AccessibilityInfo, StyleSheet, TextInput } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { describeRhythm, describeTargetAndPlan, slowingLine } from '../src/breathing/describe';
+import { refreshWatch } from '../src/companion/CompanionBridge';
 import { AppText } from '../src/components/AppText';
 import { Button } from '../src/components/Button';
 import { Card } from '../src/components/Card';
@@ -46,6 +47,7 @@ export default function SaveRhythm() {
   const save = () => {
     if (renaming) {
       if (!stores().rhythms.rename(renaming.id, name)) return setProblem('Use plain text, up to 40 characters.');
+      refreshWatch();
       AccessibilityInfo.announceForAccessibility('Renamed');
       return router.back();
     }
@@ -59,6 +61,7 @@ export default function SaveRhythm() {
       origin,
     });
     if (result.ok) {
+      refreshWatch();
       AccessibilityInfo.announceForAccessibility('Saved to My rhythms');
       return router.back();
     }

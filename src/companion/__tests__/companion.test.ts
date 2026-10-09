@@ -3,6 +3,8 @@ import { customPractice, practiceFromTechnique, quickBox } from '../../practice/
 import { DEFAULT_PREFERENCES } from '../../settings/preferences';
 import { companionContext, MAX_WATCH_PRACTICES, recordFromWatch, watchPractice, type WatchSession } from '../companion';
 
+const offer = (practice: ReturnType<typeof quickBox>) => ({ practice });
+
 const technique = (id: string) => practiceFromTechnique(LIBRARY.find((t) => t.id === id)!);
 const NOW = Date.UTC(2026, 9, 7, 12);
 
@@ -21,8 +23,8 @@ function session(change: Partial<WatchSession> = {}): WatchSession {
 
 describe('watch companion', () => {
   it('sends each practice with labels, its plan, and itself to echo back', () => {
-    const p = watchPractice(technique('nadi-shodhana'));
-    expect(p.key).toBe('technique:nadi-shodhana');
+    const p = watchPractice(offer(technique('nadi-shodhana')));
+    expect(p.key).toBe('technique:nadi-shodhana inhale4,exhale6,inhale4,exhale6 m5');
     expect(p.detail).toBe('in 4 · out 6, each side · 5 min');
     expect(p.steps.map((s) => s.label)).toEqual(['Inhale left', 'Exhale right', 'Inhale right', 'Exhale left']);
     expect(p.rounds).toBe(15);
@@ -30,15 +32,24 @@ describe('watch companion', () => {
     expect(JSON.parse(p.practiceJson).techniqueId).toBe('nadi-shodhana');
   });
 
-  it('keeps distinct practices in order, with the haptic settings', () => {
-    const many = [quickBox(), technique('sama-vritti'), customPractice(), customPractice(), ...LIBRARY.map((t) => practiceFromTechnique(t))];
+  it('drops only exact repeats, keeping practices in order with the haptic settings', () => {
+    // Box breathing is the library's Sama Vritti; an adjusted Sama Vritti is not (QA W05).
+    const adjusted = { ...technique('sama-vritti'), steps: technique('sama-vritti').steps.map((s) => ({ ...s, seconds: 6 })), target: { minutes: 20 } };
+    const many = [adjusted, quickBox(), technique('sama-vritti'), customPractice(), customPractice(), ...LIBRARY.map((t) => practiceFromTechnique(t))].map(offer);
     const context = companionContext(many, DEFAULT_PREFERENCES, NOW);
-    expect(context.practices).toHaveLength(MAX_WATCH_PRACTICES);
-    expect(context.practices.filter((p) => p.key === 'custom')).toHaveLength(1);
-    expect(new Set(context.practices.map((p) => p.key)).size).toBe(MAX_WATCH_PRACTICES);
+    expect(context.practices.map((p) => p.detail).slice(0, 3)).toEqual(['6 · 6 · 6 · 6 · 20 min', '4 · 4 · 4 · 4 · 5 min', '4 · 4 · 4 · 4 · 5 min']);
+    expect(context.practices.map((p) => p.name).slice(0, 3)).toEqual(['Sama Vritti', 'Sama Vritti', 'Custom rhythm']);
+    // Every other library practice, once.
+    expect(context.practices).toHaveLength(3 + LIBRARY.length - 1);
+    expect(new Set(context.practices.map((p) => p.key)).size).toBe(context.practices.length);
     expect(context.haptics).toEqual({ style: 'marks', phases: { inhale: true, hold: true, exhale: true, rest: true } });
-    // Small enough for WatchConnectivity's application context and a Wear OS data item.
-    expect(JSON.stringify(context).length).toBeLessThan(20_000);
+  });
+
+  it('stops at its limit, still small enough for WatchConnectivity and a Wear OS data item', () => {
+    const rhythms = Array.from({ length: 40 }, (_, i) => ({ ...customPractice(), name: `Rhythm ${i + 1}`, source: { kind: 'rhythm' as const, id: `r${i}` } }));
+    const context = companionContext([...rhythms, ...LIBRARY.map(practiceFromTechnique)].map(offer), DEFAULT_PREFERENCES, NOW);
+    expect(context.practices).toHaveLength(MAX_WATCH_PRACTICES);
+    expect(JSON.stringify(context).length).toBeLessThan(48_000);
   });
 
   it('turns a watch session into a silent, haptic record', () => {
@@ -58,6 +69,20 @@ describe('watch companion', () => {
     expect(record.breathsPerMinute).toBe(6);
   });
 
+  it('keeps a program session’s tag for the phone to check', () => {
+    const p = watchPractice({ practice: technique('sama-vritti'), program: { id: 'foundations', name: 'Pranayama Foundations', session: 1 } });
+    expect(p.detail).toBe('Session 1 · 4 · 4 · 4 · 4 · 5 min');
+    expect(p.key).toMatch(/^program:foundations:1 /);
+    const record = recordFromWatch(session({ completedRounds: 19, activeMs: 304_000, practiceJson: p.practiceJson }), NOW)!;
+    expect(record.program).toEqual({ id: 'foundations', name: 'Pranayama Foundations', session: 1 });
+    expect(recordFromWatch(session({ practiceJson: JSON.stringify({ ...technique('nadi-shodhana'), program: { id: 'x' } }) }), NOW)!.program).toBeNull();
+  });
+
+  it('accepts an ended practice whose time covers its rounds', () => {
+    expect(recordFromWatch(session({ outcome: 'ended', completedRounds: 2, activeMs: 45_000 }), NOW)).toMatchObject({ outcome: 'ended', completedRounds: 2 });
+    expect(recordFromWatch(session({ outcome: 'ended', completedRounds: 0, activeMs: 1000 }), NOW)).toMatchObject({ completedRounds: 0 });
+  });
+
   it.each([
     ['wrong version', { v: 2 as 1 }],
     ['bad id', { id: 'x' }],
@@ -66,6 +91,12 @@ describe('watch companion', () => {
     ['far future', { startedAt: NOW + 2 * 24 * 60 * 60_000 }],
     ['negative rounds', { completedRounds: -1 }],
     ['more rounds than planned', { completedRounds: 16 }],
+    // Internally inconsistent (QA W09): a completed practice ran every round, for the plan's time.
+    ['completed with no rounds', { activeMs: 1, completedRounds: 0 }],
+    ['completed short of its rounds', { completedRounds: 14 }],
+    ['completed in less than the plan’s time', { activeMs: 200_000 }],
+    ['ended with every round done', { outcome: 'ended' as const, completedRounds: 15 }],
+    ['ended with rounds it had no time for', { outcome: 'ended' as const, completedRounds: 10, activeMs: 60_000 }],
     ['bad outcome', { outcome: 'won' as 'ended' }],
     ['not JSON', { practiceJson: '{' }],
     ['out-of-bounds practice', { practiceJson: JSON.stringify({ ...technique('sama-vritti'), steps: [{ kind: 'inhale', seconds: 99 }] }) }],

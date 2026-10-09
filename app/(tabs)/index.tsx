@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
+import { refreshWatch } from '../../src/companion/CompanionBridge';
 import { cautionFor } from '../../src/practice/caution';
 import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
@@ -68,6 +69,7 @@ export default function Breathe() {
 
   const saveEnrollment = (e: Enrollment) => {
     stores().programs.save(e);
+    refreshWatch();
     setEnrollment(e);
   };
 

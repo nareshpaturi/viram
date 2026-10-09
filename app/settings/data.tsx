@@ -3,6 +3,7 @@ import { AccessibilityInfo, StyleSheet, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
+import { refreshWatch } from '../../src/companion/CompanionBridge';
 import { AppText } from '../../src/components/AppText';
 import { Button } from '../../src/components/Button';
 import { Card } from '../../src/components/Card';
@@ -116,6 +117,7 @@ export default function YourData() {
                   const restored = reload();
                   refreshQuickActions(restored);
                   refreshWidget(restored);
+                  refreshWatch(restored);
                   setMode({ kind: 'idle', message: 'Imported. Everything new from the file is now on this device.' });
                 } catch {
                   setMode({ kind: 'idle', message: 'The import didn’t finish, so nothing was changed. Try again.' });
