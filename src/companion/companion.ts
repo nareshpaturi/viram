@@ -13,6 +13,7 @@ import { describeRhythm, describeTarget, stepLabel } from '../breathing/describe
 import { planFor, type Plan, type RhythmStep, type Slowing, type StepKind } from '../breathing/rhythm';
 import type { HapticPhases, HapticStyle } from '../haptics/patterns';
 import type { ProgramTag, SessionRecord } from '../history/repository';
+import { cautionFor } from '../practice/caution';
 import { parsePractice, practiceKey, type Practice } from '../practice/practice';
 import type { Preferences } from '../settings/preferences';
 
@@ -48,6 +49,12 @@ export interface WatchPractice {
   durationMs: number;
   /** Gradual slowing: inhale and exhale move round by round to these lengths (src/breathing/rhythm.ts `slowedSteps`). */
   slowing: Slowing | null;
+  /**
+   * The phone's one short caution for this practice (src/practice/caution.ts),
+   * so the watch carries it too (content review F10). Contexts sent before it
+   * existed lack it; both watch apps read it as optional.
+   */
+  caution: string;
   /**
    * The practice as JSON, echoed back verbatim so the phone can rebuild the
    * record; a program session also carries its `program` tag here, so the
@@ -100,6 +107,7 @@ export function watchPractice(offer: WatchOffer): WatchPractice {
     rounds: plan.rounds,
     durationMs: plan.durationMs,
     slowing: practice.slowing ?? null,
+    caution: cautionFor(practice),
     practiceJson: JSON.stringify(program ? { ...practice, program } : practice),
   };
 }

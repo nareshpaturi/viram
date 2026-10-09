@@ -22,6 +22,8 @@ data class WatchPractice(
   val steps: List<WatchStep>,
   val rounds: Int,
   val slowing: Slowing?,
+  /** The phone's one short caution, shown before practice; absent from older contexts. */
+  val caution: String?,
   /** Echoed back verbatim with the session. */
   val practiceJson: String,
 )
@@ -55,7 +57,8 @@ object Format {
           }
         }
         val slowing = p.optJSONObject("slowing")?.let { Slowing(it.getDouble("inhale"), it.getDouble("exhale")) }
-        WatchPractice(p.getString("key"), p.getString("name"), p.getString("detail"), steps, p.getInt("rounds"), slowing, p.getString("practiceJson"))
+        val caution = p.optString("caution").ifEmpty { null }
+        WatchPractice(p.getString("key"), p.getString("name"), p.getString("detail"), steps, p.getInt("rounds"), slowing, caution, p.getString("practiceJson"))
       }
     }
     val haptics = root.getJSONObject("haptics").let { h ->

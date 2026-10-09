@@ -27,6 +27,8 @@ struct WatchPractice: Codable, Hashable, Identifiable {
   let rounds: Int
   let durationMs: Double
   let slowing: Slowing?
+  /// The phone's one short caution, shown before practice; absent from older contexts.
+  let caution: String?
   /// Echoed back verbatim with the session.
   let practiceJson: String
 

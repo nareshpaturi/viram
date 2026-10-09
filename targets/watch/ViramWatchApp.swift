@@ -36,6 +36,7 @@ struct RootView: View {
                 }
                 .padding(.vertical, 4)
               }
+              .accessibilityLabel(rowLabel(practice, ready: index == 0))
               .accessibilityHint("Begins after three seconds to settle")
             }
             Text("Your haptics follow Viram’s settings on your iPhone.")
@@ -69,6 +70,13 @@ struct RootView: View {
         if next == nil { runner?.close() }
         runner = next
       })
+  }
+
+  /// The row as VoiceOver reads it, with the practice's caution heard before it begins (content review F10).
+  private func rowLabel(_ practice: WatchPractice, ready: Bool) -> String {
+    let shown = "\(ready ? "Ready when you are. " : "")\(practice.name), \(practice.detail)."
+    guard let caution = practice.caution else { return shown }
+    return "\(shown) \(caution)"
   }
 
   private func begin(_ practice: WatchPractice) {
