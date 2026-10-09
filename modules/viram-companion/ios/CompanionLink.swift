@@ -26,9 +26,11 @@ final class CompanionLink: NSObject, WCSessionDelegate {
     return WCSession.default.isWatchAppInstalled ? "installed" : "paired"
   }
 
-  func send(context json: String) throws {
-    guard WCSession.isSupported(), WCSession.default.activationState == .activated, WCSession.default.isPaired else { return }
+  /// False when there's nothing to send to yet, so the caller tries again later.
+  func send(context json: String) throws -> Bool {
+    guard WCSession.isSupported(), WCSession.default.activationState == .activated, WCSession.default.isPaired else { return false }
     try WCSession.default.updateApplicationContext(["context": json])
+    return true
   }
 
   // MARK: Pending sessions

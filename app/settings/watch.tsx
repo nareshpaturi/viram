@@ -2,13 +2,15 @@ import { StyleSheet, View } from 'react-native';
 import { AppText } from '../../src/components/AppText';
 import { Card } from '../../src/components/Card';
 import { Screen } from '../../src/components/Screen';
+import { MAX_WATCH_RHYTHMS } from '../../src/companion/watchPractices';
 import { WATCH_NAME, useWatchState } from '../../src/companion/watchState';
 import { phasesLine } from '../../src/haptics/patterns';
 import { usePreferences } from '../../src/settings/PreferencesProvider';
 import { spacing } from '../../src/theme';
 
 const HOW = [
-  'Your watch shows Breathe’s practice first, then 5-minute box breathing, My rhythms, and the library.',
+  `Your watch shows Breathe’s practice first, then 5-minute box breathing, your ${MAX_WATCH_RHYTHMS} most recent rhythms, and every practice in the library.`,
+  'During a program, its next session comes first when it’s a single practice, and counts toward the program. Sequences of practices run on this phone.',
   'Tap one to begin. After three seconds to settle, the watch taps out each step: you can practise with your eyes closed and your phone put away.',
   'It keeps going with your wrist down. Pause, resume, or end early on the watch.',
   'Each practice comes back to History on this phone, and to Health if you’ve connected it.',

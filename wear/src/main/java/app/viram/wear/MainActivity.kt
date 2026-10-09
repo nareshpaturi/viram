@@ -30,6 +30,8 @@ class MainActivity : Activity() {
   private var guide: GuideView? = null
   private var label: TextView? = null
   private var line: TextView? = null
+  /** Asking before ending a paused practice, as on the phone. */
+  private var confirmingEnd = false
 
   private val dataListener = DataClient.OnDataChangedListener { events ->
     if (events.any { it.type == DataEvent.TYPE_CHANGED && Link.isContext(it.dataItem.uri.path) }) refresh()
@@ -70,6 +72,7 @@ class MainActivity : Activity() {
 
   private fun render(state: PracticeService.State?) {
     val stage = state?.stage
+    if (stage != PracticeService.Stage.Paused) confirmingEnd = false
     when {
       state == null -> showList()
       stage is PracticeService.Stage.Finished && stage.cancelled -> {
@@ -77,8 +80,14 @@ class MainActivity : Activity() {
       }
       stage is PracticeService.Stage.Finished -> showDone(stage)
       stage is PracticeService.Stage.Settling -> showSettle(stage)
+      confirmingEnd -> showEnd()
       else -> showPractice(state)
     }
+  }
+
+  private fun confirmEnd(asking: Boolean) {
+    confirmingEnd = asking
+    render(PracticeService.state)
   }
 
   private fun screen(name: String, build: () -> View) {
@@ -124,11 +133,15 @@ class MainActivity : Activity() {
 
   private fun showSettle(stage: PracticeService.Stage.Settling) {
     screen("settle:${stage.first}") {
-      column(gravity = Gravity.CENTER).apply {
-        addView(text(if (stage.first) "Settle in" else "Resuming", 16f, bold = true, color = Color.WHITE))
-        addView(text("", 40f, color = GuideView.COLORS.getValue(StepKind.INHALE)).also { label = it })
-        addView(text("Eyes closed is fine. The taps will guide you.", 12f, color = MIST))
-        if (stage.first) addView(button("Cancel") { PracticeService.command(this@MainActivity, PracticeService.CANCEL) }, spaced())
+      // Scrolls rather than cutting the guidance short at large text.
+      ScrollView(this).apply {
+        isFillViewport = true
+        addView(column(gravity = Gravity.CENTER).apply {
+          addView(text(if (stage.first) "Settle in" else "Resuming", 16f, bold = true, color = Color.WHITE))
+          addView(text("", 40f, color = GuideView.COLORS.getValue(StepKind.INHALE)).also { label = it })
+          addView(text("Eyes closed is fine. The taps will guide you.", 12f, color = MIST))
+          if (stage.first) addView(button("Cancel") { PracticeService.command(this@MainActivity, PracticeService.CANCEL) }, spaced())
+        })
       }
     }
     val left = ceil((stage.untilMs - SystemClock.elapsedRealtime()) / 1000.0).toInt().coerceAtLeast(1)
@@ -145,7 +158,7 @@ class MainActivity : Activity() {
         if (paused) {
           addView(LinearLayout(this@MainActivity).apply {
             gravity = Gravity.CENTER
-            addView(button("End") { PracticeService.command(this@MainActivity, PracticeService.END) })
+            addView(button("End") { confirmEnd(true) })
             addView(button("Resume") { PracticeService.command(this@MainActivity, PracticeService.RESUME) }, LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { leftMargin = dp(8) })
           })
         } else {
@@ -158,6 +171,21 @@ class MainActivity : Activity() {
     label?.text = if (paused) "Paused" else position?.step?.label.orEmpty()
     val left = clock(state.plan.durationMs - state.planMs)
     line?.text = position?.let { "Round ${it.round + 1} of ${state.plan.rounds} · $left" } ?: left
+  }
+
+  /** Ending is asked once, as on the phone; the time so far is kept. */
+  private fun showEnd() {
+    screen("end") {
+      ScrollView(this).apply {
+        isFillViewport = true
+        addView(column(gravity = Gravity.CENTER).apply {
+          addView(text("End this practice?", 16f, bold = true, color = Color.WHITE))
+          addView(text("Your time so far goes to History on your phone as “Ended early.”", 12f, color = MIST), spaced())
+          addView(button("Keep breathing") { confirmEnd(false) }, spaced())
+          addView(button("End session", quiet = true) { PracticeService.command(this@MainActivity, PracticeService.END) }, spaced())
+        })
+      }
+    }
   }
 
   private fun showDone(stage: PracticeService.Stage.Finished) {

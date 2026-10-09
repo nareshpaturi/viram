@@ -187,17 +187,17 @@ extension PracticeRunner: WKExtendedRuntimeSessionDelegate {
   nonisolated func extendedRuntimeSessionDidStart(_ session: WKExtendedRuntimeSession) {}
 
   nonisolated func extendedRuntimeSessionWillExpire(_ session: WKExtendedRuntimeSession) {
-    Task { @MainActor in self.stopForSystem() }
+    Task { @MainActor in self.close() }
   }
 
   nonisolated func extendedRuntimeSession(
     _ session: WKExtendedRuntimeSession, didInvalidateWith reason: WKExtendedRuntimeSessionInvalidationReason, error: Error?
   ) {
-    Task { @MainActor in self.stopForSystem() }
+    Task { @MainActor in self.close() }
   }
 
-  /// The system is ending the session: keep what was practiced.
-  private func stopForSystem() {
+  /// The system is ending the session, or the practice screen is closing: keep what was practiced.
+  func close() {
     switch stage {
     case .running, .paused: finish(completed: false)
     case .settling(_, let first):

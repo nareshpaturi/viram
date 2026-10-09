@@ -28,7 +28,7 @@ public class ViramCompanionModule: Module {
       CompanionLink.shared.state
     }
 
-    AsyncFunction("sendContext") { (json: String) in
+    AsyncFunction("sendContext") { (json: String) -> Bool in
       try CompanionLink.shared.send(context: json)
     }
 

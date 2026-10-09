@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Linking, StyleSheet, View } from 'react-native';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { describeRhythm, describeTargetAndPlan } from '../../src/breathing/describe';
+import { refreshWatch } from '../../src/companion/CompanionBridge';
 import { AppText } from '../../src/components/AppText';
 import { Button } from '../../src/components/Button';
 import { Card } from '../../src/components/Card';
@@ -58,6 +59,7 @@ export default function IncomingLink() {
 
   const save = () => {
     const outcome = stores().rhythms.save({ ...rhythm, origin: 'link' });
+    if (outcome.ok) refreshWatch();
     if (outcome.ok) setSaved('Saved to My rhythms.');
     else if (outcome.reason === 'duplicate') setSaved(`Already in My rhythms as “${outcome.existing?.name}”.`);
     else if (outcome.reason === 'limit') setSaved('You have 20 saved rhythms. Delete one in My rhythms to save this.');

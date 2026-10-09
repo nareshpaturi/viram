@@ -17,8 +17,11 @@ type CompanionEvents = {
 
 declare class ViramCompanionModule extends NativeModule<CompanionEvents> {
   watchState(): Promise<WatchState>;
-  /** Replaces what the watch has; delivered even if the watch app isn't running. */
-  sendContext(json: string): Promise<void>;
+  /**
+   * Replaces what the watch has; delivered even if the watch app isn't
+   * running. False when it wasn't sent (no watch, or the link isn't up yet).
+   */
+  sendContext(json: string): Promise<boolean>;
   /** WatchSession JSON strings, oldest first. */
   pendingSessions(): string[];
   /** Forgets sessions by id once they are saved (or found invalid). */

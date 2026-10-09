@@ -56,9 +56,19 @@ struct RootView: View {
       }
       .navigationTitle("Viram")
     }
-    .fullScreenCover(item: $runner) { runner in
+    .fullScreenCover(item: presented) { runner in
       PracticeView(runner: runner) { self.runner = nil }
     }
+  }
+
+  /// However the practice screen closes, a practice under way is ended and kept, never dropped (QA W01).
+  private var presented: Binding<PracticeRunner?> {
+    Binding(
+      get: { runner },
+      set: { next in
+        if next == nil { runner?.close() }
+        runner = next
+      })
   }
 
   private func begin(_ practice: WatchPractice) {

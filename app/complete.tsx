@@ -3,6 +3,7 @@ import { AccessibilityInfo, Pressable, StyleSheet, useWindowDimensions, View } f
 import { Redirect, router, useLocalSearchParams, useIsFocused } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { describeRhythm, describeTarget, rhythmLine } from '../src/breathing/describe';
+import { refreshWatch } from '../src/companion/CompanionBridge';
 import { AppText } from '../src/components/AppText';
 import { Button } from '../src/components/Button';
 import { Card } from '../src/components/Card';
@@ -125,6 +126,7 @@ function CompleteScreen() {
         program = applyToProgram(record);
         setProgramResult(program);
         refreshReminder(preferences);
+        if (program) refreshWatch();
       } catch {
         // The practice is saved; the program catches up next time it's opened.
       }
@@ -193,6 +195,7 @@ function CompleteScreen() {
     if (repeat) {
       const repeated = repeatPhase(result.enrollment, result.phase.done, Date.now());
       stores().programs.save(repeated);
+      refreshWatch();
       setProgramResult({ kind: 'session', enrollment: repeated, repeating: result.phase.number });
     } else {
       setProgramResult({ kind: 'session', enrollment: result.enrollment });

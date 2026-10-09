@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { AccessibilityInfo, Pressable, StyleSheet, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
+import { refreshWatch } from '../../src/companion/CompanionBridge';
 import { AppText } from '../../src/components/AppText';
 import { Button } from '../../src/components/Button';
 import { Card } from '../../src/components/Card';
@@ -59,6 +60,7 @@ export default function StartProgram() {
     const chosen = withPlan ? plan : null;
     // One row per program: starting again reuses it from session 1.
     programs.activate(start(program, existing?.id ?? programs.newId(), chosen, now), now);
+    refreshWatch();
     if (withPlan && remind && chosen) update({ reminder: { enabled: true, hour: chosen.hour, minute: chosen.minute } });
     AccessibilityInfo.announceForAccessibility(`${program.name} started. Session 1 is ready on Breathe.`);
     router.dismissTo('/');
