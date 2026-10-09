@@ -5,12 +5,16 @@ struct PracticeView: View {
   @ObservedObject var runner: PracticeRunner
   let onDone: () -> Void
   @Environment(\.isLuminanceReduced) private var dimmed
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
+  @State private var confirmingEnd = false
 
   var body: some View {
     Group {
       switch runner.stage {
       case .settling(let until, let first):
         SettleView(until: until, first: first, onCancel: runner.canCancel ? { runner.cancel() } : nil)
+      case .paused where confirmingEnd:
+        EndView(onKeepBreathing: { confirmingEnd = false }, onEnd: { runner.endEarly() })
       case .running, .paused:
         guide
       case .finished(let completed):
@@ -21,34 +25,37 @@ struct PracticeView: View {
         }
       }
     }
+    // Every stage has its own way out (Cancel, Pause then End, Done), so the
+    // system's close button can't drop a practice under way (QA W01).
+    .toolbar(.hidden, for: .navigationBar)
   }
 
   private var guide: some View {
-    TimelineView(.animation(minimumInterval: 1.0 / 30, paused: dimmed || runner.stage != .running)) { context in
+    // With Reduce Motion, a still disc that changes color with the phase, as on the phone (QA W04).
+    TimelineView(.animation(minimumInterval: reduceMotion ? 1 : 1.0 / 30, paused: dimmed || runner.stage != .running)) { context in
       let t = runner.planMs(at: context.date)
       let position = runner.position
+      let paused = runner.stage == .paused
       VStack(spacing: 6) {
-        ZStack {
-          Circle()
-            .fill(Color(position.map { $0.step.kind.rawValue } ?? "rest"))
-            .scaleEffect(scale(position, t))
-            .opacity(dimmed ? 0.45 : 1)
-          if runner.stage == .paused {
-            Text("Paused").font(.headline).foregroundStyle(.black)
-          }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .accessibilityHidden(true)
-        Text(position?.step.label ?? "")
+        Circle()
+          .fill(Color(position.map { $0.step.kind.rawValue } ?? "rest"))
+          .scaleEffect(reduceMotion ? 0.8 : scale(position, t))
+          .opacity(dimmed || paused ? 0.45 : 1)
+          .frame(maxWidth: .infinity, maxHeight: .infinity)
+          .accessibilityHidden(true)
+        // Under the disc, never on it, so it reads at every size (QA W02).
+        Text(paused ? "Paused" : position?.step.label ?? "")
           .font(.headline)
           .accessibilityAddTraits(.updatesFrequently)
         Text(line(position, t))
           .font(.footnote.monospacedDigit())
           .foregroundStyle(Color("mist"))
-        if runner.stage == .paused {
+        if paused {
+          // Side by side at every text size: the words shrink before they'd be cut off.
           HStack {
-            Button("End") { runner.endEarly() }
-            Button("Resume") { runner.resume() }.tint(Color("inhale"))
+            Button { confirmingEnd = true } label: { Text("End").lineLimit(1).minimumScaleFactor(0.6) }
+            Button { runner.resume() } label: { Text("Resume").lineLimit(1).minimumScaleFactor(0.6) }
+              .tint(Color("inhale"))
           }
         } else {
           Button("Pause") { runner.pause() }
@@ -90,19 +97,47 @@ struct SettleView: View {
   let onCancel: (() -> Void)?
 
   var body: some View {
-    TimelineView(.periodic(from: .now, by: 0.25)) { context in
+    // Scrolls rather than cutting the guidance short (QA W03).
+    ScrollView {
       VStack(spacing: 8) {
         Text(first ? "Settle in" : "Resuming").font(.headline)
-        Text("\(max(1, Int(ceil(until.timeIntervalSince(context.date)))))")
-          .font(.system(size: 44, weight: .medium).monospacedDigit())
-          .foregroundStyle(Color("inhale"))
+        TimelineView(.periodic(from: .now, by: 0.25)) { context in
+          Text("\(max(1, Int(ceil(until.timeIntervalSince(context.date)))))")
+            .font(.system(size: 44, weight: .medium).monospacedDigit())
+            .foregroundStyle(Color("inhale"))
+        }
         Text("Eyes closed is fine. The taps will guide you.")
           .font(.footnote)
           .multilineTextAlignment(.center)
           .foregroundStyle(Color("mist"))
+          .fixedSize(horizontal: false, vertical: true)
         if let onCancel {
           Button("Cancel", action: onCancel)
         }
+      }
+    }
+  }
+}
+
+/// Ending is asked once, as on the phone; the time so far is kept.
+struct EndView: View {
+  let onKeepBreathing: () -> Void
+  let onEnd: () -> Void
+
+  var body: some View {
+    ScrollView {
+      VStack(spacing: 8) {
+        Text("End this practice?")
+          .font(.headline)
+          .multilineTextAlignment(.center)
+          .accessibilityAddTraits(.isHeader)
+        Text("Your time so far goes to History on your iPhone as “Ended early.”")
+          .font(.footnote)
+          .multilineTextAlignment(.center)
+          .foregroundStyle(Color("mist"))
+          .fixedSize(horizontal: false, vertical: true)
+        Button("Keep breathing", action: onKeepBreathing).tint(Color("inhale"))
+        Button("End session", action: onEnd)
       }
     }
   }

@@ -1,5 +1,6 @@
 package app.viram.wear
 
+import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
@@ -21,7 +22,8 @@ class GuideView(context: Context) : View(context) {
   }
 
   override fun onDraw(canvas: Canvas) {
-    val scale = when (kind) {
+    // With Remove animations on, a still disc in the phase's color, as on the phone.
+    val scale = if (!ValueAnimator.areAnimatorsEnabled()) STILL else when (kind) {
       StepKind.INHALE -> SMALL + (1 - SMALL) * progress
       StepKind.EXHALE -> 1 - (1 - SMALL) * progress
       StepKind.HOLD -> 1f
@@ -36,6 +38,7 @@ class GuideView(context: Context) : View(context) {
   companion object {
     /** As on the phone (src/components/BreathingGuide.tsx). */
     private const val SMALL = 0.56f
+    private const val STILL = 0.8f
     val COLORS = mapOf(
       StepKind.INHALE to Color.parseColor("#A8CFD0"),
       StepKind.HOLD to Color.parseColor("#E4B84A"),
