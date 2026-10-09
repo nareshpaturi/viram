@@ -1,4 +1,6 @@
 import { LIBRARY } from '../../content/library';
+import { COMFORT_LINE } from '../../content/safety';
+import { HOLD_CAUTION } from '../../practice/caution';
 import { customPractice, practiceFromTechnique, quickBox } from '../../practice/practice';
 import { DEFAULT_PREFERENCES } from '../../settings/preferences';
 import { companionContext, MAX_WATCH_PRACTICES, recordFromWatch, watchPractice, type WatchSession } from '../companion';
@@ -30,6 +32,16 @@ describe('watch companion', () => {
     expect(p.rounds).toBe(15);
     expect(p.durationMs).toBe(300_000);
     expect(JSON.parse(p.practiceJson).techniqueId).toBe('nadi-shodhana');
+  });
+
+  it('carries the phone’s caution, following the rhythm as practised (content review F10)', () => {
+    const caution = (practice: ReturnType<typeof quickBox>) => watchPractice(offer(practice)).caution;
+    expect(caution(technique('4-7-8'))).toBe(LIBRARY.find((t) => t.id === '4-7-8')!.guidance.takeCareShort);
+    // Holds added to a hold-free practice, or in a rhythm of one's own, get the hold caution.
+    const nadi = technique('nadi-shodhana');
+    expect(caution({ ...nadi, steps: [nadi.steps[0], { kind: 'hold', seconds: 4 }, ...nadi.steps.slice(1)] })).toBe(HOLD_CAUTION);
+    expect(caution(customPractice())).toBe(HOLD_CAUTION);
+    expect(caution({ ...customPractice(), steps: customPractice().steps.map((s) => (s.kind === 'hold' || s.kind === 'rest' ? { ...s, seconds: 0 } : s)) })).toBe(COMFORT_LINE);
   });
 
   it('drops only exact repeats, keeping practices in order with the haptic settings', () => {

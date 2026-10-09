@@ -79,7 +79,7 @@ class MainActivity : Activity() {
         PracticeService.clear()
       }
       stage is PracticeService.Stage.Finished -> showDone(stage)
-      stage is PracticeService.Stage.Settling -> showSettle(stage)
+      stage is PracticeService.Stage.Settling -> showSettle(stage, state.practice.caution)
       confirmingEnd -> showEnd()
       else -> showPractice(state)
     }
@@ -113,7 +113,8 @@ class MainActivity : Activity() {
           practices.forEachIndexed { index, practice ->
             addView(column(padding = 10).apply {
               background = rounded(CARD)
-              contentDescription = "${practice.name}, ${practice.detail}. Begins after three seconds to settle."
+              // The practice's caution is heard before it begins (content review F10).
+              contentDescription = listOfNotNull("${practice.name}, ${practice.detail}.", practice.caution, "Begins after three seconds to settle.").joinToString(" ")
               isClickable = true
               setOnClickListener { begin(practice) }
               if (index == 0) addView(text("Ready when you are", 11f, color = MUTED))
@@ -131,7 +132,7 @@ class MainActivity : Activity() {
     PracticeService.start(this, practice, companion?.haptics ?: HapticSettings.STANDARD)
   }
 
-  private fun showSettle(stage: PracticeService.Stage.Settling) {
+  private fun showSettle(stage: PracticeService.Stage.Settling, caution: String?) {
     screen("settle:${stage.first}") {
       // Scrolls rather than cutting the guidance short at large text.
       ScrollView(this).apply {
@@ -139,8 +140,13 @@ class MainActivity : Activity() {
         addView(column(gravity = Gravity.CENTER).apply {
           addView(text(if (stage.first) "Settle in" else "Resuming", 16f, bold = true, color = Color.WHITE))
           addView(text("", 40f, color = GuideView.COLORS.getValue(StepKind.INHALE)).also { label = it })
-          addView(text("Eyes closed is fine. The taps will guide you.", 12f, color = MIST))
-          if (stage.first) addView(button("Cancel") { PracticeService.command(this@MainActivity, PracticeService.CANCEL) }, spaced())
+          // Before the first round, the practice's caution, as on the phone (content review F10),
+          // then Cancel right under it: both in view in the three seconds, the tip below.
+          if (stage.first) {
+            if (caution != null) addView(text(caution, 12f, color = MIST))
+            addView(button("Cancel") { PracticeService.command(this@MainActivity, PracticeService.CANCEL) }, spaced())
+          }
+          addView(text("Eyes closed is fine. The taps will guide you.", 12f, color = MIST), spaced())
         })
       }
     }
