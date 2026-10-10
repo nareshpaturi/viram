@@ -1,5 +1,4 @@
 // Fills the share-link page with textContent only: link content is never markup.
-// Store buttons are handled by /stores.js, as on every page.
 import { decodePayload, describeSteps, describeTarget } from './decode.js';
 
 const raw = location.pathname.replace(/^\/r\//, '').replace(/\/$/, '');
