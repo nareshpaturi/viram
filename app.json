@@ -15,7 +15,8 @@
       "infoPlist": {
         "UIBackgroundModes": ["audio"],
         "ITSAppUsesNonExemptEncryption": false,
-        "NSHealthUpdateUsageDescription": "Viram adds your completed breathing practices to Apple Health as mindful minutes. It never reads health data."
+        "NSHealthUpdateUsageDescription": "Viram adds your completed breathing practices to Apple Health as mindful minutes. It never reads health data.",
+        "NSHealthShareUsageDescription": "Viram doesn't read your health data. It only adds your completed breathing practices to Apple Health as mindful minutes, if you choose to connect."
       },
       "entitlements": {
         "com.apple.developer.healthkit": true,
