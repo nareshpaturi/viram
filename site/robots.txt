@@ -2,5 +2,6 @@
 User-agent: *
 Allow: /
 Disallow: /r/
+Disallow: /share/
 
 Sitemap: https://viram.app/sitemap.xml

@@ -1,2 +1,4 @@
-# Every shared link is served by the one static fallback page.
-/r/*  /r/index.html  200
+# Every shared link (/r/…) is served by the one static fallback page, which lives
+# outside /r/ so no file there can shadow a link. Rewritten, not redirected: the
+# page reads the link from the address bar.
+/r/*  /share/  200

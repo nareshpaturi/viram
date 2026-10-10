@@ -10,7 +10,7 @@ are served from viram.app itself.
 |---|---|
 | `/` | Home: the app in the hero, three benefits, how it works, three first techniques, privacy and care, and four questions. Hand-written. |
 | `/techniques/` and `/techniques/<id>/` | A guide per technique, generated from `src/content/library.ts`: rhythm, steps, take care, tradition, research, and sources, with a breathing orb timed to the technique's real rhythm (`techniques/orbs.css`). |
-| `/r/*` | Shared-practice page. `r/decode.js` checks the link with the app's rules and shows it as plain text, with store links and “Open this practice” (`viram://r/…`). `_redirects` serves `r/index.html` for every `/r/…` path. |
+| `/r/*` | Shared-practice links. `_redirects` rewrites every `/r/…` path to the page in `share/` (outside `/r/`, so no file there can shadow a link); `share/decode.js` checks the link with the app's rules and shows it as plain text, with “Open this practice” (`viram://r/…`). |
 | `/about/` | Who makes Viram, how the guides are written and sourced, who has (and hasn't) reviewed them, and how to send a correction. Hand-written. |
 | `/privacy/`, `/support/` | Privacy policy (linked from the app and both store listings) and support. Hand-written. |
 | `/sitemap.xml`, `/robots.txt` | For search engines. The sitemap is generated. |
@@ -19,7 +19,8 @@ are served from viram.app itself.
 | `/.well-known/assetlinks.json` | Android App Links verification. |
 
 `_redirects` and `_headers` use the Netlify / Cloudflare Pages format; other
-static hosts need the equivalent rewrite of `/r/*` to `/r/index.html`.
+static hosts need the equivalent rewrite of `/r/*` to `/share/`. Cloudflare Pages
+redirects any `…/index.html` URL to `…/`, so rewrite targets must be the folder.
 
 ## Generated files
 
