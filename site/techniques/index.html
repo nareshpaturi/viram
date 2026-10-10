@@ -12,8 +12,8 @@
   <link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
   <link rel="icon" href="/img/favicon-32.png" sizes="32x32" type="image/png">
   <link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
-  <link rel="preload" href="/fonts/dm-sans-400.ttf" as="font" type="font/ttf" crossorigin>
-  <link rel="preload" href="/fonts/newsreader-500.ttf" as="font" type="font/ttf" crossorigin>
+  <link rel="preload" href="/fonts/dm-sans-400.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/newsreader-500.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/style.css">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Viram">
@@ -24,7 +24,6 @@
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta name="twitter:card" content="summary_large_image">
-  <script type="module" src="/stores.js"></script>
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"ItemList","name":"Pranayama and breathing techniques","itemListElement":[{"@type":"ListItem","position":1,"name":"Sama Vritti (box breathing)","url":"https://viram.app/techniques/sama-vritti/"},{"@type":"ListItem","position":2,"name":"Visama Vritti (extended exhale)","url":"https://viram.app/techniques/visama-vritti/"},{"@type":"ListItem","position":3,"name":"Nadi Shodhana (alternate nostril breathing)","url":"https://viram.app/techniques/nadi-shodhana/"},{"@type":"ListItem","position":4,"name":"Bhramari (humming bee breath)","url":"https://viram.app/techniques/bhramari/"},{"@type":"ListItem","position":5,"name":"Ujjayi (ocean breath)","url":"https://viram.app/techniques/ujjayi/"},{"@type":"ListItem","position":6,"name":"Sheetali (cooling breath)","url":"https://viram.app/techniques/sheetali/"},{"@type":"ListItem","position":7,"name":"Coherent breathing (slow, even breathing)","url":"https://viram.app/techniques/coherent/"},{"@type":"ListItem","position":8,"name":"4-7-8 breathing (long hold, long exhale)","url":"https://viram.app/techniques/4-7-8/"},{"@type":"ListItem","position":9,"name":"Dirgha (three-part breath)","url":"https://viram.app/techniques/dirgha/"},{"@type":"ListItem","position":10,"name":"Udgeeth (om on the exhale)","url":"https://viram.app/techniques/udgeeth/"},{"@type":"ListItem","position":11,"name":"Chandra Bhedana (in left, out right)","url":"https://viram.app/techniques/chandra-bhedana/"},{"@type":"ListItem","position":12,"name":"Cyclic sighing (double inhale, long exhale)","url":"https://viram.app/techniques/cyclic-sighing/"}]}</script>
 </head>
 <body>
@@ -34,24 +33,61 @@
     <div class="wrap">
       <a class="brand" href="/" aria-label="Viram home"><svg viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" rx="22" fill="#12372F"/><path d="M36.85 27.28A28 28 0 0 0 36.85 76.72" stroke="#A8CFD0" stroke-width="9" stroke-linecap="round" fill="none"/><path d="M63.15 27.28A28 28 0 0 1 63.15 76.72" stroke="#EEF4EF" stroke-width="9" stroke-linecap="round" fill="none"/><circle cx="50" cy="27.3" r="4.6" fill="#E46F51"/></svg> Viram</a>
       <nav class="site-nav" aria-label="Main">
-        <a href="/#features">Features</a>
-        <a href="/techniques/">Techniques</a>
+        <a href="/#how">How it works</a>
         <a href="/#faq">FAQ</a>
-        <a class="pill" href="/#get">Get Viram</a>
+        <a href="/about/">About</a>
+        <a class="pill" href="/techniques/">Explore techniques</a>
       </nav>
     </div>
   </header>
   <!-- /header -->
   <main id="main">
     <section class="guide-hero wash">
-      <div class="wrap narrow">
+      <div class="narrow">
         <ol class="crumbs" aria-label="Breadcrumb"><li><a href="/">Viram</a></li><li aria-current="page">Techniques</li></ol>
         <p class="eyebrow">The Viram library</p>
         <h1>Pranayama and breathing techniques</h1>
         <p class="lede">12 gentle practices, each with its rhythm, step-by-step instructions, care notes, and the sources behind it. Every one is guided in the Viram app by voice, tones, or haptics.</p>
       </div>
     </section>
-    <section class="band">
+    <section class="band" id="start" aria-labelledby="start-title">
+      <div class="wrap">
+        <div class="section-head"><p class="eyebrow">New to pranayama?</p><h2 id="start-title">Start here, one at a time.</h2><p class="muted">The order Viram’s Pranayama Foundations program teaches. Practise one for a few days before moving on.</p></div>
+        <ol class="techniques path">
+          <li><a class="technique-card" href="/techniques/sama-vritti/">
+          <span class="kind">Step 1</span>
+          <strong>Box breathing</strong>
+          <span class="sub">Sama Vritti</span>
+          <span class="rhythm"><span class="dots" aria-hidden="true"><i class="dot-inhale"></i><i class="dot-hold"></i><i class="dot-exhale"></i><i class="dot-rest"></i></span>In 4 · Hold 4 · Out 4 · Rest 4</span>
+        </a></li>
+          <li><a class="technique-card" href="/techniques/visama-vritti/">
+          <span class="kind">Step 2</span>
+          <strong>Extended exhale</strong>
+          <span class="sub">Visama Vritti</span>
+          <span class="rhythm"><span class="dots" aria-hidden="true"><i class="dot-inhale"></i><i class="dot-exhale"></i></span>In 4 · Out 6</span>
+        </a></li>
+          <li><a class="technique-card" href="/techniques/ujjayi/">
+          <span class="kind">Step 3</span>
+          <strong>Ocean breath</strong>
+          <span class="sub">Ujjayi</span>
+          <span class="rhythm"><span class="dots" aria-hidden="true"><i class="dot-inhale"></i><i class="dot-exhale"></i></span>In 5 · Out 5</span>
+        </a></li>
+          <li><a class="technique-card" href="/techniques/nadi-shodhana/">
+          <span class="kind">Step 4</span>
+          <strong>Alternate nostril breathing</strong>
+          <span class="sub">Nadi Shodhana</span>
+          <span class="rhythm"><span class="dots" aria-hidden="true"><i class="dot-inhale"></i><i class="dot-exhale"></i><i class="dot-inhale"></i><i class="dot-exhale"></i></span>In 4 · Out 6, each side</span>
+        </a></li>
+          <li><a class="technique-card" href="/techniques/bhramari/">
+          <span class="kind">Step 5</span>
+          <strong>Humming bee breath</strong>
+          <span class="sub">Bhramari</span>
+          <span class="rhythm"><span class="dots" aria-hidden="true"><i class="dot-inhale"></i><i class="dot-exhale"></i></span>In 4 · Hum 8</span>
+        </a></li>
+        </ol>
+      </div>
+    </section>
+    <section class="band band--mist">
       <div class="wrap">
         <div class="section-head"><h2>Classical pranayama</h2><p class="muted">Breathing practices from the yoga tradition, taught gently and without forceful holds.</p></div>
         <ul class="techniques">
@@ -112,7 +148,7 @@
         </ul>
       </div>
     </section>
-    <section class="band band--mist">
+    <section class="band">
       <div class="wrap">
         <div class="section-head"><h2>Modern breathing patterns</h2><p class="muted">Simple patterns from modern breathing research and practice.</p></div>
         <ul class="techniques">
@@ -137,6 +173,25 @@
         </ul>
       </div>
     </section>
+    <section class="band band--mist" id="safety" aria-labelledby="safety-title">
+      <div class="narrow">
+        <p class="eyebrow">Practising safely</p>
+        <h2 id="safety-title">Care notes for every technique</h2>
+        <p class="muted">Each guide has its own notes too. These apply to all of them.</p>
+        <div class="care">
+          <ul>
+            <li>Stop and breathe normally if you feel dizzy, tingly, short of breath, or anxious.</li>
+            <li>Chest pain, fainting, or a pounding heart with dizziness: stop and get medical help.</li>
+            <li>Don’t practise while driving or operating machinery.</li>
+            <li>Never practise breath holds in or near water, including the bath.</li>
+            <li>Living with a heart or lung condition, or pregnant? Check with your clinician first, especially before holds.</li>
+            <li>If focusing on your breath makes you more anxious, stop. That happens to some people and is normal.</li>
+            <li>Breathing practice is not a treatment and doesn’t replace medical care.</li>
+          </ul>
+        </div>
+        <p class="small muted">A wellness practice, not medical advice.</p>
+      </div>
+    </section>
   </main>
   <!-- footer -->
   <footer class="site-footer">
@@ -149,10 +204,10 @@
         <h2>Practise</h2>
         <ul>
           <li><a href="/techniques/sama-vritti/">Sama Vritti</a></li>
+          <li><a href="/techniques/visama-vritti/">Visama Vritti</a></li>
           <li><a href="/techniques/nadi-shodhana/">Nadi Shodhana</a></li>
           <li><a href="/techniques/bhramari/">Bhramari</a></li>
           <li><a href="/techniques/4-7-8/">4-7-8 breathing</a></li>
-          <li><a href="/techniques/ujjayi/">Ujjayi</a></li>
           <li><a href="/techniques/coherent/">Coherent breathing</a></li>
           <li><a href="/techniques/">All techniques</a></li>
         </ul>
@@ -160,8 +215,8 @@
       <div>
         <h2>Viram</h2>
         <ul>
-          <li><a href="/#features">Features</a></li>
-          <li><a href="/#faq">Questions</a></li>
+          <li><a href="/#how">How it works</a></li>
+          <li><a href="/about/">About our guides</a></li>
           <li><a href="/privacy/">Privacy</a></li>
           <li><a href="/support/">Support</a></li>
           <li><a href="mailto:hello@viram.app">hello@viram.app</a></li>

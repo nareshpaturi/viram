@@ -5,6 +5,22 @@
 export const ORIGIN = 'https://viram.app';
 export const EMAIL = 'hello@viram.app';
 
+/**
+ * Store pages, empty until Viram is live there. At launch, set them and run
+ * `npm run site:data`: every page then links the stores in plain HTML, and the
+ * home page's structured data describes the app. Links carry a fixed campaign
+ * name only, never anything about a person or a link (FR-11, privacy).
+ */
+export const STORES = {
+  app: '',
+  // At launch: 'https://play.google.com/store/apps/details?id=app.viram&referrer=utm_source%3Dviram.app%26utm_campaign%3Dsite'
+  play: '',
+};
+export const LAUNCHED = Boolean(STORES.app || STORES.play);
+
+/** When the technique guides last changed (content review fixes, PR #22). Update with the copy. */
+export const GUIDES_UPDATED = { iso: '2026-10-08', text: 'October 8, 2026' };
+
 export const esc = (text) =>
   String(text).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
@@ -27,8 +43,8 @@ export function head({ title, description, path, image = '/img/og.jpg', type = '
   <link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
   <link rel="icon" href="/img/favicon-32.png" sizes="32x32" type="image/png">
   <link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
-  <link rel="preload" href="/fonts/dm-sans-400.ttf" as="font" type="font/ttf" crossorigin>
-  <link rel="preload" href="/fonts/newsreader-500.ttf" as="font" type="font/ttf" crossorigin>
+  <link rel="preload" href="/fonts/dm-sans-400.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/newsreader-500.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/style.css">
 ${extraCss.map((href) => `  <link rel="stylesheet" href="${href}">\n`).join('')}  <meta property="og:type" content="${type}">
   <meta property="og:site_name" content="Viram">
@@ -38,20 +54,23 @@ ${extraCss.map((href) => `  <link rel="stylesheet" href="${href}">\n`).join('')}
   <meta property="og:image" content="${ORIGIN}${image}">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta name="twitter:card" content="summary_large_image">
-  <script type="module" src="/stores.js"></script>`;
+  <meta name="twitter:card" content="summary_large_image">`;
 }
 
+/**
+ * Before launch the main action is reading the guides; after, getting the app.
+ * Techniques stays in reach on phones either way (QA website audit).
+ */
 export const HEADER = `<!-- header -->
   <a class="skip" href="#main">Skip to content</a>
   <header class="site-header">
     <div class="wrap">
       <a class="brand" href="/" aria-label="Viram home">${MARK} Viram</a>
       <nav class="site-nav" aria-label="Main">
-        <a href="/#features">Features</a>
-        <a href="/techniques/">Techniques</a>
-        <a href="/#faq">FAQ</a>
-        <a class="pill" href="/#get">Get Viram</a>
+        <a href="/#how">How it works</a>
+${LAUNCHED ? '        <a class="keep" href="/techniques/">Techniques</a>\n' : ''}        <a href="/#faq">FAQ</a>
+        <a href="/about/">About</a>
+        ${LAUNCHED ? '<a class="pill" href="/#get">Get Viram</a>' : '<a class="pill" href="/techniques/">Explore techniques</a>'}
       </nav>
     </div>
   </header>
@@ -59,7 +78,7 @@ export const HEADER = `<!-- header -->
 
 /** The footer, with a few practices from the library. */
 export function footer(techniques) {
-  const picks = ['sama-vritti', 'nadi-shodhana', 'bhramari', '4-7-8', 'ujjayi', 'coherent']
+  const picks = ['sama-vritti', 'visama-vritti', 'nadi-shodhana', 'bhramari', '4-7-8', 'coherent']
     .map((id) => techniques.find((t) => t.id === id))
     .filter(Boolean);
   return `<!-- footer -->
@@ -79,8 +98,8 @@ ${picks.map((t) => `          <li><a href="/techniques/${t.id}/">${esc(t.name)}<
       <div>
         <h2>Viram</h2>
         <ul>
-          <li><a href="/#features">Features</a></li>
-          <li><a href="/#faq">Questions</a></li>
+          <li><a href="/#how">How it works</a></li>
+          <li><a href="/about/">About our guides</a></li>
           <li><a href="/privacy/">Privacy</a></li>
           <li><a href="/support/">Support</a></li>
           <li><a href="mailto:${EMAIL}">${EMAIL}</a></li>
@@ -92,9 +111,29 @@ ${picks.map((t) => `          <li><a href="/techniques/${t.id}/">${esc(t.name)}<
   <!-- /footer -->`;
 }
 
-/** Store buttons; stores.js links them, or shows “Coming soon” until Viram is live there. */
-export const STORE_BUTTONS = `<div class="actions" data-stores>
-          <a class="button" data-store="app" hidden>Download on the App Store</a>
-          <a class="button" data-store="play" hidden>Get it on Google Play</a>
-          <span class="soon" data-soon>Coming soon to the App Store and Google Play</span>
-        </div>`;
+const LAUNCH_MAIL = `mailto:${EMAIL}?subject=Tell%20me%20when%20Viram%20is%20out`;
+
+/** Store links, in plain HTML so they work without JavaScript. */
+function storeLinks() {
+  return [
+    STORES.app ? `<a class="button" href="${esc(STORES.app)}">Download on the App Store</a>` : '',
+    STORES.play ? `<a class="button" href="${esc(STORES.play)}">Get it on Google Play</a>` : '',
+  ].filter(Boolean);
+}
+
+/**
+ * The page's main action. Before launch: explore the guides, or ask for a note
+ * at launch. After: the stores. `explore` adds the guides as a second action.
+ */
+export function getViram({ explore = true } = {}) {
+  if (LAUNCHED) {
+    return `<div class="actions">
+          ${[...storeLinks(), explore ? '<a class="button secondary" href="/techniques/">Explore techniques</a>' : ''].filter(Boolean).join('\n          ')}
+        </div>
+        <p class="avail">Free on iPhone and Android. No ads, no account, ready offline.</p>`;
+  }
+  return `<div class="actions">
+          ${explore ? '<a class="button" href="/techniques/">Explore techniques</a>\n          ' : ''}<a class="button ${explore ? 'secondary' : ''}" href="${LAUNCH_MAIL}">Email me at launch</a>
+        </div>
+        <p class="avail">Coming soon for iPhone and Android. Free, private, and ready offline.</p>`.replace('class="button "', 'class="button"');
+}
