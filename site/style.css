@@ -179,6 +179,22 @@ section { scroll-margin-top: 80px; }
 .care--on-pine li { color: var(--muted-on-pine); }
 @media (max-width: 860px) { .trust { grid-template-columns: minmax(0, 1fr); } }
 
+/* At a glance: plain facts, easy to read and to quote */
+.glance { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 clamp(24px, 4vw, 48px); margin: 0; }
+.glance div { padding: 16px 0; border-top: 1px solid var(--line); }
+.glance dt { font: 600 0.78rem/1.4 var(--sans); letter-spacing: 0.1em; text-transform: uppercase; color: var(--coral-deep); margin-bottom: 4px; }
+.glance dd { margin: 0; color: var(--ink); }
+@media (max-width: 760px) { .glance { grid-template-columns: minmax(0, 1fr); } }
+
+/* Learn pages: the answer first */
+.answer { font-size: clamp(1.15rem, 2vw, 1.3rem); line-height: 1.55; color: var(--ink); border-left: 4px solid var(--coral); padding-left: 18px; margin: 18px 0 20px; max-width: 40em; }
+.prose h2 { font-size: clamp(1.6rem, 3vw, 2.1rem); margin-top: 1.6em; }
+.prose h3 { font-size: 1.25rem; margin-top: 1.2em; }
+.prose ol, .prose ul { padding-left: 1.3em; }
+.prose li { margin-bottom: 0.6em; }
+.prose .techniques { padding: 0; }
+.prose .care { margin-top: 12px; }
+
 /* FAQ: flat, one border */
 .faq { display: grid; border-top: 1px solid var(--line); }
 .faq details { border-bottom: 1px solid var(--line); padding: 0 4px; }
@@ -256,6 +272,7 @@ section { scroll-margin-top: 80px; }
 .step-table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
 .step-table th, .step-table td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: top; overflow-wrap: anywhere; }
 .step-table th { font-weight: 600; color: var(--ink-soft); font-size: 0.82rem; letter-spacing: 0.06em; text-transform: uppercase; }
+.step-table tbody th { min-width: 8.5em; font-size: 0.92rem; letter-spacing: 0; text-transform: none; color: var(--ink); }
 @media (max-width: 860px) { .guide { grid-template-columns: minmax(0, 1fr); } .aside-card { position: static; } }
 
 /* Plain pages: about, privacy, support, the shared-practice page */

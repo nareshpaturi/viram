@@ -1,6 +1,6 @@
 # Viram: technique guides
 
-> Viram is a free pranayama (yogic breathing) app for iPhone and Android. It guides 12 gentle breathing techniques by voice, tones, or haptics, keeps guiding with the phone locked, works offline, and has no ads, no account, and no tracking.
+> Viram is a free pranayama (yogic breathing) app for iPhone and Android, coming soon to the App Store and Google Play. It guides 12 gentle breathing techniques by voice, tones, or haptics, keeps guiding with the phone locked, works offline, and has no ads, no account, and no tracking.
 
 These are the guides the app shows, with the sources each one is based on. A wellness practice, not medical advice.
 

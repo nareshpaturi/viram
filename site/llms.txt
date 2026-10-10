@@ -1,13 +1,18 @@
 # Viram
 
-> Viram is a free pranayama (yogic breathing) app for iPhone and Android. It guides 12 gentle breathing techniques by voice, tones, or haptics, keeps guiding with the phone locked, works offline, and has no ads, no account, and no tracking.
+> Viram is a free pranayama (yogic breathing) app for iPhone and Android, coming soon to the App Store and Google Play. It guides 12 gentle breathing techniques by voice, tones, or haptics, keeps guiding with the phone locked, works offline, and has no ads, no account, and no tracking.
 
 Key facts:
-- Free, with no ads, subscriptions, or account. Viram doesn't collect practice history; it stays on the phone.
+- Availability: Coming soon to the App Store (iPhone) and Google Play (Android). Not yet available to download.
+- Price: Free. No ads, subscriptions, in-app purchases, or account.
+- Practices: 12 gentle techniques, classical pranayama and modern breathing patterns, each with steps, care notes, and sources.
+- Guidance: A calm voice, one of three tone sets, or haptics, in step with an on-screen guide and captions. Voices speak American, British, or Indian English.
+- Offline: Everything, including the voice, is on the phone. No connection is needed to practise.
+- Screen locked: With voice or tones, guidance continues with the screen off. In Silent mode, Android keeps guiding with haptics; an iPhone pauses, or continues with soft tones if you choose.
+- Privacy: Viram doesn’t collect your practice history: there is no account, server, advertising, or analytics. If you turn it on, Apple Health or Health Connect receive each finished practice’s start and end time.
+- Not medical advice: A wellness practice. Every technique carries its own care notes.
 - Techniques: Sama Vritti (box breathing); Visama Vritti (extended exhale); Nadi Shodhana (alternate nostril breathing); Bhramari (humming bee breath); Ujjayi (ocean breath); Sheetali (cooling breath); Coherent breathing (slow, even breathing); 4-7-8 breathing (long hold, long exhale); Dirgha (three-part breath); Udgeeth (om on the exhale); Chandra Bhedana (in left, out right); Cyclic sighing (double inhale, long exhale).
-- Guidance: a calm voice, three tone sets, or phase-by-phase haptics, in step with an on-screen breathing guide. It keeps guiding with the screen locked.
 - Practice by minutes (1 to 60) or rounds (1 to 108), adjust any rhythm, save your own, follow a program, and share a practice by link.
-- A wellness practice, not medical advice. Every technique carries its own care notes and sources.
 - Contact: hello@viram.app
 
 ## Techniques
@@ -24,8 +29,13 @@ Key facts:
 - [Chandra Bhedana (in left, out right)](https://viram.app/techniques/chandra-bhedana/): In 4 left · Out 6 right seconds. Skip it with a blocked nose. Stop if you feel dizzy.
 - [Cyclic sighing (double inhale, long exhale)](https://viram.app/techniques/cyclic-sighing/): In 3 · Top up 1 · Out 6 seconds. Keep the top-up small. If you feel dizzy or tingly, stop and breathe normally.
 
+## Guides
+- [Getting started with pranayama](https://viram.app/learn/getting-started/)
+- [Box breathing and coherent breathing](https://viram.app/learn/box-vs-coherent-breathing/)
+- [Offline and with your screen locked](https://viram.app/learn/offline-and-locked-screen/)
+
 ## About Viram
-- [Home](https://viram.app/): how a practice works, where to start, and common questions
+- [Home](https://viram.app/): how a practice works, where to start, Viram at a glance, and common questions
 - [About the guides](https://viram.app/about/): how the guides are written, sourced, and reviewed
 - [Privacy](https://viram.app/privacy/): what the app keeps, all on your device
 - [Support](https://viram.app/support/): contact and help
