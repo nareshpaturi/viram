@@ -5,7 +5,7 @@ import AppKit
 import CoreText
 
 let width = 1200.0, height = 630.0
-for font in ["site/fonts/newsreader-500.ttf", "site/fonts/dm-sans-400.ttf", "site/fonts/dm-sans-600.ttf"] {
+for font in ["node_modules/@expo-google-fonts/newsreader/500Medium/Newsreader_500Medium.ttf", "node_modules/@expo-google-fonts/dm-sans/400Regular/DMSans_400Regular.ttf", "node_modules/@expo-google-fonts/dm-sans/600SemiBold/DMSans_600SemiBold.ttf"] {
   CTFontManagerRegisterFontsForURL(URL(fileURLWithPath: font) as CFURL, .process, nil)
 }
 

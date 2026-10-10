@@ -49,7 +49,7 @@
       "expo-sqlite",
       "expo-asset",
       "expo-quick-actions",
-      "@bacons/apple-targets",
+      ["@bacons/apple-targets", { "match": "widget" }],
       ["expo-notifications", { "icon": "./assets/android-icon-monochrome.png", "color": "#12372F" }],
       [
         "expo-build-properties",
