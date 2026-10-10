@@ -3,7 +3,7 @@ import { LIBRARY } from '../../content/library';
 import { describeRhythm } from '../../breathing/describe';
 import { decodeShareLink, encodeShareLink, type SharedRhythm } from '../link';
 // The viram.app fallback page's decoder, plain JS for the browser.
-import { decodePayload, describeSteps } from '../../../site/r/decode.js';
+import { decodePayload, describeSteps } from '../../../site/share/decode.js';
 
 const payloadOf = (link: string) => link.split('/r/')[1];
 

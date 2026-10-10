@@ -69,7 +69,7 @@ Jest suites. CI runs the same, plus Android and iOS simulator builds
 | `npm run audio:samples` | Builds first use's Voice and Bells samples from the bundled clips; run it after the voices or tones change |
 | `npm run audio:voice-kokoro` | Renders every clip for each voice in `src/audio/voices.ts` locally with Kokoro; setup is at the top of the script |
 | `npm run audio:voice` | Renders one voice with ElevenLabs into `assets/voice/viram/` (needs a paid plan and key) |
-| `npm run site:data` | Regenerates `site/r/library.js` from the technique library |
+| `npm run site:data` | Regenerates the site's technique guides and `site/share/library.js` from the technique library |
 | `npm run content:preview` | Renders `docs/content/library-preview.html` |
 | `npm run brand:assets` | Renders the app icon, adaptive icons, favicon, and splash |
 
