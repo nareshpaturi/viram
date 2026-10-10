@@ -18,6 +18,26 @@ export const STORES = {
 };
 export const LAUNCHED = Boolean(STORES.app || STORES.play);
 
+/**
+ * AI crawlers, named in robots.txt so the choice is plain. Search crawlers let
+ * assistants find and cite the guides; training crawlers (and Google's and
+ * Apple's training tokens) may use the pages to train models, which is a
+ * separate choice from search. Set allowTraining to false to opt out of
+ * training only; search stays open either way.
+ */
+export const AI_CRAWLERS = {
+  search: ['OAI-SearchBot', 'Claude-SearchBot', 'PerplexityBot'],
+  training: ['GPTBot', 'ClaudeBot', 'Google-Extended', 'Applebot-Extended'],
+  allowTraining: true,
+};
+
+/** Short answers to common questions, generated from the app's content. */
+export const LEARN = [
+  { path: '/learn/getting-started/', title: 'Getting started with pranayama' },
+  { path: '/learn/box-vs-coherent-breathing/', title: 'Box breathing and coherent breathing' },
+  { path: '/learn/offline-and-locked-screen/', title: 'Offline and with your screen locked' },
+];
+
 /** When the technique guides last changed (content review fixes, PR #22). Update with the copy. */
 export const GUIDES_UPDATED = { iso: '2026-10-08', text: 'October 8, 2026' };
 
@@ -99,6 +119,7 @@ ${picks.map((t) => `          <li><a href="/techniques/${t.id}/">${esc(t.name)}<
         <h2>Viram</h2>
         <ul>
           <li><a href="/#how">How it works</a></li>
+${LEARN.map((l) => `          <li><a href="${l.path}">${esc(l.title)}</a></li>`).join('\n')}
           <li><a href="/about/">About our guides</a></li>
           <li><a href="/privacy/">Privacy</a></li>
           <li><a href="/support/">Support</a></li>

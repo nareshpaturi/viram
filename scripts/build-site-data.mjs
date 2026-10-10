@@ -2,7 +2,8 @@
 // never says anything the app doesn't:
 //   site/share/library.js            names and step structure for the share-link page
 //   site/techniques/                  a guide page per technique, the index, and orbs.css
-//   site/sitemap.xml, llms.txt, llms-full.txt
+//   site/learn/                      short answers to common questions
+//   site/sitemap.xml, robots.txt, llms.txt, llms-full.txt
 //   the header, footer, main actions, structured data, a few techniques, and
 //   the care notes inside the hand-written pages
 // Run with `npm run site:data`; `--check` verifies everything is current (CI).
@@ -12,8 +13,9 @@ import { LIBRARY } from '../src/content/library.ts';
 import { SOURCES } from '../src/content/sources.ts';
 import { COMFORT_LINE, GENERAL_TAKE_CARE, WELLNESS_LINE } from '../src/content/safety.ts';
 import { PROGRAMS } from '../src/programs/definitions.ts';
+import { MODE_HELP } from '../src/practice/guidanceRules.ts';
 import { planFor } from './check-content.mjs';
-import { EMAIL, GUIDES_UPDATED, HEADER, LAUNCHED, ORIGIN, STORES, esc, footer, getViram, head } from './lib/site.mjs';
+import { AI_CRAWLERS, EMAIL, GUIDES_UPDATED, HEADER, LAUNCHED, LEARN, ORIGIN, STORES, esc, footer, getViram, head } from './lib/site.mjs';
 
 const CHECK = process.argv.includes('--check');
 const outputs = new Map();
@@ -191,6 +193,24 @@ function card(t, { kicker = t.family === 'classical' ? 'Classical' : 'Modern', e
         </a></li>`;
 }
 
+/** What Viram is, in plain facts: shown on the home page and in llms.txt, so they always agree. */
+const AVAILABILITY = LAUNCHED
+  ? `Available on ${[STORES.app && 'the App Store (iPhone)', STORES.play && 'Google Play (Android)'].filter(Boolean).join(' and ')}.`
+  : 'Coming soon to the App Store (iPhone) and Google Play (Android). Not yet available to download.';
+const FACTS = [
+  ['Availability', AVAILABILITY],
+  ['Price', 'Free. No ads, subscriptions, in-app purchases, or account.'],
+  ['Practices', `${techniques.length} gentle techniques, classical pranayama and modern breathing patterns, each with steps, care notes, and sources.`],
+  ['Guidance', 'A calm voice, one of three tone sets, or haptics, in step with an on-screen guide and captions. Voices speak American, British, or Indian English.'],
+  ['Offline', 'Everything, including the voice, is on the phone. No connection is needed to practise.'],
+  ['Screen locked', 'With voice or tones, guidance continues with the screen off. In Silent mode, Android keeps guiding with haptics; an iPhone pauses, or continues with soft tones if you choose.'],
+  ['Privacy', 'Viram doesn’t collect your practice history: there is no account, server, advertising, or analytics. If you turn it on, Apple Health or Health Connect receive each finished practice’s start and end time.'],
+  ['Not medical advice', 'A wellness practice. Every technique carries its own care notes.'],
+];
+
+/** When the Learn pages last changed. */
+const LEARN_UPDATED = '2026-10-10';
+
 const BYLINE = `Written by Viram from the sources below. Updated <time datetime="${GUIDES_UPDATED.iso}">${GUIDES_UPDATED.text}</time>. <a href="/about/">How we write our guides</a>.`;
 
 const FOOTER = footer(techniques);
@@ -356,7 +376,7 @@ for (const t of techniques) write(`site/techniques/${t.id}/index.html`, techniqu
     </section>
     <section class="band" id="start" aria-labelledby="start-title">
       <div class="wrap">
-        <div class="section-head"><p class="eyebrow">New to pranayama?</p><h2 id="start-title">Start here, one at a time.</h2><p class="muted">The order Viram’s Pranayama Foundations program teaches. Practise one for a few days before moving on.</p></div>
+        <div class="section-head"><p class="eyebrow">New to pranayama?</p><h2 id="start-title">Start here, one at a time.</h2><p class="muted">The order Viram’s Pranayama Foundations program teaches: one technique at a time, each with its introduction first. <a href="/learn/getting-started/">Getting started</a></p></div>
         <ol class="techniques path">
           ${PATH.map((t, i) => card(t, { kicker: `Step ${i + 1}`, english: true })).join('\n          ')}
         </ol>
@@ -409,6 +429,183 @@ ${GENERAL_TAKE_CARE.map((c) => `            <li>${esc(c)}</li>`).join('\n')}
 }
 
 // ---------------------------------------------------------------------------
+// Learn: short answers to the questions people ask, built from the app's own
+// content. Each opens with the answer, then the detail and the guides.
+
+function learnPage({ path, title, h1, description, answer, body, about = [] }) {
+  const ld = [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'Article',
+      headline: title,
+      description,
+      url: `${ORIGIN}${path}`,
+      inLanguage: 'en',
+      dateModified: LEARN_UPDATED,
+      author: { '@type': 'Organization', name: 'Viram', url: `${ORIGIN}/about/` },
+      publisher: { '@type': 'Organization', name: 'Viram', url: `${ORIGIN}/` },
+      ...(about.length ? { about: about.map((t) => ({ '@type': 'Thing', name: plain(t), url: `${ORIGIN}/techniques/${t.id}/` })) } : {}),
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Viram', item: `${ORIGIN}/` },
+        { '@type': 'ListItem', position: 2, name: h1, item: `${ORIGIN}${path}` },
+      ],
+    },
+  ];
+  return page({
+    headHtml: head({ title: `${title} · Viram`, description, path, type: 'article' }),
+    ld,
+    body: `    <section class="guide-hero wash">
+      <div class="narrow">
+        <ol class="crumbs" aria-label="Breadcrumb"><li><a href="/">Viram</a></li><li aria-current="page">${esc(h1)}</li></ol>
+        <p class="eyebrow">Learn</p>
+        <h1>${esc(h1)}</h1>
+        <p class="answer">${answer}</p>
+        <p class="byline">Written by Viram from the app’s own guides. Updated <time datetime="${LEARN_UPDATED}">${new Date(`${LEARN_UPDATED}T12:00:00Z`).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' })}</time>. <a href="/about/">How we write our guides</a>.</p>
+      </div>
+    </section>
+    <section class="band">
+      <div class="narrow prose">
+${body}
+        <p class="note small">${esc(WELLNESS_LINE)} ${esc(COMFORT_LINE)}</p>
+      </div>
+    </section>`,
+  });
+}
+
+const careList = () => `<ul>\n${GENERAL_TAKE_CARE.map((c) => `          <li>${esc(c)}</li>`).join('\n')}\n        </ul>`;
+
+// Getting started.
+{
+  const first = FOUNDATIONS.sessions[0].parts[0];
+  const firstTechnique = byId(first.techniqueId);
+  const minutesFor = (t) => FOUNDATIONS.sessions.find((s) => s.parts.length === 1 && s.parts[0].techniqueId === t.id)?.parts[0].minutes;
+  write(
+    'site/learn/getting-started/index.html',
+    learnPage({
+      path: '/learn/getting-started/',
+      title: 'Getting started with pranayama: where to begin',
+      h1: 'Getting started with pranayama',
+      description: `Where to begin with pranayama: one gentle technique at a time, starting with ${plain(firstTechnique)} for ${first.minutes} minutes, and how a first practice goes in Viram.`,
+      answer: `Begin with one gentle technique for a few minutes, sitting comfortably and breathing softly. Viram’s beginner program, ${esc(FOUNDATIONS.name)}, starts with ${esc(plain(firstTechnique))} for ${first.minutes} minutes, then adds one technique at a time: ${PATH.slice(1).map((t) => esc(t.subtitle.toLowerCase())).join(', then ')}.`,
+      about: PATH,
+      body: `        <h2>The beginner path</h2>
+        <p>${esc(FOUNDATIONS.description)} These are its single-technique sessions, in order:</p>
+        <ol class="techniques path">
+          ${PATH.map((t, i) => card(t, { kicker: `Session ${i + 1} · ${minutesFor(t)} min`, english: true })).join('\n          ')}
+        </ol>
+        <h2>Your first practice in Viram</h2>
+        <ol>
+          <li><strong>Choose.</strong> Begin the practice ready on Breathe, pick a technique from Practices, or start ${esc(FOUNDATIONS.name)} under Programs.</li>
+          <li><strong>Settle.</strong> The first time you practise a technique, a short spoken introduction explains it. Then three quiet seconds to settle, with the technique’s care note.</li>
+          <li><strong>Follow the guide.</strong> A voice, soft tones, or haptics mark each step, with the on-screen guide. Pause anytime; ending asks first, and the practice is saved to History.</li>
+        </ol>
+        <h2>How long, and how often?</h2>
+        <p>Any length from 1 to 60 minutes, or a set number of rounds. Most guides start at five minutes; 4-7-8 breathing is taught in rounds and starts at four. ${esc(FOUNDATIONS.name)} moves on one session at a time, and Viram can remind you once a day if you’d like.</p>
+        <h2>Practising safely</h2>
+        <div class="care">
+        ${careList()}
+        </div>
+        <p class="more"><a class="text-link" href="/techniques/">Read every technique guide</a></p>`,
+    }),
+  );
+}
+
+// Box breathing and coherent breathing.
+{
+  const box = byId('sama-vritti');
+  const even = byId('coherent');
+  const pair = [box, even];
+  const row = (label, f) => `            <tr><th scope="row">${label}</th>${pair.map((t) => `<td>${f(t)}</td>`).join('')}</tr>`;
+  const bpm = (t) => +planFor(t.practice).breathsPerMinute.toFixed(1);
+  /** The name people search for first: “Box breathing (Sama Vritti)”, “Coherent breathing”. */
+  const familiar = (t) => (t.family === 'classical' ? `${t.subtitle} (${t.name})` : t.name);
+  const lower = (t) => rhythmLine(t.practice.steps).toLowerCase();
+  const sources = [...new Set(pair.flatMap((t) => t.guidance.basedOn))];
+  write(
+    'site/learn/box-vs-coherent-breathing/index.html',
+    learnPage({
+      path: '/learn/box-vs-coherent-breathing/',
+      title: 'Box breathing and coherent breathing: how the rhythms differ',
+      h1: 'Box breathing and coherent breathing',
+      description: `Box breathing is ${lower(box)} seconds with short holds; coherent breathing is ${lower(even)} seconds with no holds. How the two rhythms differ, with care notes and sources.`,
+      answer: `Box breathing (${esc(box.name)}) moves through four equal steps, ${esc(lower(box))} seconds, with short holds: about ${bpm(box)} breaths a minute. Coherent breathing is an even breath in and out, ${esc(lower(even))} seconds, with no holds: about ${bpm(even)} breaths a minute.`,
+      about: pair,
+      body: `        <h2>Side by side</h2>
+        <div class="table-scroll" role="region" aria-label="Box breathing and coherent breathing compared" tabindex="0">
+          <table class="step-table">
+            <thead><tr><th scope="col"><span class="visually-hidden">Compared</span></th>${pair.map((t) => `<th scope="col">${esc(familiar(t))}</th>`).join('')}</tr></thead>
+            <tbody>
+${row('Rhythm, in seconds', (t) => esc(rhythmLine(t.practice.steps)))}
+${row('Holds', (t) => (holds(t) ? 'Short holds after the inhale and exhale' : 'None'))}
+${row('Pace', (t) => `About ${bpm(t)} breaths a minute`)}
+${row('In Viram', (t) => esc(planLine(t.practice.target, planFor(t.practice))))}
+${row('Origin', (t) => esc(familyLabel(t)))}
+${row('Take care', (t) => esc(t.guidance.takeCareShort))}
+            </tbody>
+          </table>
+        </div>
+${pair
+  .map(
+    (t) => `        <h2>${esc(familiar(t))}</h2>
+        <p>${esc(t.guidance.lead)}</p>
+        <h3>What the research says</h3>
+        <p>${esc(t.guidance.research)}</p>
+        <p><a class="text-link" href="/techniques/${t.id}/">Read the ${esc(t.name)} guide</a></p>`,
+  )
+  .join('\n')}
+        <h2>If one doesn’t suit you</h2>
+        <p>If a hold feels tight in box breathing, shorten it or set it to Off in Adjust rhythm. Coherent breathing has no holds, and in Viram it can slow gradually across a session.</p>
+        <h2>Sources</h2>
+        <ol class="sources">
+${sources.map((id) => `          <li>${sourceHtml(id)}</li>`).join('\n')}
+        </ol>`,
+    }),
+  );
+}
+
+// Offline and with the screen locked.
+{
+  const modes = [
+    ['Voice', MODE_HELP.voice],
+    ['Tones', MODE_HELP.tones],
+    ['Silent, Android with haptics', MODE_HELP.haptics],
+    ['Silent, iPhone with Soft tones', MODE_HELP.softTones],
+    ['Silent, iPhone with Pause, or Android without haptics', MODE_HELP.pauses],
+  ];
+  write(
+    'site/learn/offline-and-locked-screen/index.html',
+    learnPage({
+      path: '/learn/offline-and-locked-screen/',
+      title: 'How Viram works offline and with your screen locked',
+      h1: 'Offline and with your screen locked',
+      description: 'Viram needs no connection, and with voice or tones it keeps guiding when you lock your phone. What each guidance mode does when the screen locks, and what pauses a practice.',
+      answer: 'Viram needs no connection: the techniques, the voice, and the tones are all on your phone. With voice or tones, guidance keeps going when you lock the screen, so you can put the phone down and close your eyes.',
+      body: `        <h2>When you lock your phone</h2>
+        <p>What happens depends on the guidance you choose in Cues &amp; sound:</p>
+        <div class="table-scroll" role="region" aria-label="Guidance modes when the phone locks" tabindex="0">
+          <table class="step-table">
+            <thead><tr><th scope="col">Guidance</th><th scope="col">What it does</th></tr></thead>
+            <tbody>
+${modes.map(([mode, help]) => `              <tr><th scope="row">${esc(mode)}</th><td>${esc(help)}</td></tr>`).join('\n')}
+            </tbody>
+          </table>
+        </div>
+        <p>An iPhone can’t play haptics while it’s locked, which is why Silent mode offers soft tones there. While a practice plays, it shows on the lock screen like other audio, where you can pause and resume it.</p>
+        <h2>What pauses a practice</h2>
+        <p>Calls, other apps that take over audio, and disconnected headphones pause a practice. Return to Viram and tap Resume; the step starts again after a short settle.</p>
+        <h2>Music and other audio</h2>
+        <p>In Cues &amp; sound, choose what happens to other audio during a practice: Play along or Pause it, plus Automatic on iPhone and Lower it under each cue on Android. Viram’s own background music is off unless you turn it on.</p>
+        <h2>Offline, and private</h2>
+        <p>Everything Viram needs to guide a practice is on your phone, including every voice clip, so it works in airplane mode. Your practice history stays on your phone too: Viram has no account or server. <a href="/privacy/">Read the privacy policy</a>.</p>`,
+    }),
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Hand-written pages: shared header, footer, and the home page's library.
 
 const HAND_WRITTEN = ['site/index.html', 'site/about/index.html', 'site/privacy/index.html', 'site/support/index.html', 'site/404.html', 'site/share/index.html'];
@@ -456,6 +653,7 @@ for (const path of HAND_WRITTEN) {
     text = between(text, 'get', `<!-- get -->\n          ${getViram()}\n          <!-- /get -->`, path);
     text = between(text, 'get-end', `<!-- get-end -->\n        ${getViram()}\n        <!-- /get-end -->`, path);
     text = between(text, 'start', `<!-- start -->\n        <ol class="techniques path">\n          ${PATH.slice(0, 3).map((t, i) => card(t, { kicker: i === 0 ? 'Start here' : `Then ${i + 1}`, english: true })).join('\n          ')}\n        </ol>\n        <!-- /start -->`, path);
+    text = between(text, 'glance', `<!-- glance -->\n        <dl class="glance">\n${FACTS.map(([k, v]) => `          <div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('\n')}\n        </dl>\n        <!-- /glance -->`, path);
     text = between(text, 'care', `<!-- care -->\n            <ul>\n${ESSENTIAL_CARE.map((c) => `              <li>${esc(c)}</li>`).join('\n')}\n            </ul>\n            <!-- /care -->`, path);
   }
   if (path === 'site/share/index.html') text = between(text, 'get', `<!-- get -->\n      ${getViram({ explore: false })}\n      <!-- /get -->`, path);
@@ -481,13 +679,48 @@ for (const path of HAND_WRITTEN) {
   write('site/share/library.js', `// Generated by scripts/build-site-data.mjs from src/content/library.ts. Do not edit.\nexport const TECHNIQUES = ${JSON.stringify(shareable, null, 2)};\n`);
 }
 
-const PAGES = ['/', '/techniques/', ...techniques.map((t) => `/techniques/${t.id}/`), '/about/', '/privacy/', '/support/'];
+/** When each page's content last changed (sitemap lastmod). Update a date when you change its page. */
+const UPDATED = {
+  '/': '2026-10-10',
+  '/techniques/': '2026-10-10',
+  ...Object.fromEntries(techniques.map((t) => [`/techniques/${t.id}/`, GUIDES_UPDATED.iso])),
+  ...Object.fromEntries(LEARN.map((l) => [l.path, LEARN_UPDATED])),
+  '/about/': '2026-10-09',
+  '/privacy/': '2026-10-09',
+  '/support/': '2026-10-09',
+};
 write(
   'site/sitemap.xml',
-  `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${PAGES.map((p) => `  <url><loc>${ORIGIN}${p}</loc></url>`).join('\n')}\n</urlset>\n`,
+  `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${Object.entries(UPDATED)
+    .map(([p, date]) => `  <url><loc>${ORIGIN}${p}</loc><lastmod>${date}</lastmod></url>`)
+    .join('\n')}\n</urlset>\n`,
 );
 
-const SUMMARY = `Viram is a free pranayama (yogic breathing) app for iPhone and Android. It guides ${techniques.length} gentle breathing techniques by voice, tones, or haptics, keeps guiding with the phone locked, works offline, and has no ads, no account, and no tracking.`;
+{
+  const rules = (allow) => (allow ? ['Allow: /', 'Disallow: /r/', 'Disallow: /share/'] : ['Disallow: /']).join('\n');
+  write(
+    'site/robots.txt',
+    `# Viram welcomes search engines and AI assistants: the guides are here to be found.
+# Shared-practice links (/r/) are private to the people they're sent to.
+# Generated by scripts/build-site-data.mjs from AI_CRAWLERS in scripts/lib/site.mjs.
+
+User-agent: *
+${rules(true)}
+
+# AI search: assistants that find and cite pages for their users.
+${AI_CRAWLERS.search.map((b) => `User-agent: ${b}`).join('\n')}
+${rules(true)}
+
+# AI training: a separate choice from search. ${AI_CRAWLERS.allowTraining ? 'Allowed.' : 'Not allowed.'}
+${AI_CRAWLERS.training.map((b) => `User-agent: ${b}`).join('\n')}
+${rules(AI_CRAWLERS.allowTraining)}
+
+Sitemap: ${ORIGIN}/sitemap.xml
+`,
+  );
+}
+
+const SUMMARY = `Viram is a free pranayama (yogic breathing) app for iPhone and Android${LAUNCHED ? '' : ', coming soon to the App Store and Google Play'}. It guides ${techniques.length} gentle breathing techniques by voice, tones, or haptics, keeps guiding with the phone locked, works offline, and has no ads, no account, and no tracking.`;
 
 write(
   'site/llms.txt',
@@ -496,18 +729,19 @@ write(
 > ${SUMMARY}
 
 Key facts:
-- Free, with no ads, subscriptions, or account. Viram doesn't collect practice history; it stays on the phone.
+${FACTS.map(([k, v]) => `- ${k}: ${v}`).join('\n')}
 - Techniques: ${techniques.map(plain).join('; ')}.
-- Guidance: a calm voice, three tone sets, or phase-by-phase haptics, in step with an on-screen breathing guide. It keeps guiding with the screen locked.
 - Practice by minutes (1 to 60) or rounds (1 to 108), adjust any rhythm, save your own, follow a program, and share a practice by link.
-- A wellness practice, not medical advice. Every technique carries its own care notes and sources.
 - Contact: ${EMAIL}
 
 ## Techniques
 ${techniques.map((t) => `- [${plain(t)}](${ORIGIN}/techniques/${t.id}/): ${rhythmLine(t.practice.steps)} seconds. ${t.guidance.takeCareShort}`).join('\n')}
 
+## Guides
+${LEARN.map((l) => `- [${l.title}](${ORIGIN}${l.path})`).join('\n')}
+
 ## About Viram
-- [Home](${ORIGIN}/): how a practice works, where to start, and common questions
+- [Home](${ORIGIN}/): how a practice works, where to start, Viram at a glance, and common questions
 - [About the guides](${ORIGIN}/about/): how the guides are written, sourced, and reviewed
 - [Privacy](${ORIGIN}/privacy/): what the app keeps, all on your device
 - [Support](${ORIGIN}/support/): contact and help

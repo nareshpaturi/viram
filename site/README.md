@@ -8,12 +8,13 @@ are served from viram.app itself.
 
 | Path | Purpose |
 |---|---|
-| `/` | Home: the app in the hero, three benefits, how it works, three first techniques, privacy and care, and four questions. Hand-written. |
+| `/` | Home: the app in the hero, three benefits, how it works, three first techniques, privacy and care, Viram at a glance (the same facts as `llms.txt`), and four questions. Hand-written. |
+| `/learn/…` | Short answers to common questions (getting started, box or coherent breathing, offline and locked), each opening with the answer. Generated from the app's content and wording. |
 | `/techniques/` and `/techniques/<id>/` | A guide per technique, generated from `src/content/library.ts`: rhythm, steps, take care, tradition, research, and sources, with a breathing orb timed to the technique's real rhythm (`techniques/orbs.css`). |
 | `/r/*` | Shared-practice links. `_redirects` rewrites every `/r/…` path to the page in `share/` (outside `/r/`, so no file there can shadow a link); `share/decode.js` checks the link with the app's rules and shows it as plain text, with “Open this practice” (`viram://r/…`). |
 | `/about/` | Who makes Viram, how the guides are written and sourced, who has (and hasn't) reviewed them, and how to send a correction. Hand-written. |
 | `/privacy/`, `/support/` | Privacy policy (linked from the app and both store listings) and support. Hand-written. |
-| `/sitemap.xml`, `/robots.txt` | For search engines. The sitemap is generated. |
+| `/sitemap.xml`, `/robots.txt` | For search engines and AI crawlers. Both generated: the sitemap with each page's `lastmod`, and robots.txt naming AI search and AI training crawlers separately (`AI_CRAWLERS` in `scripts/lib/site.mjs`). |
 | `/llms.txt`, `/llms-full.txt` | For AI assistants ([llmstxt.org](https://llmstxt.org)): a summary with links, and every guide as plain text. Generated. |
 | `/.well-known/apple-app-site-association` | iOS Universal Links for `/r/*`. |
 | `/.well-known/assetlinks.json` | Android App Links verification. |
@@ -57,6 +58,8 @@ Pages project on `main`, no build command, output directory `site`, with
 - `apple-app-site-association` carries the Apple Developer Team ID (`BPD6N9TLQ4`, also `ios.appleTeamId` in `app.json`). The file is served as `application/json` with no redirect.
 - Replace `PLAY_APP_SIGNING_SHA256` in `assetlinks.json` with the Play app-signing certificate's SHA-256 fingerprint (Play Console › App integrity), and add the upload key's fingerprint for testing builds.
 - At launch, set `STORES` in `scripts/lib/site.mjs` and run `npm run site:data`. Every page then links the stores in plain HTML (no JavaScript needed), the header's action becomes Get Viram, and the home page's structured data adds the app. Until then the main action is Explore techniques, with “Email me at launch”.
-- For AI assistants to read the site, leave Cloudflare's AI-crawler blocking and managed robots.txt off (Security › Bots / AI Crawl Control); `robots.txt` here allows everyone.
+- For AI assistants to read the site, leave Cloudflare's AI-crawler blocking and managed robots.txt off (AI Crawl Control); a firewall block overrides `robots.txt`. To opt out of AI training but stay in AI search, set `AI_CRAWLERS.allowTraining` to false.
+- Turn on Cloudflare's Crawler Hints (Caching › Configuration) so changes are announced to IndexNow search engines such as Bing after each deploy.
+- When a page changes, update its date in `UPDATED` in `scripts/build-site-data.mjs` (the sitemap's `lastmod`).
 
 Preview locally with any static server, for example `python3 -m http.server --directory site`.
