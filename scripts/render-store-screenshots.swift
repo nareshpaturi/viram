@@ -1,25 +1,32 @@
-// Renders the App Store screenshots: each raw Simulator capture in
-// docs/store/screenshots/raw/ framed on the Soft Light wash with its caption,
-// at 1320 × 2868 (the 6.9" iPhone size App Store Connect requires; it scales
-// them for smaller iPhones). Flattened JPEG, no transparency, as Apple requires.
-// Run from the repo root: swift scripts/render-store-screenshots.swift
+// Renders the store screenshots: each raw capture framed on the Soft Light
+// wash with its caption. Flattened JPEG, no transparency, as both stores require.
+//   ios      docs/store/screenshots/ios-raw/ → ios-6.9/, 1320 × 2868 (the 6.9"
+//            iPhone size App Store Connect requires; it scales them down)
+//   android  docs/store/play/raw/ → play/screenshots/, 1080 × 1920 (Play's 9:16)
+// Run from the repo root: swift scripts/render-store-screenshots.swift ios|android
 import AppKit
 import CoreText
 
-let width = 1320.0, height = 2868.0
-let raw = "docs/store/screenshots/raw/"
-let out = "docs/store/screenshots/ios-6.9/"
+let android = CommandLine.arguments.dropFirst().first == "android"
+let width = android ? 1080.0 : 1320.0, height = android ? 1920.0 : 2868.0
+/// Type and spacing scale with the canvas; 1 is the iPhone size.
+let k = android ? 0.72 : 1.0
+let raw = android ? "docs/store/play/raw/" : "docs/store/screenshots/ios-raw/"
+let out = android ? "docs/store/play/screenshots/" : "docs/store/screenshots/ios-6.9/"
 for font in ["node_modules/@expo-google-fonts/newsreader/500Medium/Newsreader_500Medium.ttf", "node_modules/@expo-google-fonts/dm-sans/400Regular/DMSans_400Regular.ttf"] {
   CTFontManagerRegisterFontsForURL(URL(fileURLWithPath: font) as CFURL, .process, nil)
 }
 
 /// Each screen and what it says. Keep captions true to the 1.0 app.
 let shots: [(file: String, title: String, line: String)] = [
-  ("1-breathe", "Pranayama, guided\nat your pace.", "Free, private, and ready offline."),
+  // Play discourages price words in graphics, so its first line leaves out “free”.
+  ("1-breathe", "Pranayama, guided\nat your pace.", android ? "Gentle, private, and ready offline." : "Free, private, and ready offline."),
   ("2-practice", "A calm voice\nkeeps time.", "Even with your phone locked."),
   ("3-library", "Twelve gentle\ntechniques.", "Classical pranayama and modern patterns."),
   ("4-guide", "Learn each one\nproperly.", "Steps, care notes, and the sources."),
-  ("5-settle", "Settle in,\nthen breathe.", "Its care note comes before you begin."),
+  android
+    ? ("5-introduction", "Read along\nthe first time.", "A spoken introduction, with captions.")
+    : ("5-settle", "Settle in,\nthen breathe.", "Its care note comes before you begin."),
 ]
 
 func color(_ hex: String, _ alpha: Double = 1) -> NSColor {
@@ -52,22 +59,22 @@ for shot in shots {
   // The day wash.
   let base = CGGradient(colorsSpace: CGColorSpace(name: CGColorSpace.sRGB), colors: [color("#F8F7EE").cgColor, color("#EAF3EE").cgColor] as CFArray, locations: [0, 1])!
   ctx.drawLinearGradient(base, start: CGPoint(x: 0, y: height), end: CGPoint(x: 0, y: 0), options: [])
-  glow(ctx, x: width, y: height, radius: 1400, "#E4B84A", 0.24)
-  glow(ctx, x: 0, y: 0, radius: 1600, "#A8CFD0", 0.5)
+  glow(ctx, x: width, y: height, radius: 1400 * k, "#E4B84A", 0.24)
+  glow(ctx, x: 0, y: 0, radius: 1600 * k, "#A8CFD0", 0.5)
 
   // Caption.
-  let afterTitle = centered(shot.title, font: "Newsreader-Medium", size: 108, hex: "#17211D", top: 150, lineHeight: 118)
-  let afterLine = centered(shot.line, font: "DMSans-Regular", size: 46, hex: "#47544D", top: afterTitle + 36, lineHeight: 58)
+  let afterTitle = centered(shot.title, font: "Newsreader-Medium", size: 108 * k, hex: "#17211D", top: 150 * k, lineHeight: 118 * k)
+  let afterLine = centered(shot.line, font: "DMSans-Regular", size: 46 * k, hex: "#47544D", top: afterTitle + 36 * k, lineHeight: 58 * k)
 
   // The screen, scaled to fit below the caption, with rounded corners and a soft pine shadow.
   let screen = NSImage(contentsOfFile: raw + shot.file + ".jpg")!
-  let available = height - (afterLine + 90) - 110
-  let scale = min(available / screen.size.height, (width - 220) / screen.size.width)
+  let available = height - (afterLine + 90 * k) - 110 * k
+  let scale = min(available / screen.size.height, (width - 220 * k) / screen.size.width)
   let w = screen.size.width * scale, h = screen.size.height * scale
-  let frame = NSRect(x: (width - w) / 2, y: 110, width: w, height: h)
-  let radius = 96.0 * scale / 0.46
+  let frame = NSRect(x: (width - w) / 2, y: 110 * k, width: w, height: h)
+  let radius = (android ? 40.0 : 96.0) * scale / 0.46
   ctx.saveGState()
-  ctx.setShadow(offset: CGSize(width: 0, height: -30), blur: 90, color: color("#12372F", 0.28).cgColor)
+  ctx.setShadow(offset: CGSize(width: 0, height: -30 * k), blur: 90 * k, color: color("#12372F", 0.28).cgColor)
   color("#FFFFFF").setFill()
   NSBezierPath(roundedRect: frame, xRadius: radius, yRadius: radius).fill()
   ctx.restoreGState()

@@ -46,7 +46,7 @@ jobs:
           manifest=$(find android/app/build/intermediates -path '*merged_manifest*' -name AndroidManifest.xml | head -1)
           test -n "$manifest"
           grep -q 'FOREGROUND_SERVICE_MEDIA_PLAYBACK' "$manifest"
-          ! grep -E 'RECORD_AUDIO' "$manifest"
+          if grep -q 'RECORD_AUDIO' "$manifest"; then echo "The manifest asks for the microphone"; exit 1; fi
           # FR-18: Health Connect may write mindful sessions and nothing else; never read.
           grep -q 'permission.health.WRITE_MINDFULNESS' "$manifest"
           ! grep -E 'permission\.health\.' "$manifest" | grep -v 'WRITE_MINDFULNESS'
@@ -78,15 +78,18 @@ jobs:
       - name: Info.plist has background audio, write-only Health, and no microphone purpose string
         run: |
           grep -q "<string>audio</string>" ios/Viram/Info.plist
-          ! grep -E "NSMicrophoneUsageDescription" ios/Viram/Info.plist
-          # FR-18: Apple Health may be written (mindful sessions) and never read.
+          if grep -q NSMicrophoneUsageDescription ios/Viram/Info.plist; then echo "Info.plist asks for the microphone"; exit 1; fi
+          # FR-18: Apple Health may be written (mindful sessions) and never read. App Store
+          # Connect still requires the read purpose string with the HealthKit entitlement
+          # (ITMS-90683), so it must say Viram doesn't read, and the module must ask to read nothing.
           grep -q "NSHealthUpdateUsageDescription" ios/Viram/Info.plist
-          ! grep -E "NSHealthShareUsageDescription|NSHealthClinicalHealthRecordsShareUsageDescription" ios/Viram/Info.plist
-      # The embedded Apple Watch app (targets/watch) needs the watchOS platform.
-      - name: watchOS platform
-        run: xcrun simctl list runtimes | grep -q watchOS || xcodebuild -downloadPlatform watchOS
-      # Builds the app with its widget and its Apple Watch app (targets/). No -sdk: it would
-      # force the watch target onto the iOS SDK; the destination picks each target's simulator SDK.
+          grep -A1 "NSHealthShareUsageDescription" ios/Viram/Info.plist | grep -q "doesn't read"
+          if grep -q NSHealthClinicalHealthRecordsShareUsageDescription ios/Viram/Info.plist; then echo "Info.plist asks for health records"; exit 1; fi
+          grep -q "read: nil" modules/viram-health/ios/ViramHealthModule.swift
+      # Builds the app with its widget (targets/widget). The Apple Watch app isn't in 1.0:
+      # app.json's @bacons/apple-targets "match" leaves it out, so no watchOS platform is needed.
+      - name: No Apple Watch app in 1.0
+        run: '! grep -q ViramWatch ios/Viram.xcodeproj/project.pbxproj'
       - run: |
           xcodebuild -workspace ios/Viram.xcworkspace -scheme Viram -configuration Debug \
             -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
